@@ -1,0 +1,20 @@
+{
+  "name": "biltrans",
+  "version": "1.0.2",
+  "description": "block intermediate language translatro",
+  "main": "biltrans.js",
+  "scripts": {
+    "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --recursive -R spec -r should",
+    "posttest": "./node_modules/.bin/istanbul check-coverage && rm -rf coverage"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "debug": "latest"
+  },
+  "devDependencies": {
+    "mocha": "latest",
+    "istanbul": "latest",
+    "should": "latest"
+  }
+}
