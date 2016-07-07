@@ -1,0 +1,467 @@
+{
+  "port-settings": {
+    "V0": "dc-motor",
+    "V1": "dc-motor",
+    "V2": "servo-motor",
+    "V3": "servo-motor",
+    "A0": "push-button",
+    "A1": "push-button"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 90
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "blocks": [
+                {
+                  "name": "call-function",
+                  "function": "fb"
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A1"
+                },
+                "y": 0
+              },
+              "blocks": [
+                {
+                  "name": "call-function",
+                  "function": "turn"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "fb",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "call-function",
+              "function": "forward"
+            },
+            {
+              "name": "call-function",
+              "function": "back"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "forward",
+      "blocks": [
+        {
+          "name": "set-dcmotor-power",
+          "port": "V0",
+          "power": 40
+        },
+        {
+          "name": "set-dcmotor-power",
+          "port": "V1",
+          "power": 40
+        },
+        {
+          "name": "turn-dcmotor-on",
+          "port": "V0",
+          "direction": "REVERSE"
+        },
+        {
+          "name": "turn-dcmotor-on",
+          "port": "V1",
+          "direction": "REVERSE"
+        },
+        {
+          "name": "repeat",
+          "count": 2,
+          "blocks": [
+            {
+              "name": "call-function",
+              "function": "body"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "back",
+      "blocks": [
+        {
+          "name": "set-dcmotor-power",
+          "port": "V0",
+          "power": 40
+        },
+        {
+          "name": "set-dcmotor-power",
+          "port": "V1",
+          "power": 40
+        },
+        {
+          "name": "turn-dcmotor-on",
+          "port": "V0",
+          "direction": "NORMAL"
+        },
+        {
+          "name": "turn-dcmotor-on",
+          "port": "V1",
+          "direction": "NORMAL"
+        },
+        {
+          "name": "repeat",
+          "count": 2,
+          "blocks": [
+            {
+              "name": "call-function",
+              "function": "body"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "body",
+      "blocks": [
+        {
+          "name": "if-then-else",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A1"
+            },
+            "y": 0
+          },
+          "then-blocks": [
+            {
+              "name": "call-function",
+              "function": "turn"
+            }
+          ],
+          "else-blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 1,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 80
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 115
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "if-then-else",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A1"
+            },
+            "y": 0
+          },
+          "then-blocks": [
+            {
+              "name": "call-function",
+              "function": "turn"
+            }
+          ],
+          "else-blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 1,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 75
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 65
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "if-then-else",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A1"
+            },
+            "y": 0
+          },
+          "then-blocks": [
+            {
+              "name": "call-function",
+              "function": "turn"
+            }
+          ],
+          "else-blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 1,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 100
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 115
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "if-then-else",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A1"
+            },
+            "y": 0
+          },
+          "then-blocks": [
+            {
+              "name": "call-function",
+              "function": "turn"
+            }
+          ],
+          "else-blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 1,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 100
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 65
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "turn",
+      "blocks": [
+        {
+          "name": "repeat-until",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A0"
+            },
+            "y": 0
+          },
+          "blocks": [
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 80
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V1",
+              "power": 30
+            },
+            {
+              "name": "turn-dcmotor-on",
+              "port": "V0",
+              "direction": "REVERSE"
+            },
+            {
+              "name": "turn-dcmotor-on",
+              "port": "V1",
+              "direction": "NORMAL"
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "call-function",
+                  "function": "fb"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "servomotor-synchronized-motion",
+                  "speed": 1,
+                  "blocks": [
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V2",
+                      "degree": 75
+                    },
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V3",
+                      "degree": 115
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "call-function",
+                  "function": "fb"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "servomotor-synchronized-motion",
+                  "speed": 1,
+                  "blocks": [
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V3",
+                      "degree": 65
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "call-function",
+                  "function": "fb"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "servomotor-synchronized-motion",
+                  "speed": 1,
+                  "blocks": [
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V3",
+                      "degree": 115
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "call-function",
+                  "function": "turn"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "servomotor-synchronized-motion",
+                  "speed": 1,
+                  "blocks": [
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V3",
+                      "degree": 65
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

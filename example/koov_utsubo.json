@@ -1,0 +1,117 @@
+{
+  "port-settings": {
+    "V5": "servo-motor",
+    "K4": "ir-photo-reflector"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "set-variable-to",
+              "variable": "x",
+              "value": {
+                "name": "pick-random",
+                "from": 1,
+                "to": 3
+              }
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 124
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "greater-than?",
+                "x": {
+                  "name": "ir-photo-reflector-value",
+                  "port": "K4"
+                },
+                "y": 20
+              },
+              "blocks": [
+                {
+                  "name": "repeat-until",
+                  "condition": {
+                    "name": "less-than?",
+                    "x": {
+                      "name": "ir-photo-reflector-value",
+                      "port": "K4"
+                    },
+                    "y": 20
+                  },
+                  "blocks": [
+                    {
+                      "name": "if-then-else",
+                      "condition": {
+                        "name": "equal?",
+                        "x": {
+                          "name": "variable-ref",
+                          "variable": "x"
+                        },
+                        "y": 1
+                      },
+                      "then-blocks": [
+                        {
+                          "name": "servomotor-synchronized-motion",
+                          "speed": 20,
+                          "blocks": [
+                            {
+                              "name": "set-servomotor-degree",
+                              "port": "V5",
+                              "degree": 90
+                            }
+                          ]
+                        }
+                      ],
+                      "else-blocks": [
+                        {
+                          "name": "servomotor-synchronized-motion",
+                          "speed": 10,
+                          "blocks": [
+                            {
+                              "name": "set-servomotor-degree",
+                              "port": "V5",
+                              "degree": 115
+                            }
+                          ]
+                        },
+                        {
+                          "name": "servomotor-synchronized-motion",
+                          "speed": 10,
+                          "blocks": [
+                            {
+                              "name": "set-servomotor-degree",
+                              "port": "V5",
+                              "degree": 107
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "variable",
+      "variable": "x",
+      "value": 0
+    }
+  ]
+}

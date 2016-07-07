@@ -1,0 +1,39 @@
+{
+  "port-settings": {
+    "V5": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 18,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 30
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 18,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 150
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

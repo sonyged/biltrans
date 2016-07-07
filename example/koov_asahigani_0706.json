@@ -1,0 +1,413 @@
+{
+  "port-settings": {
+    "V2": "servo-motor",
+    "V3": "servo-motor",
+    "V5": "servo-motor",
+    "V6": "servo-motor",
+    "V7": "servo-motor",
+    "V8": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V6",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V7",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V8",
+                  "degree": 90
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "touch-sensor-value",
+                  "port": "K6"
+                },
+                "y": 0
+              },
+              "blocks": [
+                {
+                  "name": "wait",
+                  "secs": 0.5
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "touch-sensor-value",
+                      "port": "K7"
+                    },
+                    "y": 1
+                  },
+                  "blocks": [
+                    {
+                      "name": "call-function",
+                      "function": "walk01"
+                    }
+                  ]
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "touch-sensor-value",
+                      "port": "K7"
+                    },
+                    "y": 0
+                  },
+                  "blocks": [
+                    {
+                      "name": "call-function",
+                      "function": "walk02"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "and",
+                "x": {
+                  "name": "equal?",
+                  "x": {
+                    "name": "touch-sensor-value",
+                    "port": "K6"
+                  },
+                  "y": 1
+                },
+                "y": {
+                  "name": "equal?",
+                  "x": {
+                    "name": "touch-sensor-value",
+                    "port": "K7"
+                  },
+                  "y": 0
+                }
+              },
+              "blocks": [
+                {
+                  "name": "call-function",
+                  "function": "eat"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "eat",
+      "blocks": [
+        {
+          "name": "repeat-until",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "touch-sensor-value",
+              "port": "K7"
+            },
+            "y": 1
+          },
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 8,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 125
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 8,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 125
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "walk01",
+      "blocks": [
+        {
+          "name": "repeat-until",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "touch-sensor-value",
+              "port": "K6"
+            },
+            "y": 1
+          },
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 14,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 95
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 75
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V6",
+                  "degree": 65
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V7",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V8",
+                  "degree": 115
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 14,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 95
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 115
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V6",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V7",
+                  "degree": 65
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V8",
+                  "degree": 75
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "walk02",
+      "blocks": [
+        {
+          "name": "repeat-until",
+          "condition": {
+            "name": "and",
+            "x": {
+              "name": "equal?",
+              "x": {
+                "name": "touch-sensor-value",
+                "port": "K6"
+              },
+              "y": 1
+            },
+            "y": {
+              "name": "equal?",
+              "x": {
+                "name": "touch-sensor-value",
+                "port": "K7"
+              },
+              "y": 1
+            }
+          },
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 14,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 120
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 120
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V6",
+                  "degree": 75
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V7",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V8",
+                  "degree": 105
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 14,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V5",
+                  "degree": 105
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V6",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V7",
+                  "degree": 75
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V8",
+                  "degree": 75
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

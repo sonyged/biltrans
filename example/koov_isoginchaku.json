@@ -1,0 +1,27 @@
+{
+  "port-settings": {
+    "V0": "dc-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 23
+            },
+            {
+              "name": "turn-dcmotor-on",
+              "port": "V0",
+              "direction": "NORMAL"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
