@@ -3,9 +3,9 @@
 set -e
 
 : ${ARDUINO_APP:=/Users/enami/Applications/Arduino-1.7.10.app}
-: ${EXTRA_LIBDIR:=/Users/enami/Documents/Arduino/libraries}
 : ${ARDUINO_ROOT:=${ARDUINO_APP}/Contents/Java}
 : ${TOOLDIR:=${ARDUINO_ROOT}/hardware/tools}
+: ${FIRMATA_DIR:=/Users/enami/Documents/Arduino/libraries/Firmata}
 ARDUINODIR=${ARDUINO_ROOT}/hardware/arduino
 CROSS=${TOOLDIR}/gcc-arm-none-eabi-4.8.3-2014q1/bin/arm-none-eabi-
 
@@ -39,11 +39,11 @@ INCLUDES="-I${TOOLDIR}/CMSIS/CMSIS/Include/
 
 EXTRA_INCLUDES="-I${ARDUINO_ROOT}/libraries/Servo/src
  -I${ARDUINODIR}/samd/libraries/Wire
- -I${EXTRA_LIBDIR}/Firmata"
+ -I${FIRMATA_DIR}"
 
 WIRE_INCLUDES=-I${ARDUINODIR}/samd/libraries/Wire/utility
 
-FIRMATA_INCLUDES=-I${EXTRA_LIBDIR}/Firmata/utility
+FIRMATA_INCLUDES=-I${FIRMATA_DIR}/utility
 
 USB_MANUFACTURER='Sony Corp.'
 USB_PRODUCT='KOOV'
@@ -89,8 +89,8 @@ WIRE_OBJS="
  ${BUILDDIR}/Wire/Wire.cpp.o"
 
 FIRMATA_SRCS="
- ${EXTRA_LIBDIR}/Firmata/Firmata.cpp
- ${EXTRA_LIBDIR}/Firmata/utility/EthernetClientStream.cpp"
+ ${FIRMATA_DIR}/Firmata.cpp
+ ${FIRMATA_DIR}/utility/EthernetClientStream.cpp"
 FIRMATA_OBJS="
  ${BUILDDIR}/Firmata/Firmata.cpp.o
  ${BUILDDIR}/Firmata/utility/EthernetClientStream.cpp.o"
@@ -101,7 +101,7 @@ OBJS="${BUILDDIR}/syscalls.c.o ${SKETCH_CPP}.o
 
 # Using library Servo in folder: ${ARDUINO_ROOT}/libraries/Servo 
 # Using library Wire in folder: ${ARDUINODIR}/samd/libraries/Wire (legacy)
-# Using library Firmata in folder: ${EXTRA_LIBDIR}/Firmata 
+# Using library Firmata in folder: ${FIRMATA_DIR} 
 
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} \
  ${ARDUINO_ROOT}/libraries/Servo/src/avr/Servo.cpp \
@@ -115,9 +115,9 @@ ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} \
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} ${WIRE_INCLUDES} \
  ${ARDUINODIR}/samd/libraries/Wire/Wire.cpp -o ${BUILDDIR}/Wire/Wire.cpp.o 
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} ${FIRMATA_INCLUDES} \
- ${EXTRA_LIBDIR}/Firmata/Firmata.cpp -o ${BUILDDIR}/Firmata/Firmata.cpp.o 
+ ${FIRMATA_DIR}/Firmata.cpp -o ${BUILDDIR}/Firmata/Firmata.cpp.o 
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} ${FIRMATA_INCLUDES} \
- ${EXTRA_LIBDIR}/Firmata/utility/EthernetClientStream.cpp \
+ ${FIRMATA_DIR}/utility/EthernetClientStream.cpp \
  -o ${BUILDDIR}/Firmata/utility/EthernetClientStream.cpp.o 
 
 LIBSRCS="${ARDUINODIR}/samd/cores/arduino/avr/dtostrf.c
