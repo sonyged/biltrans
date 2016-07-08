@@ -4,6 +4,7 @@
 #ifndef max
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
+#define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
 
 #define setup KoovSetup
 #define loop KoovLoop
@@ -26,6 +27,9 @@
 #define PORT_K7 29
 
 #define LED_MULTI_FET 18
+#define LED_MULTI_RED 13
+#define LED_MULTI_GREEN 12
+#define LED_MULTI_BLUE 10
 
 #define PORT_A0 PORT_K2
 #define PORT_A1 PORT_K3
@@ -111,15 +115,15 @@ const word BZR_S   = 0;    // silent
 
 const word BTONE[] = {
   BZR_C3,  BZR_CS3, BZR_D3,  BZR_DS3, BZR_E3,  BZR_F3,
-  BZR_FS3, BZR_G3,  BZR_GS3, BZR_A3,  BZR_AS3, BZR_B3,  
+  BZR_FS3, BZR_G3,  BZR_GS3, BZR_A3,  BZR_AS3, BZR_B3,
   BZR_C4,  BZR_CS4, BZR_D4,  BZR_DS4, BZR_E4,  BZR_F4,
-  BZR_FS4, BZR_G4,  BZR_GS4, BZR_A4,  BZR_AS4, BZR_B4,  
+  BZR_FS4, BZR_G4,  BZR_GS4, BZR_A4,  BZR_AS4, BZR_B4,
   BZR_C5,  BZR_CS5, BZR_D5,  BZR_DS5, BZR_E5,  BZR_F5,
-  BZR_FS5, BZR_G5,  BZR_GS5, BZR_A5,  BZR_AS5, BZR_B5,  
+  BZR_FS5, BZR_G5,  BZR_GS5, BZR_A5,  BZR_AS5, BZR_B5,
   BZR_C6,  BZR_CS6, BZR_D6,  BZR_DS6, BZR_E6,  BZR_F6,
-  BZR_FS6, BZR_G6,  BZR_GS6, BZR_A6,  BZR_AS6, BZR_B6,  
+  BZR_FS6, BZR_G6,  BZR_GS6, BZR_A6,  BZR_AS6, BZR_B6,
   BZR_C7,  BZR_CS7, BZR_D7,  BZR_DS7, BZR_E7,  BZR_F7,
-  BZR_FS7, BZR_G7,  BZR_GS7, BZR_A7,  BZR_AS7, BZR_B7,  
+  BZR_FS7, BZR_G7,  BZR_GS7, BZR_A7,  BZR_AS7, BZR_B7,
   BZR_C8,
 };
 
@@ -202,10 +206,7 @@ static void
 SET_DCMOTOR_POWER(int port, int power)
 {
 
-  if (power < 0)
-    power = 0;
-  if (power > 100)
-    power = 100;
+  power = clamp(0, 100, power);
   power = map(power, 0, 100, 0, 1023);
 
   switch (port) {
@@ -277,7 +278,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
   if (number == 0) return;
 
   time = min(max(0, (20 - time)), 20);
-  
+
   // Get maximum difference between current angle and target angle.
   for (int i = 0;i < number;i++) {
     int pin = ss[i].port + 8;
@@ -288,8 +289,8 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
     // Get maximum difference.
     maxDelta = (abs(delta[i]) > maxDelta) ? abs(delta[i]) : maxDelta;
   }
-  
-  // Set angles for each servomotor 
+
+  // Set angles for each servomotor
   if (time == 0) {  // If delay time is 0...
     // Set angles for each servomotor
     for (int i = 0;i < number;i++) {
@@ -299,7 +300,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
       servos[servoPinMap[pin]].write(calibedDegree);
     }
     // Wait until all servomotors reach their target angles.
-    delay(maxDelta * 3);    
+    delay(maxDelta * 3);
   } else {          // If delay time is over 1...
     for (int i = 0;i < number;i++) {
       delta[i] = (double)(delta[i]) / (double)(maxDelta);
@@ -357,3 +358,39 @@ INIT_PUSH_BUTTON(int port)
   pinMode(port, INPUT_PULLUP);
 }
 
+static void
+INIT_MULTILED()
+{
+  pinMode(LED_MULTI_RED, OUTPUT);
+  pinMode(LED_MULTI_GREEN, OUTPUT);
+  pinMode(LED_MULTI_BLUE, OUTPUT);
+  pinMode(LED_MULTI_FET, OUTPUT);
+
+  digitalWrite(LED_MULTI_RED, HIGH);
+  digitalWrite(LED_MULTI_GREEN, HIGH);
+  digitalWrite(LED_MULTI_BLUE, HIGH);
+  digitalWrite(LED_MULTI_FET, HIGH);
+}
+
+static void
+MULTILED(int r, int g, int b)
+{
+  static const int analogMax = 255;
+
+  r = map(clamp(0, 100, r), 0, 100, 0, analogMax);
+  g = map(clamp(0, 100, g), 0, 100, 0, analogMax);
+  b = map(clamp(0, 100, b), 0, 100, 0, analogMax);
+
+  if (r == 0 && g == 0 && b == 0) {
+    digitalWrite(LED_MULTI_RED, HIGH);
+    digitalWrite(LED_MULTI_GREEN, HIGH);
+    digitalWrite(LED_MULTI_BLUE, HIGH);
+    digitalWrite(LED_MULTI_FET, HIGH);
+    return;
+  }
+
+  digitalWrite(LED_MULTI_FET, LOW);
+  analogWrite(LED_MULTI_RED, analogMax - r);
+  analogWrite(LED_MULTI_GREEN, analogMax - g);
+  analogWrite(LED_MULTI_BLUE, analogMax - b);
+}

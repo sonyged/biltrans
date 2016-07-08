@@ -246,6 +246,15 @@ const BLKTRANS = {
     return `TURN_LED(${port}, ${blk.mode})`;
   },
 
+  'multi-led': blk => {
+    const port = blkport(blk);
+    use_port(blk.port, 'multi-led');
+    const r = emit_value(blk.r);
+    const g = emit_value(blk.g);
+    const b = emit_value(blk.b);
+    return `MULTILED(${r}, ${g}, ${b})`;
+  },
+
   'set-dcmotor-power': blk => {
     const port = blkport(blk);
     use_port(blk.port, 'dc-motor');
