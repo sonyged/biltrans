@@ -155,6 +155,8 @@ function emit_setup()
 }
 
 const BLKTRANS = {
+  'background-thread': blk => { return ''; },
+
   'when-green-flag-clicked': blk => {
     return [].concat('void loop()', '{', emit_blocks(blk.blocks), '}' );
   },
