@@ -185,7 +185,7 @@ DCMOTOR_CONTROL(int port)
     break;
   case DCMOTOR_REVERSE:
     digitalWrite(dport, HIGH);
-    analogWrite(aport, 255 - power);
+    analogWrite(aport, 1023 - power);
     break;
   case DCMOTOR_COAST:
     digitalWrite(dport, LOW);
@@ -193,7 +193,7 @@ DCMOTOR_CONTROL(int port)
     break;
   case DCMOTOR_BRAKE:
     digitalWrite(dport, HIGH);
-    analogWrite(aport, 255);
+    analogWrite(aport, 1023);
     break;
   }
 }
@@ -206,7 +206,7 @@ SET_DCMOTOR_POWER(int port, int power)
     power = 0;
   if (power > 100)
     power = 100;
-  power = map(power, 0, 100, 0, 255);
+  power = map(power, 0, 100, 0, 1023);
 
   switch (port) {
   default:
