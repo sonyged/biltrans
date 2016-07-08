@@ -967,6 +967,14 @@ void FirmataLoop()
 #define USE_BLE
 void setup()
 {
+  /*
+   * Reset BTS01.  Pin 43 is PA13.
+   */
+  pinMode(43, OUTPUT);
+  digitalWrite(43, LOW);
+  delay(1);
+  digitalWrite(43, HIGH);
+
   // to use a port other than Serial, such as Serial1 on an Arduino Leonardo or Mega,
   // Call begin(baud) on the alternate serial port and pass it to Firmata to begin like this:
   //Serial5.begin(115200);
