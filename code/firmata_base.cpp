@@ -854,6 +854,19 @@ class DualStream: public Stream {
 #endif
     return currentSerial().write(c);
   }
+
+  enum {
+    NOT_CONNECTED,
+    USB_CONNECTED,
+    BLE_CONNECTED
+  };
+  int connectMode() const {
+    if (serial == &Serial)
+      return USB_CONNECTED;
+    if (serial == &SerialUSB)
+      return BLE_CONNECTED;
+    return NOT_CONNECTED;
+  }
 } dualStream;
 
 static void
@@ -1071,10 +1084,53 @@ void loop()
     }
   }
 
-  if (enableFirmata)
+#define PIN_USB 20
+#define PIN_BLE 21
+#define PIN_AUTO 1
+#define PIN_LIVE 0
+#define LED_OFF(pin) do {			\
+  pinMode((pin), OUTPUT);			\
+  digitalWrite((pin), HIGH);			\
+} while (0)
+#define LED_ON(pin) do {			\
+  pinMode((pin), OUTPUT);			\
+  digitalWrite((pin), LOW);			\
+} while (0)
+
+  switch (dualStream.connectMode()) {
+  case DualStream::NOT_CONNECTED:
+    LED_OFF(PIN_USB);
+    LED_OFF(PIN_BLE);
+    break;
+  case DualStream::USB_CONNECTED:
+    LED_ON(PIN_USB);
+    LED_OFF(PIN_BLE);
+    break;
+  case DualStream::BLE_CONNECTED:
+    LED_OFF(PIN_USB);
+    LED_ON(PIN_BLE);
+    break;
+  };
+
+  if (enableFirmata) {
+    LED_OFF(PIN_AUTO);
+    LED_ON(PIN_LIVE);
+
     FirmataLoop();
+  }
 #if !defined(DEBUG_USB)
-  else
+  if (!enableFirmata) {
+    LED_ON(PIN_AUTO);
+    LED_OFF(PIN_LIVE);
+
     KoovLoop();
+  }
 #endif
+
+#undef PIN_USB
+#undef PIN_BLE
+#undef PIN_AUTO
+#undef PIN_LIVE
+#undef LED_ON
+#undef LED_OFF
 }
