@@ -862,9 +862,9 @@ class DualStream: public Stream {
   };
   int connectMode() const {
     if (serial == &Serial)
-      return USB_CONNECTED;
-    if (serial == &SerialUSB)
       return BLE_CONNECTED;
+    if (serial == &SerialUSB)
+      return USB_CONNECTED;
     return NOT_CONNECTED;
   }
 } dualStream;
