@@ -169,12 +169,14 @@ INIT_DC_MOTOR(int port)
   case PORT_V0:
   case PORT_V1:
     pinMode(dcMotorState[port].dport, OUTPUT);
+    pinMode(dcMotorState[port].aport, OUTPUT);
     break;
   }
   pinMode(LED_MULTI_FET, OUTPUT);
   digitalWrite(LED_MULTI_FET, HIGH);
 }
 
+static const int analogMax = 255;
 static void
 DCMOTOR_CONTROL(int port)
 {
@@ -189,7 +191,7 @@ DCMOTOR_CONTROL(int port)
     break;
   case DCMOTOR_REVERSE:
     digitalWrite(dport, HIGH);
-    analogWrite(aport, 1023 - power);
+    analogWrite(aport, analogMax - power);
     break;
   case DCMOTOR_COAST:
     digitalWrite(dport, LOW);
@@ -197,7 +199,7 @@ DCMOTOR_CONTROL(int port)
     break;
   case DCMOTOR_BRAKE:
     digitalWrite(dport, HIGH);
-    analogWrite(aport, 1023);
+    analogWrite(aport, analogMax);
     break;
   }
 }
@@ -207,7 +209,7 @@ SET_DCMOTOR_POWER(int port, int power)
 {
 
   power = clamp(0, 100, power);
-  power = map(power, 0, 100, 0, 1023);
+  power = map(power, 0, 100, 0, analogMax);
 
   switch (port) {
   default:
