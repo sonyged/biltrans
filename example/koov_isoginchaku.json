@@ -10,14 +10,117 @@
           "name": "forever",
           "blocks": [
             {
-              "name": "set-dcmotor-power",
-              "port": "V0",
-              "power": 23
-            },
-            {
               "name": "turn-dcmotor-on",
               "port": "V0",
               "direction": "NORMAL"
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 40
+            },
+            {
+              "name": "wait",
+              "secs": 1
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 35
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 30
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 20
+            },
+            {
+              "name": "wait",
+              "secs": 6
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 30
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 35
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 50
+            },
+            {
+              "name": "wait",
+              "secs": 1
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 35
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 30
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 20
+            },
+            {
+              "name": "wait",
+              "secs": 6
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 30
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 35
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
             }
           ]
         }
