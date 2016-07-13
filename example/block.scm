@@ -447,7 +447,8 @@
              (traverse (cdr item)))
             (else)))
     (traverse script)
-    (map (^x (cons (car x) (symbol->string (cdr x)))) settings)))
+    (sort (map (^x (cons (car x) (symbol->string (cdr x)))) settings)
+          (^[x y] (string<? (symbol->string x) (symbol->string y))) car)))
 
 (define (block-list->json scripts port-mappings)
   (let1 mapped-scripts (map-ports port-mappings scripts)
