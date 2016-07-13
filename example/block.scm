@@ -1,3 +1,4 @@
+;;; -*- indent-tabs-mode: nil -*-
 ;;;
 ;;; Convert block intermediate language written in S-expression to JSON.
 ;;;
@@ -137,10 +138,10 @@
 
 (define (map-ports mapping script)
   (cond ((pair? script)
-	 (cons (map-ports mapping (car script))
-	       (map-ports mapping (cdr script))))
-	((assq script mapping) => cdr)
-	(else script)))
+  (cons (map-ports mapping (car script))
+        (map-ports mapping (cdr script))))
+ ((assq script mapping) => cdr)
+ (else script)))
 
 (define (map-op op)
   (case op
@@ -156,11 +157,11 @@
   (memq op '(change-by change-effect-by)))
 (define (sensor-op? op)
   (memq op '(light-sensor-value
-	     button-value
-	     3-axis-digital-accelerometer-value
-	     ir-photo-reflector-value
-	     sound-sensor-value
-	     touch-sensor-value)))
+      button-value
+      3-axis-digital-accelerometer-value
+      ir-photo-reflector-value
+      sound-sensor-value
+      touch-sensor-value)))
 
 ;; (get 'if 'lisp-indent-function)
 ;; (put 'match 'scheme-indent-function 1)
@@ -294,7 +295,7 @@
   ;; accessors
   (define (block-attr attr block)
     (cond ((assq attr block) => cdr)
-	  (else (errorf "no ~a found ~a" attr block))))
+          (else (errorf "no ~a found ~a" attr block))))
   (define (block-name block)
     (string->symbol (block-attr 'name block)))
 
@@ -313,13 +314,13 @@
     (inc! thread-counter)
     (cons (format "NIL_WORKING_AREA(waThread~a, 16);\n\
                    NIL_THREAD(Thread~a, arg) {\n"
-		  thread-counter thread-counter)
-	  (append (indent (block->code block)) (list "}\n"))))
+                  thread-counter thread-counter)
+          (append (indent (block->code block)) (list "}\n"))))
   (define (turn-led block)
     (let ((port (block-attr 'port block))
-	  (mode (block-attr 'mode block)))
+          (mode (block-attr 'mode block)))
       (unless (member port ports)
-	(push! ports port))
+        (push! ports port))
       (format "board.LED(PORT_~a, ~a);\n" port mode)))
   (define (wait block)
     (let ((secs (block-attr 'secs block)))
@@ -329,32 +330,32 @@
   (define (emit-initializers)
     (let1 v '()
       (for-each (^p (push! v p))
-		'("#include <Arduino.h>\n"
-		  "#include <Servo.h>\n"
-		  "#include <Wire.h>\n"
-		  "#include <MMA8653.h>\n"
-		  "#include <MPU6050.h>\n"
-		  "#include <IRremoteForStuduino.h>\n"
-		  "#include <ColorSensor.h>\n"
-		  "#include \"Studuino.h\"\n"
-		  "#include <NilRTOS.h>\n"
-		  "\n"
-		  "Studuino board;\n"
-		  "\n"
-		  ))
+                '("#include <Arduino.h>\n"
+                  "#include <Servo.h>\n"
+                  "#include <Wire.h>\n"
+                  "#include <MMA8653.h>\n"
+                  "#include <MPU6050.h>\n"
+                  "#include <IRremoteForStuduino.h>\n"
+                  "#include <ColorSensor.h>\n"
+                  "#include \"Studuino.h\"\n"
+                  "#include <NilRTOS.h>\n"
+                  "\n"
+                  "Studuino board;\n"
+                  "\n"
+                  ))
       (push! v "void setup()\n{\n")
       (for-each (^p (push! v #"  board.InitSensorPort(PORT_~p, PIDLED);\n"))
-		ports)
+                ports)
       (push! v "  nilSysBegin();\n")
       (push! v "}\n")
       (for-each (^p (push! v p))
-		'("void loop()\n"
-		  "{\n"
-		  "  while (1) {\n"
-		  "    nilSysLock();\n"
-		  "    nilSysUnlock();\n"
-		  "  }\n"
-		  "}\n"))
+                '("void loop()\n"
+                  "{\n"
+                  "  while (1) {\n"
+                  "    nilSysLock();\n"
+                  "    nilSysUnlock();\n"
+                  "  }\n"
+                  "}\n"))
       (reverse v)))
   ;; emit C code for finalizers
   (define (emit-finalizers)
@@ -371,19 +372,19 @@
   (define (emit-block block)
     (define (emit)
       (let1 name (block-name block)
-	(case name
-	  ((when-green-flag-clicked)
-	   (when-green-flag-clicked block))
-	  ((forever)
-	   (forever block))
-	  ((turn-led)
-	   (turn-led block))
-	  ((wait)
-	   (wait block))
-	  (else
-	   (display block)
-	   (newline)
-	   ""))))
+        (case name
+          ((when-green-flag-clicked)
+           (when-green-flag-clicked block))
+          ((forever)
+           (forever block))
+          ((turn-led)
+           (turn-led block))
+          ((wait)
+           (wait block))
+          (else
+           (display block)
+           (newline)
+           ""))))
     (let1 code (emit)
       (if (list? code) code (list code))))
   (define (emit-script script)
@@ -401,55 +402,55 @@
 ;; Any op followed by port
 (define (port-op? op)
   (memq op '(turn-led
-	     buzzer-on
-	     buzzer-off
-	     set-servomotor-degree
-	     set-dcmotor-power
-	     turn-dcmotor-on
-	     turn-dcmotor-off)))
+             buzzer-on
+             buzzer-off
+             set-servomotor-degree
+             set-dcmotor-power
+             turn-dcmotor-on
+             turn-dcmotor-off)))
 
 (define (op->part op)
   (cond ((assq op '((turn-led . led)
-		    (buzzer-on . buzzer)
-		    (buzzer-off . buzzer)
-		    (set-servomotor-degree . servo-motor)
-		    (set-dcmotor-power . dc-motor)
-		    (turn-dcmotor-on . dc-motor)
-		    (turn-dcmotor-off . dc-motor)
-		    (light-sensor-value . light-sensor)
-		    (button-value . push-button)
-		    (3-axis-digital-accelerometer
-		     . 3-axis-digital-accelerometer-value)
-		    (ir-photo-reflector-value . ir-photo-reflector)
-		    (sound-sensor-value . sound-sensor)
-		    (touch-sensor-value . touch-sensor))) => cdr)
-	(else (error "uknown op code" op))))
+                    (buzzer-on . buzzer)
+                    (buzzer-off . buzzer)
+                    (set-servomotor-degree . servo-motor)
+                    (set-dcmotor-power . dc-motor)
+                    (turn-dcmotor-on . dc-motor)
+                    (turn-dcmotor-off . dc-motor)
+                    (light-sensor-value . light-sensor)
+                    (button-value . push-button)
+                    (3-axis-digital-accelerometer
+                     . 3-axis-digital-accelerometer-value)
+                    (ir-photo-reflector-value . ir-photo-reflector)
+                    (sound-sensor-value . sound-sensor)
+                    (touch-sensor-value . touch-sensor))) => cdr)
+        (else (error "uknown op code" op))))
 
 (define (port-settings script)
   (let1 settings '()
     (define (use-port op port)
       (let1 part (op->part op)
-	(cond ((assq port settings) =>
-	       (^s (unless (eq? part (cdr s))
-		     (error "port is already used" s part))))
-	      (else
-	       (push! settings (cons port part))))))
+        (cond ((assq port settings) =>
+               (^s (unless (eq? part (cdr s))
+                     (error "port is already used" s part))))
+              (else
+               (push! settings (cons port part))))))
     (define (traverse item)
       (cond ((pair? item)
-	     (match item
-	       [((? sensor-op? op) port)
-		(use-port op port)]
-	       [((? port-op? op) port rest ...)
-		(use-port op port)]
-	       [else #f])
-	     (traverse (car item))
-	     (traverse (cdr item)))
-	    (else)))
+             (match item
+               [((? sensor-op? op) port)
+                (use-port op port)]
+               [((? port-op? op) port rest ...)
+                (use-port op port)]
+               [else #f])
+             (traverse (car item))
+             (traverse (cdr item)))
+            (else)))
     (traverse script)
     (map (^x (cons (car x) (symbol->string (cdr x)))) settings)))
 
 (define (block-list->json scripts port-mappings)
   (let1 mapped-scripts (map-ports port-mappings scripts)
     (let1 json (acons 'port-settings (port-settings mapped-scripts)
-		      (acons 'scripts (blocks->json mapped-scripts) '()))
+                      (acons 'scripts (blocks->json mapped-scripts) '()))
       (construct-json json))))

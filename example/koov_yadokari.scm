@@ -1,4 +1,4 @@
-;;;
+;;; -*- indent-tabs-mode: nil -*-
 ;;; cd ..
 ;;; gosh ./example/koov_yadokari.scm  | jq .
 
