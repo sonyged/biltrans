@@ -157,11 +157,11 @@
   (memq op '(change-by change-effect-by)))
 (define (sensor-op? op)
   (memq op '(light-sensor-value
-      button-value
-      3-axis-digital-accelerometer-value
-      ir-photo-reflector-value
-      sound-sensor-value
-      touch-sensor-value)))
+             button-value
+             3-axis-digital-accelerometer-value
+             ir-photo-reflector-value
+             sound-sensor-value
+             touch-sensor-value)))
 
 ;; (get 'if 'lisp-indent-function)
 ;; (put 'match 'scheme-indent-function 1)
