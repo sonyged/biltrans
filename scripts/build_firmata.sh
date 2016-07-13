@@ -2,10 +2,10 @@
 
 set -e
 
-: ${ARDUINO_APP:=/Users/enami/Applications/Arduino-1.7.10.app}
+: ${ARDUINO_APP:=${HOME}/Applications/Arduino-1.7.10.app}
 : ${ARDUINO_ROOT:=${ARDUINO_APP}/Contents/Java}
 : ${TOOLDIR:=${ARDUINO_ROOT}/hardware/tools}
-: ${FIRMATA_DIR:=/Users/enami/Documents/Arduino/libraries/Firmata}
+: ${FIRMATA_DIR:=${HOME}/Documents/Arduino/libraries/Firmata}
 ARDUINODIR=${ARDUINO_ROOT}/hardware/arduino
 CROSS=${TOOLDIR}/gcc-arm-none-eabi-4.8.3-2014q1/bin/arm-none-eabi-
 

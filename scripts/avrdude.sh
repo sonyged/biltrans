@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: ${ARDUINO_APP:=/Users/enami/Applications/Arduino-1.7.8.app}
+: ${ARDUINO_APP:=${HOME}/Applications/Arduino-1.7.10.app}
 TOOLDIR=${ARDUINO_APP}/Contents/Java/hardware/tools
 AVRDIR=${TOOLDIR}/avr
 HEX=${1:-/tmp/build/sketch_mar07b.cpp.hex}
