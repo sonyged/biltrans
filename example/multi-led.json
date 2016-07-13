@@ -1,0 +1,124 @@
+{
+    "scripts": [
+	{
+	    "name": "when-green-flag-clicked",
+	    "blocks": [
+		{
+		    "name": "set-variable-to",
+		    "variable": "r",
+		    "value": 0
+		},
+		{
+		    "name": "set-variable-to",
+		    "variable": "g",
+		    "value": 0
+		},
+		{
+		    "name": "set-variable-to",
+		    "variable": "b",
+		    "value": 0
+		},
+		{
+		    "name": "repeat",
+		    "count": 100,
+		    "blocks": [
+			{
+			    "name": "change-variable-by",
+			    "variable": "r",
+			    "value": 1
+			},
+			{
+			    "name": "multi-led",
+			    "r": { "name": "variable-ref", "variable": "r" },
+			    "g": { "name": "variable-ref", "variable": "g" },
+			    "b": { "name": "variable-ref", "variable": "b" }
+			},
+			{
+			    "name": "wait",
+			    "secs": 0.1
+			}
+		    ]
+		},
+		{
+		    "name": "set-variable-to",
+		    "variable": "r",
+		    "value": 0
+		},
+		{
+		    "name": "repeat",
+		    "count": 100,
+		    "blocks": [
+			{
+			    "name": "change-variable-by",
+			    "variable": "g",
+			    "value": 1
+			},
+			{
+			    "name": "multi-led",
+			    "r": { "name": "variable-ref", "variable": "r" },
+			    "g": { "name": "variable-ref", "variable": "g" },
+			    "b": { "name": "variable-ref", "variable": "b" }
+			},
+			{
+			    "name": "wait",
+			    "secs": 0.1
+			}
+		    ]
+		},
+		{
+		    "name": "set-variable-to",
+		    "variable": "g",
+		    "value": 0
+		},
+		{
+		    "name": "repeat",
+		    "count": 100,
+		    "blocks": [
+			{
+			    "name": "change-variable-by",
+			    "variable": "b",
+			    "value": 1
+			},
+			{
+			    "name": "multi-led",
+			    "r": { "name": "variable-ref", "variable": "r" },
+			    "g": { "name": "variable-ref", "variable": "g" },
+			    "b": { "name": "variable-ref", "variable": "b" }
+			},
+			{
+			    "name": "wait",
+			    "secs": 0.1
+			}
+		    ]
+		},
+		{
+		    "name": "set-variable-to",
+		    "variable": "r",
+		    "value": 0
+		}
+	    ]
+	},
+	{
+	    "name": "variable",
+	    "variable": "r",
+	    "value": 0
+	},
+	{
+	    "name": "variable",
+	    "variable": "g",
+	    "value": 0
+	},
+	{
+	    "name": "variable",
+	    "variable": "b",
+	    "value": 0
+	}
+    ],
+    "port-settings": {
+	"A0": "push-button",
+	"A1": "push-button",
+	"RGB": "multi-led",
+	"K6": "light-sensor",
+	"K7": "ir-photo-reflector"
+    }
+}
