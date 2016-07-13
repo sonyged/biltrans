@@ -1,0 +1,53 @@
+{
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "repeat",
+          "count": 10,
+          "blocks": [
+            {
+              "name": "set-variable-to",
+              "variable": "ir-photo-reflector",
+              "value": {
+                "name": "ir-photo-reflector-value",
+                "port": "K7"
+              }
+            },
+            {
+              "name": "turn-led",
+              "port": "V2",
+              "mode": "ON"
+            },
+            {
+              "name": "wait",
+              "secs": 1
+            },
+            {
+              "name": "turn-led",
+              "port": "V2",
+              "mode": "OFF"
+            },
+            {
+              "name": "wait",
+              "secs": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "variable",
+      "variable": "ir-photo-reflector",
+      "value": 0
+    }
+  ],
+  "port-settings": {
+    "A0": "push-button",
+    "A1": "push-button",
+    "V2": "led",
+    "K6": "light-sensor",
+    "K7": "ir-photo-reflector"
+  }
+}

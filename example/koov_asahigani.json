@@ -1,5 +1,7 @@
 {
   "port-settings": {
+    "K6": "touch-sensor",
+    "K7": "touch-sensor",
     "V2": "servo-motor",
     "V3": "servo-motor",
     "V5": "servo-motor",
