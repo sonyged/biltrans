@@ -21,11 +21,11 @@
        (= (touch-sensor-value A0) 0)
        (wait 0.5)
        (if-then
-	(= (touch-sensor-value A1) 1)
-	(call-function walk01))
+        (= (touch-sensor-value A1) 1)
+        (call-function walk01))
        (if-then
-	(= (touch-sensor-value A1) 0)
-	(call-function walk02)))
+        (= (touch-sensor-value A1) 0)
+        (call-function walk02)))
       (if-then
        (and (= (touch-sensor-value A0) 1) (= (touch-sensor-value A1) 0))
        (call-function eat))))
