@@ -77,27 +77,27 @@
       (if-then-else
        (equal? (button-value A0) 0)
        (then
-	(call-function fb))
+        (call-function fb))
        (else
-	,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 115)))))
+        ,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 115)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
-	(call-function fb))
+        (call-function fb))
        (else
-	,(servomotor-synchronized-motion 1 '((D10 . 65)))))
+        ,(servomotor-synchronized-motion 1 '((D10 . 65)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
-	(call-function fb))
+        (call-function fb))
        (else
-	,(servomotor-synchronized-motion 1 '((D10 . 115)))))
+        ,(servomotor-synchronized-motion 1 '((D10 . 115)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
-	(call-function turn))
+        (call-function turn))
        (else
-	,(servomotor-synchronized-motion 1 '((D10 . 65)))))))))
+        ,(servomotor-synchronized-motion 1 '((D10 . 65)))))))))
 (define *port-mappings*
   '((M1 . V0) (M2 . V1) (D9 . V2) (D10 . V3)))
 
