@@ -7,7 +7,7 @@
 
 ;; koov_whale_shark_aqa
 (define *scripts*
-  '((when-green-flag-clicked
+  `((when-green-flag-clicked
      (set-servomotor-degree D9 90)
      (set-servomotor-degree D10 90)
      (forever
@@ -47,37 +47,25 @@
       (then
        (call-function turn))
       (else
-       (servomotor-synchronized-motion
-	1
-	(set-servomotor-degree D9 80)
-	(set-servomotor-degree D10 115))))
+       ,(servomotor-synchronized-motion 1 '((D9 . 80) (D10 . 115)))))
      (if-then-else
       (equal? (button-value A1) 0)
       (then
        (call-function turn))
       (else
-       (servomotor-synchronized-motion
-	1
-	(set-servomotor-degree D9 75)
-	(set-servomotor-degree D10 65))))
+       ,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 65)))))
      (if-then-else
       (equal? (button-value A1) 0)
       (then
        (call-function turn))
       (else
-       (servomotor-synchronized-motion
-	1
-	(set-servomotor-degree D9 100)
-	(set-servomotor-degree D10 115))))
+       ,(servomotor-synchronized-motion 1 '((D9 . 100) (D10 . 115)))))
      (if-then-else
       (equal? (button-value A1) 0)
       (then
        (call-function turn))
       (else
-       (servomotor-synchronized-motion
-	1
-	(set-servomotor-degree D9 100)
-	(set-servomotor-degree D10 65)))))
+       ,(servomotor-synchronized-motion 1 '((D9 . 100) (D10 . 65))))))
     (function
      turn
      (repeat-until
@@ -91,34 +79,25 @@
        (then
 	(call-function fb))
        (else
-	(servomotor-synchronized-motion
-	 1
-	 (set-servomotor-degree D9 75)
-	 (set-servomotor-degree D10 115))))
+	,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 115)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
 	(call-function fb))
        (else
-	(servomotor-synchronized-motion
-	 1
-	 (set-servomotor-degree D10 65))))
+	,(servomotor-synchronized-motion 1 '((D10 . 65)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
 	(call-function fb))
        (else
-	(servomotor-synchronized-motion
-	 1
-	 (set-servomotor-degree D10 115))))
+	,(servomotor-synchronized-motion 1 '((D10 . 115)))))
       (if-then-else
        (equal? (button-value A0) 0)
        (then
 	(call-function turn))
        (else
-	(servomotor-synchronized-motion
-	 1
-	 (set-servomotor-degree D10 65))))))))
+	,(servomotor-synchronized-motion 1 '((D10 . 65)))))))))
 (define *port-mappings*
   '((M1 . V0) (M2 . V1) (D9 . V2) (D10 . V3)))
 

@@ -5,12 +5,6 @@
 (add-load-path "./example")
 (use block)
 
-(define (servomotor-synchronized-motion speed port&degree)
-  `(servomotor-synchronized-motion
-    ,speed
-    ,@(map (^[p&d] `(set-servomotor-degree ,(car p&d) ,(cdr p&d)))
-           port&degree)))
-
 ;;; koov_asahigani_0706.bpd
 (define *scripts*
   `((when-green-flag-clicked

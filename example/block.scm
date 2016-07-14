@@ -8,7 +8,8 @@
   (use util.match)
   (use gauche.collection)
   (use srfi-13)
-  (export block-list->json))
+  (export block-list->json
+          servomotor-synchronized-motion))
 (select-module block)
 
 ;;; Hat blocks are the block that start every script.
@@ -455,3 +456,9 @@
     (let1 json (acons 'port-settings (port-settings mapped-scripts)
                       (acons 'scripts (blocks->json mapped-scripts) '()))
       (construct-json json))))
+
+(define (servomotor-synchronized-motion speed port&degree)
+  `(servomotor-synchronized-motion
+    ,speed
+    ,@(map (^[p&d] `(set-servomotor-degree ,(car p&d) ,(cdr p&d)))
+           port&degree)))
