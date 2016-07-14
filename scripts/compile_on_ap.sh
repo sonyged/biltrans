@@ -8,9 +8,13 @@ export EXTRA_LIBDIR=/usr/local/firmata-arduino
 export FIRMATA_DIR=/usr/local/firmata-arduino/Firmata
 export ARDUINO_APP=/usr/local/arduino-1.7.10-linux64
 
+# make sure to use recent node.
+PATH=/usr/local/bin:$PATH
+
 BUILDDIR=/tmp/build.$$
 rm -rf "${BUILDDIR}"
 mkdir -p "${BUILDDIR}"
 
 test -f "$1" || exit 1
-node ../compile.js "$1" | sh ./compile.sh "${BUILDDIR}"
+node --version >>"${BUILDDIR}"/node.log
+node ../compile.js "$1" 2>>"${BUILDDIR}"/node.log | sh ./compile.sh "${BUILDDIR}"
