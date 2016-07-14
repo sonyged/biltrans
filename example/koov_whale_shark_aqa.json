@@ -1,11 +1,11 @@
 {
   "port-settings": {
+    "A0": "push-button",
+    "A1": "push-button",
     "V0": "dc-motor",
     "V1": "dc-motor",
     "V2": "servo-motor",
-    "V3": "servo-motor",
-    "A0": "push-button",
-    "A1": "push-button"
+    "V3": "servo-motor"
   },
   "scripts": [
     {
@@ -124,12 +124,12 @@
         {
           "name": "set-dcmotor-power",
           "port": "V0",
-          "power": 40
+          "power": 16
         },
         {
           "name": "set-dcmotor-power",
           "port": "V1",
-          "power": 40
+          "power": 16
         },
         {
           "name": "turn-dcmotor-on",

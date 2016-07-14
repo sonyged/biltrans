@@ -5,7 +5,7 @@
 (add-load-path "./example")
 (use block)
 
-;; koov_whale_shark_aqa
+;; koov_whale_shark_aqa 0714 (sony building version)
 (define *scripts*
   `((when-green-flag-clicked
      (set-servomotor-degree D9 90)
@@ -33,8 +33,8 @@
       (call-function body)))
     (function
      back
-     (set-dcmotor-power M1 40)
-     (set-dcmotor-power M2 40)
+     (set-dcmotor-power M1 16)
+     (set-dcmotor-power M2 16)
      (turn-dcmotor-on M1 NORMAL)
      (turn-dcmotor-on M2 NORMAL)
      (repeat

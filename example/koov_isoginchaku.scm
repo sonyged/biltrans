@@ -5,7 +5,7 @@
 (add-load-path "./example")
 (use block)
 
-;; isoginchaku 0713
+;; isoginchaku 0714 (sony building version)
 (define *scripts*
   `((when-green-flag-clicked
      (forever
@@ -14,18 +14,18 @@
          (^(power&wait)
            `((set-dcmotor-power M2 ,(car power&wait))
              (wait ,(cdr power&wait))))
-         '((40 . 1)
-           (35 . 0.5)
-           (30 . 0.5)
-           (20 . 6)
-           (30 . 0.5)
-           (35 . 0.5)
-           (50 . 1)
-           (35 . 0.5)
-           (30 . 0.5)
-           (20 . 6)
-           (30 . 0.5)
-           (35 . 0.5)
+         '((24 . 0.8)
+           (23 . 0.5)
+           (18 . 0.5)
+           (12 . 6)
+           (18 . 0.5)
+           (23 . 0.5)
+           (26 . 0.8)
+           (23 . 0.5)
+           (18 . 0.5)
+           (12 . 6)
+           (18 . 0.5)
+           (23 . 0.5)
            ))))))
 (define *port-mappings*
   '((M2 . V0)))
