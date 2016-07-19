@@ -296,6 +296,10 @@ const BLKTRANS = {
       '  #undef SERVO_MOTOR_DEGREE',
       '}');
   },
+
+  breakpoint: blk => {
+    return '/* breakpoint */';
+  },
 };
 
 function indent(stmt)
