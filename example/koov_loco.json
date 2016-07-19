@@ -1,0 +1,68 @@
+{
+  "port-settings": {
+    "K2": "ir-photo-reflector",
+    "V0": "dc-motor",
+    "V1": "dc-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-dcmotor-power",
+          "port": "V0",
+          "power": 60
+        },
+        {
+          "name": "set-dcmotor-power",
+          "port": "V1",
+          "power": 60
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "less-than?",
+                "x": {
+                  "name": "ir-photo-reflector-value",
+                  "port": "K2"
+                },
+                "y": 45
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-dcmotor-on",
+                  "port": "V0",
+                  "direction": "NORMAL"
+                },
+                {
+                  "name": "turn-dcmotor-off",
+                  "port": "V1",
+                  "mode": "COAST"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-dcmotor-off",
+                  "port": "V0",
+                  "mode": "COAST"
+                },
+                {
+                  "name": "turn-dcmotor-on",
+                  "port": "V1",
+                  "direction": "NORMAL"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
