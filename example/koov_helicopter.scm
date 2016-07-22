@@ -10,7 +10,7 @@
   `((when-green-flag-clicked
      (set-dcmotor-power M1 80)
      (turn-dcmotor-on M1 NORMAL)
-     ,(servomotor-synchronized-motion 4 '((D9 . 90)))
+     (set-servomotor-degree D9 90)
      (forever
       (if-then
        (= (button-value A0) 0)

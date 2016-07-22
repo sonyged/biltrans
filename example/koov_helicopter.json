@@ -21,15 +21,9 @@
           "direction": "NORMAL"
         },
         {
-          "name": "servomotor-synchronized-motion",
-          "speed": 4,
-          "blocks": [
-            {
-              "name": "set-servomotor-degree",
-              "port": "V2",
-              "degree": 90
-            }
-          ]
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 90
         },
         {
           "name": "forever",
