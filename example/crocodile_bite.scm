@@ -5,9 +5,15 @@
 (add-load-path "./example")
 (use block)
 
+;(define *sensor-op* '(< light-sensor-value 50))
+(define *sensor-op* '(> ir-photo-reflector-value 10))
+
+(define (sensor-reacted port)
+  `(,(car *sensor-op*) (,(cadr *sensor-op*) ,port) ,(caddr *sensor-op*)))
+
 ;; crocodile_bite
 (define *scripts*
-  '((when-green-flag-clicked
+  `((when-green-flag-clicked
      (forever
       (set-servomotor-degree D9 120)
       (turn-led A0 OFF)
@@ -15,7 +21,7 @@
       (wait 2)
 
       (if-then
-       (< (light-sensor-value A3) 50)
+       ,(sensor-reacted 'A3)
        (set-variable-to bite (pick-random 1 3))
        (if-then
         (= (variable-ref bite) 1)

@@ -1,0 +1,352 @@
+{
+  "port-settings": {
+    "K7": "ir-photo-reflector",
+    "V2": "led",
+    "V3": "led",
+    "V6": "buzzer",
+    "V9": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "set-servomotor-degree",
+              "port": "V9",
+              "degree": 120
+            },
+            {
+              "name": "turn-led",
+              "port": "V2",
+              "mode": "OFF"
+            },
+            {
+              "name": "turn-led",
+              "port": "V3",
+              "mode": "OFF"
+            },
+            {
+              "name": "wait",
+              "secs": 2
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "greater-than?",
+                "x": {
+                  "name": "ir-photo-reflector-value",
+                  "port": "K7"
+                },
+                "y": 10
+              },
+              "blocks": [
+                {
+                  "name": "set-variable-to",
+                  "variable": "bite",
+                  "value": {
+                    "name": "pick-random",
+                    "from": 1,
+                    "to": 3
+                  }
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "variable-ref",
+                      "variable": "bite"
+                    },
+                    "y": 1
+                  },
+                  "blocks": [
+                    {
+                      "name": "repeat",
+                      "count": 5,
+                      "blocks": [
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        }
+                      ]
+                    },
+                    {
+                      "name": "turn-led",
+                      "port": "V3",
+                      "mode": "ON"
+                    },
+                    {
+                      "name": "call-function",
+                      "function": "OK"
+                    },
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V9",
+                      "degree": 150
+                    },
+                    {
+                      "name": "wait",
+                      "secs": 1
+                    },
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V9",
+                      "degree": 120
+                    }
+                  ]
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "variable-ref",
+                      "variable": "bite"
+                    },
+                    "y": 2
+                  },
+                  "blocks": [
+                    {
+                      "name": "repeat",
+                      "count": 5,
+                      "blocks": [
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        }
+                      ]
+                    },
+                    {
+                      "name": "call-function",
+                      "function": "OK"
+                    },
+                    {
+                      "name": "repeat",
+                      "count": 3,
+                      "blocks": [
+                        {
+                          "name": "set-servomotor-degree",
+                          "port": "V9",
+                          "degree": 140
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        },
+                        {
+                          "name": "set-servomotor-degree",
+                          "port": "V9",
+                          "degree": 150
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "variable-ref",
+                      "variable": "bite"
+                    },
+                    "y": 3
+                  },
+                  "blocks": [
+                    {
+                      "name": "repeat",
+                      "count": 5,
+                      "blocks": [
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V2",
+                          "mode": "OFF"
+                        },
+                        {
+                          "name": "turn-led",
+                          "port": "V3",
+                          "mode": "ON"
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.2
+                        }
+                      ]
+                    },
+                    {
+                      "name": "turn-led",
+                      "port": "V2",
+                      "mode": "ON"
+                    },
+                    {
+                      "name": "turn-led",
+                      "port": "V3",
+                      "mode": "OFF"
+                    },
+                    {
+                      "name": "call-function",
+                      "function": "NG"
+                    },
+                    {
+                      "name": "repeat",
+                      "count": 3,
+                      "blocks": [
+                        {
+                          "name": "set-servomotor-degree",
+                          "port": "V9",
+                          "degree": 140
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.5
+                        },
+                        {
+                          "name": "set-servomotor-degree",
+                          "port": "V9",
+                          "degree": 180
+                        },
+                        {
+                          "name": "wait",
+                          "secs": 0.5
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "OK",
+      "blocks": [
+        {
+          "name": "buzzer-on",
+          "port": "V6",
+          "frequency": 72
+        },
+        {
+          "name": "wait",
+          "secs": 0.2
+        },
+        {
+          "name": "buzzer-off",
+          "port": "V6"
+        },
+        {
+          "name": "wait",
+          "secs": 0.2
+        },
+        {
+          "name": "buzzer-on",
+          "port": "V6",
+          "frequency": 69
+        },
+        {
+          "name": "wait",
+          "secs": 0.2
+        },
+        {
+          "name": "buzzer-off",
+          "port": "V6"
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "NG",
+      "blocks": [
+        {
+          "name": "buzzer-on",
+          "port": "V6",
+          "frequency": 50
+        },
+        {
+          "name": "wait",
+          "secs": 0.5
+        },
+        {
+          "name": "buzzer-off",
+          "port": "V6"
+        }
+      ]
+    },
+    {
+      "name": "variable",
+      "variable": "bite",
+      "value": 0
+    }
+  ]
+}
