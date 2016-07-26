@@ -1030,7 +1030,7 @@ void setup()
 #endif
     } while (!ok);
   }
-  {
+  if (0) {
     int ok = 0;
     do {
       drain(Serial);
