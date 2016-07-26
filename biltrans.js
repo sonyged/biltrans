@@ -45,22 +45,28 @@ function blkport(blk)
   return portsym(blk.port);
 }
 
+function symbolize(str)
+{
+
+  return str.replace(/-/g, '_');
+}
+
 function blkvar(blk)
 {
 
-  return `V${blk.variable}`;
+  return `V${symbolize(blk.variable)}`;
 }
 
 function blkfunc(blk)
 {
 
-  return `F${blk.function}`;
+  return `F${symbolize(blk.function)}`;
 }
 
 function sensor(type)
 {
   const conv = n => {
-    return n.replace(/-/g, '_').toUpperCase();
+    return symbolize(n).toUpperCase();
   };
 
   return blk => {

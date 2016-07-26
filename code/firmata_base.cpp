@@ -980,6 +980,23 @@ void FirmataLoop()
 #define USE_BLE
 void setup()
 {
+#define LED_INIT(n) do { pinMode((n), OUTPUT); } while (0)
+#define LED_ON(n) do { digitalWrite((n), LOW); } while (0)
+#define LED_OFF(n) do { digitalWrite((n), HIGH); } while (0)
+#define BLINK(n)				\
+  do {						\
+    LED_INIT((n));				\
+    LED_OFF((n));				\
+    delay(100);					\
+    LED_ON((n));				\
+    delay(100);					\
+    LED_OFF((n));				\
+  } while (0)
+
+/*
+ * Resetting BTS01 is now done in bootloader.
+ */
+#if 0
   /*
    * Reset BTS01.  Pin 43 is PA13.
    */
@@ -987,6 +1004,7 @@ void setup()
   digitalWrite(43, LOW);
   delay(1);
   digitalWrite(43, HIGH);
+#endif
 
   // to use a port other than Serial, such as Serial1 on an Arduino Leonardo or Mega,
   // Call begin(baud) on the alternate serial port and pass it to Firmata to begin like this:
@@ -995,15 +1013,7 @@ void setup()
   Serial.begin(38400);
 #endif
   SerialUSB.begin(57600);
-#define BLINK(n)				\
-  do {						\
-    pinMode((n), OUTPUT);			\
-    digitalWrite((n), HIGH);			\
-    delay(100);					\
-    digitalWrite((n), LOW);			\
-    delay(100);					\
-    digitalWrite((n), HIGH);			\
-  } while (0)
+
 /*
  * Put BTS01 into operation mode.
  */
@@ -1013,7 +1023,8 @@ void setup()
     ;
 #endif
   delay(1); // following AT commands does not complete without this
-  {
+
+  if (0) {
     int ok = 0;
     do {
       drain(Serial);
@@ -1030,6 +1041,7 @@ void setup()
 #endif
     } while (!ok);
   }
+
   if (0) {
     int ok = 0;
     do {
