@@ -1011,6 +1011,7 @@ void setup()
   //Serial5.begin(115200);
 #if defined(USE_BLE)
   Serial.begin(38400);
+  Serial.setTimeout(50);
 #endif
   SerialUSB.begin(57600);
 
