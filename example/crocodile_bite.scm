@@ -4,9 +4,11 @@
 
 (add-load-path "./example")
 (use block)
+(use gauche.parseopt)
 
-;(define *sensor-op* '(< light-sensor-value 50))
-(define *sensor-op* '(> ir-photo-reflector-value 10))
+(define *sensor-op* '(< light-sensor-value 50))
+(let-args *argv*
+  ((#f "ir" => (^[] (set! *sensor-op* '(> ir-photo-reflector-value 10))))))
 
 (define (sensor-reacted port)
   `(,(car *sensor-op*) (,(cadr *sensor-op*) ,port) ,(caddr *sensor-op*)))
