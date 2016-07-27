@@ -139,10 +139,11 @@
 
 (define (map-ports mapping script)
   (cond ((pair? script)
-  (cons (map-ports mapping (car script))
-        (map-ports mapping (cdr script))))
- ((assq script mapping) => cdr)
- (else script)))
+         (cons (map-ports mapping (car script))
+               (map-ports mapping (cdr script))))
+        ;; (M1 . V1) or (M1 V1)
+        ((assq script mapping) => (^x (if (pair? (cdr x)) (cadr x) (cdr x))))
+        (else script)))
 
 (define (map-op op)
   (case op
@@ -193,6 +194,9 @@
      `((name . "repeat-until")
        (condition . ,(jsonfy condition))
        (blocks . ,(blocks->json blocks)))]
+    [('wait-until condition)
+     `((name . "wait-until")
+       (condition . ,(jsonfy condition)))]
     [('if-then condition then ...)
      `((name . "if-then")
        (condition . ,(jsonfy condition))
@@ -458,7 +462,10 @@
       (construct-json json))))
 
 (define (servomotor-synchronized-motion speed port&degree)
+  (define (decode port&degree)
+    `(,(car port&degree)
+      ,((if (pair? (cdr port&degree)) cadr cdr) port&degree)))
   `(servomotor-synchronized-motion
     ,speed
-    ,@(map (^[p&d] `(set-servomotor-degree ,(car p&d) ,(cdr p&d)))
+    ,@(map (^[p&d] `(set-servomotor-degree ,@(decode p&d)))
            port&degree)))
