@@ -193,6 +193,14 @@ const BLKTRANS = {
       '}');
   },
 
+  'wait-until': blk => {
+    return [].concat(
+      `while (!(${emit_value(blk.condition)})) {`,
+      'CHECK_INTR;',
+      '  DELAY(0.02);',
+      '}');
+  },
+
   repeat: blk => {
     const v = gensym('i');
     return [].concat(
