@@ -21,8 +21,8 @@
        (forever
 	(set-dcmotor-power M1 70)
 	(set-dcmotor-power M2 30)
-	(turn-dcmotor-on M1 NORMAL)
-	(turn-dcmotor-on M2 NORMAL)
+	(turn-dcmotor-on M1 REVERSE)
+	(turn-dcmotor-on M2 REVERSE)
 	(if-then
 	 (= (touch-sensor-value A0) 0)
 	 (call-function touch))))))
@@ -42,6 +42,6 @@
        5
        '((D9 160) (D11 20))))))
 (define *port-mappings*
-  '((M1 V0) (M2 V1) (D9 V2) (D11 V3) (A0 K6) (A2 K7)))
+  '((M1 V0) (M2 V1) (D9 V2) (D11 V3) (A0 K2) (A2 K4)))
 
 (block-list->json *scripts* *port-mappings*)

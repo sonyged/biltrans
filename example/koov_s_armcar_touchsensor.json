@@ -1,7 +1,7 @@
 {
   "port-settings": {
-    "K6": "touch-sensor",
-    "K7": "ir-photo-reflector",
+    "K2": "touch-sensor",
+    "K4": "ir-photo-reflector",
     "V0": "dc-motor",
     "V1": "dc-motor",
     "V2": "servo-motor",
@@ -30,7 +30,7 @@
                 "name": "greater-than?",
                 "x": {
                   "name": "ir-photo-reflector-value",
-                  "port": "K7"
+                  "port": "K4"
                 },
                 "y": 20
               },
@@ -75,12 +75,12 @@
                     {
                       "name": "turn-dcmotor-on",
                       "port": "V0",
-                      "direction": "NORMAL"
+                      "direction": "REVERSE"
                     },
                     {
                       "name": "turn-dcmotor-on",
                       "port": "V1",
-                      "direction": "NORMAL"
+                      "direction": "REVERSE"
                     },
                     {
                       "name": "if-then",
@@ -88,7 +88,7 @@
                         "name": "equal?",
                         "x": {
                           "name": "touch-sensor-value",
-                          "port": "K6"
+                          "port": "K2"
                         },
                         "y": 0
                       },
@@ -147,7 +147,7 @@
             "name": "less-than?",
             "x": {
               "name": "ir-photo-reflector-value",
-              "port": "K7"
+              "port": "K4"
             },
             "y": 10
           }
@@ -162,7 +162,7 @@
             "name": "greater-than?",
             "x": {
               "name": "ir-photo-reflector-value",
-              "port": "K7"
+              "port": "K4"
             },
             "y": 20
           }
