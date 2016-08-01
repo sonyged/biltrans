@@ -43,6 +43,6 @@
         (buzzer-off A5)))))))
 
 (define *port-mappings*
-  '((A0 A0) (A4 K6) (A5 K7)))
+  '((A0 K4) (A4 K6) (A5 V6)))
 
 (block-list->json *scripts* *port-mappings*)

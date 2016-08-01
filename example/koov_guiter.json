@@ -1,8 +1,8 @@
 {
   "port-settings": {
-    "A0": "ir-photo-reflector",
+    "K4": "ir-photo-reflector",
     "K6": "ir-photo-reflector",
-    "K7": "buzzer"
+    "V6": "buzzer"
   },
   "scripts": [
     {
@@ -17,7 +17,7 @@
                 "name": "greater-than?",
                 "x": {
                   "name": "ir-photo-reflector-value",
-                  "port": "A0"
+                  "port": "K4"
                 },
                 "y": 30
               },
@@ -46,7 +46,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 48
                     }
                   ]
@@ -75,7 +75,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 50
                     }
                   ]
@@ -104,7 +104,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 52
                     }
                   ]
@@ -133,7 +133,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 53
                     }
                   ]
@@ -162,7 +162,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 55
                     }
                   ]
@@ -191,7 +191,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 57
                     }
                   ]
@@ -220,7 +220,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 59
                     }
                   ]
@@ -249,7 +249,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 60
                     }
                   ]
@@ -278,7 +278,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 62
                     }
                   ]
@@ -307,7 +307,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 64
                     }
                   ]
@@ -336,7 +336,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 65
                     }
                   ]
@@ -365,7 +365,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 67
                     }
                   ]
@@ -383,7 +383,7 @@
                   "blocks": [
                     {
                       "name": "buzzer-on",
-                      "port": "K7",
+                      "port": "V6",
                       "frequency": 69
                     }
                   ]
@@ -392,7 +392,7 @@
               "else-blocks": [
                 {
                   "name": "buzzer-off",
-                  "port": "K7"
+                  "port": "V6"
                 }
               ]
             }
