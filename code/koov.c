@@ -129,13 +129,18 @@ const word BTONE[] = {
 
 #define TONENUM	((sizeof(BTONE)/sizeof(word))-1)
 #define BHZ(num)  (BTONE[(byte)(min(max(0, (num-48)),TONENUM))])
+static word last_pitch = 0;
 static void
 BUZZER_CONTROL(int port, int mode, int freq)
 {
   if (mode == ON) {
     word pitch = BHZ(freq);
-    tone(port, pitch);
+    if (pitch != last_pitch) {
+      tone(port, pitch);
+      last_pitch = pitch;
+    }
   } else {
+    last_pitch = 0;
     noTone(port);
   }
 }
