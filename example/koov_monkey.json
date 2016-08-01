@@ -1,0 +1,68 @@
+{
+  "port-settings": {
+    "V2": "servo-motor",
+    "V3": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 10
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 170
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 15,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 10
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 170
+                }
+              ]
+            },
+            {
+              "name": "wait",
+              "secs": 0.1
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 20,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                }
+              ]
+            },
+            {
+              "name": "wait",
+              "secs": 0.1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

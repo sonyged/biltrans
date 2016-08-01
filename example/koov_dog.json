@@ -1,0 +1,118 @@
+{
+  "port-settings": {
+    "V2": "servo-motor",
+    "V3": "servo-motor",
+    "V4": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 120
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V4",
+          "degree": 60
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 120
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V4",
+                  "degree": 60
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 120
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V4",
+                  "degree": 60
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 60
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V4",
+                  "degree": 120
+                }
+              ]
+            },
+            {
+              "name": "servomotor-synchronized-motion",
+              "speed": 10,
+              "blocks": [
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V2",
+                  "degree": 60
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V3",
+                  "degree": 90
+                },
+                {
+                  "name": "set-servomotor-degree",
+                  "port": "V4",
+                  "degree": 120
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
