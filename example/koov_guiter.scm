@@ -5,7 +5,20 @@
 (add-load-path "./example")
 (use block)
 
-;; dog
+(define *fret*
+  ;; list of ir-photo-reflector value and buzzer pitch.
+  '((10 57)
+    (11 59)
+    (13 60)
+    (15 62)
+    (19 64)
+    (24 65)
+    (32 67)
+    (43 69)
+    (59 71)
+    (#f 72)))
+
+;; guiter
 (define *scripts*
   `((when-green-flag-clicked
      (forever
@@ -13,32 +26,20 @@
        (> (ir-photo-reflector-value A0) 30)
        (then
         ,@(let loop ((acc '())
-                     (params '((9 48)
-                               (11 50)
-                               (13 52)
-                               (17 53)
-                               (20 55)
-                               (25 57)
-                               (30 59)
-                               (35 60)
-                               (41 62)
-                               (53 64)
-                               (61 65)
-                               (82 67)))
-                     (prev 0))
+                     (params *fret*)
+                     (prev 1))
             (define (emit p)
               `(if-then
-                (and
-                 (< ,prev (ir-photo-reflector-value A4))
-                 (<  (ir-photo-reflector-value A4) ,(car p)))
+                ,(if (null? (cdr params))
+                     `(< ,(- prev 1) (ir-photo-reflector-value A4))
+                     `(and
+                       (< ,(- prev 1) (ir-photo-reflector-value A4))
+                       (<  (ir-photo-reflector-value A4) ,(car p))))
                 (buzzer-on A5 ,(cadr p))))
             (cond ((null? params) (reverse acc))
                   (else (loop (cons (emit (car params)) acc)
                               (cdr params)
-                              (caar params)))))
-        (if-then
-         (< 82 (ir-photo-reflector-value A4))
-         (buzzer-on A5 69)))
+                              (caar params))))))
        (else
         (buzzer-off A5)))))))
 

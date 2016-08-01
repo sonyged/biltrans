@@ -40,14 +40,14 @@
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
                       },
-                      "y": 9
+                      "y": 10
                     }
                   },
                   "blocks": [
                     {
                       "name": "buzzer-on",
                       "port": "V6",
-                      "frequency": 48
+                      "frequency": 57
                     }
                   ]
                 },
@@ -76,7 +76,7 @@
                     {
                       "name": "buzzer-on",
                       "port": "V6",
-                      "frequency": 50
+                      "frequency": 59
                     }
                   ]
                 },
@@ -86,7 +86,7 @@
                     "name": "and",
                     "x": {
                       "name": "less-than?",
-                      "x": 11,
+                      "x": 10,
                       "y": {
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
@@ -105,151 +105,6 @@
                     {
                       "name": "buzzer-on",
                       "port": "V6",
-                      "frequency": 52
-                    }
-                  ]
-                },
-                {
-                  "name": "if-then",
-                  "condition": {
-                    "name": "and",
-                    "x": {
-                      "name": "less-than?",
-                      "x": 13,
-                      "y": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      }
-                    },
-                    "y": {
-                      "name": "less-than?",
-                      "x": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      },
-                      "y": 17
-                    }
-                  },
-                  "blocks": [
-                    {
-                      "name": "buzzer-on",
-                      "port": "V6",
-                      "frequency": 53
-                    }
-                  ]
-                },
-                {
-                  "name": "if-then",
-                  "condition": {
-                    "name": "and",
-                    "x": {
-                      "name": "less-than?",
-                      "x": 17,
-                      "y": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      }
-                    },
-                    "y": {
-                      "name": "less-than?",
-                      "x": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      },
-                      "y": 20
-                    }
-                  },
-                  "blocks": [
-                    {
-                      "name": "buzzer-on",
-                      "port": "V6",
-                      "frequency": 55
-                    }
-                  ]
-                },
-                {
-                  "name": "if-then",
-                  "condition": {
-                    "name": "and",
-                    "x": {
-                      "name": "less-than?",
-                      "x": 20,
-                      "y": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      }
-                    },
-                    "y": {
-                      "name": "less-than?",
-                      "x": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      },
-                      "y": 25
-                    }
-                  },
-                  "blocks": [
-                    {
-                      "name": "buzzer-on",
-                      "port": "V6",
-                      "frequency": 57
-                    }
-                  ]
-                },
-                {
-                  "name": "if-then",
-                  "condition": {
-                    "name": "and",
-                    "x": {
-                      "name": "less-than?",
-                      "x": 25,
-                      "y": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      }
-                    },
-                    "y": {
-                      "name": "less-than?",
-                      "x": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      },
-                      "y": 30
-                    }
-                  },
-                  "blocks": [
-                    {
-                      "name": "buzzer-on",
-                      "port": "V6",
-                      "frequency": 59
-                    }
-                  ]
-                },
-                {
-                  "name": "if-then",
-                  "condition": {
-                    "name": "and",
-                    "x": {
-                      "name": "less-than?",
-                      "x": 30,
-                      "y": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      }
-                    },
-                    "y": {
-                      "name": "less-than?",
-                      "x": {
-                        "name": "ir-photo-reflector-value",
-                        "port": "K6"
-                      },
-                      "y": 35
-                    }
-                  },
-                  "blocks": [
-                    {
-                      "name": "buzzer-on",
-                      "port": "V6",
                       "frequency": 60
                     }
                   ]
@@ -260,7 +115,7 @@
                     "name": "and",
                     "x": {
                       "name": "less-than?",
-                      "x": 35,
+                      "x": 12,
                       "y": {
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
@@ -272,7 +127,7 @@
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
                       },
-                      "y": 41
+                      "y": 15
                     }
                   },
                   "blocks": [
@@ -289,7 +144,7 @@
                     "name": "and",
                     "x": {
                       "name": "less-than?",
-                      "x": 41,
+                      "x": 14,
                       "y": {
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
@@ -301,7 +156,7 @@
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
                       },
-                      "y": 53
+                      "y": 19
                     }
                   },
                   "blocks": [
@@ -318,7 +173,7 @@
                     "name": "and",
                     "x": {
                       "name": "less-than?",
-                      "x": 53,
+                      "x": 18,
                       "y": {
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
@@ -330,7 +185,7 @@
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
                       },
-                      "y": 61
+                      "y": 24
                     }
                   },
                   "blocks": [
@@ -347,7 +202,7 @@
                     "name": "and",
                     "x": {
                       "name": "less-than?",
-                      "x": 61,
+                      "x": 23,
                       "y": {
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
@@ -359,7 +214,7 @@
                         "name": "ir-photo-reflector-value",
                         "port": "K6"
                       },
-                      "y": 82
+                      "y": 32
                     }
                   },
                   "blocks": [
@@ -373,8 +228,66 @@
                 {
                   "name": "if-then",
                   "condition": {
+                    "name": "and",
+                    "x": {
+                      "name": "less-than?",
+                      "x": 31,
+                      "y": {
+                        "name": "ir-photo-reflector-value",
+                        "port": "K6"
+                      }
+                    },
+                    "y": {
+                      "name": "less-than?",
+                      "x": {
+                        "name": "ir-photo-reflector-value",
+                        "port": "K6"
+                      },
+                      "y": 43
+                    }
+                  },
+                  "blocks": [
+                    {
+                      "name": "buzzer-on",
+                      "port": "V6",
+                      "frequency": 69
+                    }
+                  ]
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
+                    "name": "and",
+                    "x": {
+                      "name": "less-than?",
+                      "x": 42,
+                      "y": {
+                        "name": "ir-photo-reflector-value",
+                        "port": "K6"
+                      }
+                    },
+                    "y": {
+                      "name": "less-than?",
+                      "x": {
+                        "name": "ir-photo-reflector-value",
+                        "port": "K6"
+                      },
+                      "y": 59
+                    }
+                  },
+                  "blocks": [
+                    {
+                      "name": "buzzer-on",
+                      "port": "V6",
+                      "frequency": 71
+                    }
+                  ]
+                },
+                {
+                  "name": "if-then",
+                  "condition": {
                     "name": "less-than?",
-                    "x": 82,
+                    "x": 58,
                     "y": {
                       "name": "ir-photo-reflector-value",
                       "port": "K6"
@@ -384,7 +297,7 @@
                     {
                       "name": "buzzer-on",
                       "port": "V6",
-                      "frequency": 69
+                      "frequency": 72
                     }
                   ]
                 }
