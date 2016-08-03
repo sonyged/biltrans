@@ -14,6 +14,36 @@
       "name": "when-green-flag-clicked",
       "blocks": [
         {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V5",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V6",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V7",
+          "degree": 90
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V8",
+          "degree": 90
+        },
+        {
           "name": "forever",
           "blocks": [
             {
