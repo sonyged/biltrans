@@ -22,6 +22,7 @@ mkdir -p ${BUILDDIR}/Servo/avr
 mkdir -p ${BUILDDIR}/Servo/sam
 mkdir -p ${BUILDDIR}/Servo/samd
 mkdir -p ${BUILDDIR}/Wire
+mkdir -p ${BUILDDIR}/MMA8653
 mkdir -p ${BUILDDIR}/Firmata/utility
 
 SKETCH_CPP=${BUILDDIR}/${2:-sketch_mar07b.cpp}
@@ -38,6 +39,7 @@ INCLUDES="-I${TOOLDIR}/CMSIS/CMSIS/Include/
  -I${ARDUINODIR}/samd/variants/arduino_zero"
 
 EXTRA_INCLUDES="-I${ARDUINO_ROOT}/libraries/Servo/src
+ -I${ARDUINO_ROOT}/libraries/MMA8653
  -I${ARDUINODIR}/samd/libraries/Wire
  -I${FIRMATA_DIR}"
 
@@ -83,6 +85,11 @@ SERVO_OBJS="
  ${BUILDDIR}/Servo/sam/Servo.cpp.o
  ${BUILDDIR}/Servo/samd/Servo.cpp.o"
 
+MMA8653_SRCS="
+ ${ARDUINO_ROOT}/libraries/MMA8653/MMA8653.cpp"
+MMA8653_OBJS="
+ ${BUILDDIR}/MMA8653/MMA8653.cpp.o"
+
 WIRE_SRCS="
  ${ARDUINODIR}/samd/libraries/Wire/Wire.cpp"
 WIRE_OBJS="
@@ -96,7 +103,7 @@ FIRMATA_OBJS="
  ${BUILDDIR}/Firmata/utility/EthernetClientStream.cpp.o"
 
 OBJS="${BUILDDIR}/syscalls.c.o ${SKETCH_CPP}.o
- ${SERVO_OBJS} ${WIRE_OBJS} ${FIRMATA_OBJS}
+ ${SERVO_OBJS} ${MMA8653_OBJS} ${WIRE_OBJS} ${FIRMATA_OBJS}
  ${BUILDDIR}/variant.cpp.o ${BUILDDIR}/core.a"
 
 # Using library Servo in folder: ${ARDUINO_ROOT}/libraries/Servo 
@@ -112,6 +119,9 @@ ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} \
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} \
  ${ARDUINO_ROOT}/libraries/Servo/src/samd/Servo.cpp \
  -o ${BUILDDIR}/Servo/samd/Servo.cpp.o 
+${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} \
+ ${ARDUINO_ROOT}/libraries/MMA8653/MMA8653.cpp \
+ -o ${BUILDDIR}/MMA8653/MMA8653.cpp.o 
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} ${WIRE_INCLUDES} \
  ${ARDUINODIR}/samd/libraries/Wire/Wire.cpp -o ${BUILDDIR}/Wire/Wire.cpp.o 
 ${CXX} -c ${CXXFLAGS} ${INCLUDES} ${EXTRA_INCLUDES} ${FIRMATA_INCLUDES} \

@@ -25,6 +25,7 @@
 
 #include <Servo.h>
 #include <Wire.h>
+#include <MMA8653.h>
 #include <Firmata.h>
 
 #define I2C_WRITE                   B00000000
@@ -41,6 +42,7 @@
 
 #include "Arduino.h"
 static void BUZZER_CONTROL(int port, int mode, int freq);
+static void ACCEL_UPDATE(int *, int *, int *);
 void reportAnalogCallback(byte analogPin, int value);
 void sysexCallback(byte command, byte argc, byte *argv);
 void enableI2CPins();
@@ -700,6 +702,47 @@ void sysexCallback(byte command, byte argc, byte *argv)
 
 	if (IS_PIN_DIGITAL(pin)) {
 	  BUZZER_CONTROL(PIN_TO_DIGITAL(pin), mode ? HIGH : LOW, freq);
+	}
+      }
+      break;
+    case 0x0e:
+      {
+	if (argc == 0)
+	  break;
+	switch (argv[0]) {
+	case 0x01:		// accel.
+	  /*
+	   * Request:
+	   *    0e 01 AA
+	   *          AA: 01 -> X, 02 -> Y, 03 -> Z
+	   * Response:
+	   *    0e 01 AA BB CC
+	   *          BB: V & 0x7f
+	   *          CC: (V >> 7) & 0x7f
+	   *          V = BB | (((signed char)(CC << 1)) << 6)
+	   */
+	  if (argc > 1) {
+	    int v = 0, x, y, z;
+	    ACCEL_UPDATE(&x, &y, &z);
+	    switch (argv[1]) {
+	    case 0x01:
+	      v = x;
+	      break;
+	    case 0x02:
+	      v = y;
+	      break;
+	    case 0x03:
+	      v = z;
+	      break;
+	    }
+	    Firmata.write(START_SYSEX);
+	    Firmata.write(0x0e);
+	    Firmata.write(0x01);
+	    Firmata.write(argv[1]);
+	    Firmata.write(v & 0x7f);
+	    Firmata.write((v >> 7) & 0x7f);
+	    Firmata.write(END_SYSEX);
+	  }
 	}
       }
       break;

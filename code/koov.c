@@ -145,6 +145,47 @@ BUZZER_CONTROL(int port, int mode, int freq)
   }
 }
 
+static MMA8653 accel;
+static uint32_t accel_tick;
+
+static void
+ACCEL_INIT()
+{
+
+  Wire.begin(); 
+  accel.begin(false, 2);
+}
+
+static void
+ACCEL_UPDATE(int *x, int *y, int *z)
+{
+  uint32_t tick = millis();
+
+  if (tick - accel_tick > 2000) {
+    ACCEL_INIT();
+    accel_tick = tick;
+  }
+  accel.update();
+  *x = accel.getX();
+  *y = accel.getY();
+  *z = accel.getZ();
+
+#define ACCEL_MAP(n)  (map((n), -100, 100, -128, 127))
+  *x = ACCEL_MAP(*x);
+  *y = ACCEL_MAP(*y);
+  *z = ACCEL_MAP(*z);
+#undef ACCEL_MAP
+}
+
+enum accel_port { PORT_K0 = 0, PORT_K1 };
+
+void
+INIT_3_AXIS_DIGITAL_ACCELEROMETER(accel_port port)
+{
+
+  // currently, only single accelerometer is supported.
+}
+
 enum { PORT_V0 = 0, PORT_V1 };
 
 enum dcMotroMode {
