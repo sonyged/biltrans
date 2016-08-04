@@ -184,6 +184,21 @@ INIT_3_AXIS_DIGITAL_ACCELEROMETER(accel_port port)
 {
 
   // currently, only single accelerometer is supported.
+  ACCEL_INIT();
+}
+
+static int
+ACCELEROMETER_VALUE(int port, int direction)
+{
+  int x, y, z, v = 0;
+
+  ACCEL_UPDATE(&x, &y, &z);
+  switch (direction) {
+  case 1: v = x; break;
+  case 2: v = y; break;
+  case 3: v = z; break;
+  }
+  return v;
 }
 
 enum { PORT_V0 = 0, PORT_V1 };

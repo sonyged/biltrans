@@ -223,6 +223,10 @@
     [((? sensor-op? op) port)
      `((name . ,(symbol->string op))
        (port . ,(jsonfy port)))]
+    [(`3-axis-digital-accelerometer-value port direction)
+     `((name . "3-axis-digital-accelerometer-value")
+       (port . ,(jsonfy port))
+       (direction . ,(jsonfy direction)))]
     [(`turn-led port mode)
      `((name . "turn-led")
        (port . ,(jsonfy port))

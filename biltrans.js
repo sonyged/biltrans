@@ -108,6 +108,15 @@ const EXPTRANS = {
   'light-sensor-value': sensor('light-sensor'),
   'sound-sensor-value': sensor('sound-sensor'),
   'touch-sensor-value': sensor('touch-sensor'),
+
+  '3-axis-digital-accelerometer-value': blk => {
+    const port = blk.port;
+    const direction =
+          blk.direction === 'x' ? 1 :
+          blk.direction === 'y' ? 2 : 3;
+    use_port(port, '3-axis-digital-accelerometer');
+    return `ACCELEROMETER_VALUE(${portsym(port)}, ${direction})`;
+  }
 };
 
 /*
@@ -142,7 +151,9 @@ function emit_setup()
     'servo-motor': port => { return `INIT_SERVO_MOTOR(${port})`; },
     'dc-motor': port => { return `INIT_DC_MOTOR(${port})`; },
     'push-button': port => { return `INIT_PUSH_BUTTON(${port})`; },
-    'ir-photo-reflector': port => { return `INIT_IR_PHOTO_REFLECTOR(${port})`; },
+    'ir-photo-reflector': port => {
+      return `INIT_IR_PHOTO_REFLECTOR(${port})`;
+    },
     '3-axis-digital-accelerometer': port => {
       return `INIT_3_AXIS_DIGITAL_ACCELEROMETER(${port})`;
     },

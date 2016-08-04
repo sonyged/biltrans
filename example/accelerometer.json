@@ -1,0 +1,94 @@
+{
+  "port-settings": {
+    "V2": "led",
+    "V3": "led"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "ON"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "ON"
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "OFF"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "OFF"
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "turn-led",
+              "port": "V3",
+              "mode": "ON"
+            },
+            {
+              "name": "wait",
+              "secs": 0.2
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "less-than?",
+                "x": 0,
+                "y": {
+                  "name": "3-axis-digital-accelerometer-value",
+                  "port": "K0",
+                  "direction": "x"
+                }
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "ON"
+                },
+                {
+                  "name": "wait",
+                  "secs": 0.5
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "OFF"
+                },
+                {
+                  "name": "wait",
+                  "secs": 0.5
+                }
+              ]
+            },
+            {
+              "name": "turn-led",
+              "port": "V3",
+              "mode": "OFF"
+            },
+            {
+              "name": "wait",
+              "secs": 0.2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
