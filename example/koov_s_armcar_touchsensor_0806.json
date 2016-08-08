@@ -1,0 +1,313 @@
+{
+  "port-settings": {
+    "A1": "push-button",
+    "A3": "push-button",
+    "K2": "touch-sensor",
+    "K4": "ir-photo-reflector",
+    "V0": "dc-motor",
+    "V1": "dc-motor",
+    "V2": "servo-motor",
+    "V3": "servo-motor"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 160
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 20
+        },
+        {
+          "name": "if-then",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A1"
+            },
+            "y": 0
+          },
+          "blocks": [
+            {
+              "name": "call-function",
+              "function": "photo"
+            }
+          ]
+        },
+        {
+          "name": "if-then",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "button-value",
+              "port": "A3"
+            },
+            "y": 0
+          },
+          "blocks": [
+            {
+              "name": "call-function",
+              "function": "no_photo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "photo",
+      "blocks": [
+        {
+          "name": "set-servomotor-degree",
+          "port": "V3",
+          "degree": 160
+        },
+        {
+          "name": "set-servomotor-degree",
+          "port": "V2",
+          "degree": 20
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "greater-than?",
+                "x": {
+                  "name": "ir-photo-reflector-value",
+                  "port": "K4"
+                },
+                "y": 35
+              },
+              "blocks": [
+                {
+                  "name": "wait",
+                  "secs": 1
+                },
+                {
+                  "name": "servomotor-synchronized-motion",
+                  "speed": 5,
+                  "blocks": [
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V2",
+                      "degree": 160
+                    },
+                    {
+                      "name": "set-servomotor-degree",
+                      "port": "V3",
+                      "degree": 20
+                    }
+                  ]
+                },
+                {
+                  "name": "wait",
+                  "secs": 1
+                },
+                {
+                  "name": "forever",
+                  "blocks": [
+                    {
+                      "name": "set-dcmotor-power",
+                      "port": "V0",
+                      "power": 70
+                    },
+                    {
+                      "name": "set-dcmotor-power",
+                      "port": "V1",
+                      "power": 30
+                    },
+                    {
+                      "name": "turn-dcmotor-on",
+                      "port": "V0",
+                      "direction": "REVERSE"
+                    },
+                    {
+                      "name": "turn-dcmotor-on",
+                      "port": "V1",
+                      "direction": "REVERSE"
+                    },
+                    {
+                      "name": "if-then",
+                      "condition": {
+                        "name": "equal?",
+                        "x": {
+                          "name": "touch-sensor-value",
+                          "port": "K2"
+                        },
+                        "y": 0
+                      },
+                      "blocks": [
+                        {
+                          "name": "call-function",
+                          "function": "touch"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "no_photo",
+      "blocks": [
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "servomotor-synchronized-motion",
+          "speed": 5,
+          "blocks": [
+            {
+              "name": "set-servomotor-degree",
+              "port": "V2",
+              "degree": 160
+            },
+            {
+              "name": "set-servomotor-degree",
+              "port": "V3",
+              "degree": 20
+            }
+          ]
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "set-dcmotor-power",
+              "port": "V0",
+              "power": 70
+            },
+            {
+              "name": "set-dcmotor-power",
+              "port": "V1",
+              "power": 40
+            },
+            {
+              "name": "turn-dcmotor-on",
+              "port": "V0",
+              "direction": "REVERSE"
+            },
+            {
+              "name": "turn-dcmotor-on",
+              "port": "V1",
+              "direction": "REVERSE"
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "touch-sensor-value",
+                  "port": "K2"
+                },
+                "y": 0
+              },
+              "blocks": [
+                {
+                  "name": "call-function",
+                  "function": "touch"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "function",
+      "function": "touch",
+      "blocks": [
+        {
+          "name": "turn-dcmotor-off",
+          "port": "V0",
+          "mode": "BRAKE"
+        },
+        {
+          "name": "turn-dcmotor-off",
+          "port": "V1",
+          "mode": "BRAKE"
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "servomotor-synchronized-motion",
+          "speed": 5,
+          "blocks": [
+            {
+              "name": "set-servomotor-degree",
+              "port": "V3",
+              "degree": 160
+            },
+            {
+              "name": "set-servomotor-degree",
+              "port": "V2",
+              "degree": 20
+            }
+          ]
+        },
+        {
+          "name": "wait-until",
+          "condition": {
+            "name": "less-than?",
+            "x": {
+              "name": "ir-photo-reflector-value",
+              "port": "K4"
+            },
+            "y": 10
+          }
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "wait-until",
+          "condition": {
+            "name": "greater-than?",
+            "x": {
+              "name": "ir-photo-reflector-value",
+              "port": "K4"
+            },
+            "y": 20
+          }
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "servomotor-synchronized-motion",
+          "speed": 5,
+          "blocks": [
+            {
+              "name": "set-servomotor-degree",
+              "port": "V2",
+              "degree": 160
+            },
+            {
+              "name": "set-servomotor-degree",
+              "port": "V3",
+              "degree": 20
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

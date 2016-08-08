@@ -2,7 +2,9 @@ JSON=crocodile_bite_ir.json crocodile_bite.json \
 	koov_helicopter.json koov_isoginchaku.json koov_loco.json \
 	koov_s_armcar_touchsensor.json koov_whale_shark_aqa.json \
 	koov_yadokari.json servo-motor.json koov_dog.json koov_monkey.json \
-	koov_guiter.json accelerometer.json button.json
+	koov_guiter.json accelerometer.json button.json \
+	koov_s_armcar_touchsensor_0806.json \
+	crocodile_bite_0809.json
 
 all: $(JSON)
 
