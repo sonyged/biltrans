@@ -6,6 +6,20 @@
 #endif
 #define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
 
+void
+setup()
+{
+
+  firmata_base::setup();
+}
+
+void
+loop()
+{
+
+  firmata_base::loop();
+}
+
 #define setup KoovSetup
 #define loop KoovLoop
 
@@ -312,14 +326,15 @@ static void
 SERVO_MOTOR(int port, int value)
 {
   int pin = port + 8;
-  if (servoPinMap[pin] < MAX_SERVOS)
-    servos[servoPinMap[pin]].write(value);
+  int servoNo = firmata_base::servoPinMap[pin];
+  if (servoNo < MAX_SERVOS)
+    firmata_base::servos[servoNo].write(value);
 }
 static void
 INIT_SERVO_MOTOR(int port)
 {
   int pin = port + 8;
-  attachServo(pin, 0, 0);
+  firmata_base::attachServo(pin, 0, 0);
   pinMode(LED_MULTI_FET, OUTPUT);
   digitalWrite(LED_MULTI_FET, HIGH);
 }
@@ -346,7 +361,8 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
   for (int i = 0;i < number;i++) {
     int pin = ss[i].port + 8;
     int degree = ss[i].degree;
-    before[i] = servos[servoPinMap[pin]].read();  // Current angle.
+    int servoNo = firmata_base::servoPinMap[pin];
+    before[i] = firmata_base::servos[servoNo].read(); // Current angle.
     calibedDegree = min(180, max(0, degree /* + SVOFF[connector[i]] */)); // Calibrating the given angle.
     delta[i] = calibedDegree - before[i];              // Get difference.
     // Get maximum difference.
@@ -360,7 +376,8 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
       int pin = ss[i].port + 8;
       int degree = ss[i].degree;
       calibedDegree = min(180, max(0, degree /* + SVOFF[connector[i]] */)); // Calibrating the given angle.
-      servos[servoPinMap[pin]].write(calibedDegree);
+      int servoNo = firmata_base::servoPinMap[pin];
+      firmata_base::servos[servoNo].write(calibedDegree);
     }
     // Wait until all servomotors reach their target angles.
     delay(maxDelta * 3);
@@ -372,7 +389,8 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
     for (int t = 1; t <= (int)maxDelta; t++) {
       for (int i = 0; i < number; i++) {
 	int pin = ss[i].port + 8;
-        servos[servoPinMap[pin]].write(before[i]+delta[i]*t);
+	int servoNo = firmata_base::servoPinMap[pin];
+        firmata_base::servos[servoNo].write(before[i]+delta[i]*t);
       }
       delay(time);
     }

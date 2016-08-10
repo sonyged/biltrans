@@ -8,6 +8,7 @@ test -d "${BUILDDIR}" || exit 2
 SKETCH_CPP=${2:-sketch_mar07b.cpp}
 
 (cat ../code/firmata_base.cpp;
+ cat ../code/firmata_base.h;
  cat ../code/koov.c;
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 
