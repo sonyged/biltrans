@@ -63,16 +63,35 @@ function blkfunc(blk)
   return `F${symbolize(blk.function)}`;
 }
 
-function sensor(type)
+function sensor_name(n)
 {
-  const conv = n => {
+
     return symbolize(n).toUpperCase();
-  };
+}
+
+function analog_sensor(type)
+{
 
   return blk => {
     const port = blk.port;
     use_port(port, type);
-    return `${conv(type)}(${portsym(port)})`;
+    return `${sensor_name(type)}(${portsym(port)})`;
+  };
+}
+
+function digital_sensor(type)
+{
+
+  return blk => {
+    const port = blk.port;
+    const value = `${sensor_name(type)}(${portsym(port)})`;
+    use_port(port, type);
+
+    if (blk.mode === 'ON')
+      return `(${value} == 0)`;
+    if (blk.mode === 'OFF')
+      return `(${value} != 0)`;
+    return value;
   };
 }
 
@@ -103,11 +122,12 @@ const EXPTRANS = {
     return `random(${emit_exp(blk.from)}, (${emit_exp(blk.to)} + 1))`;
   },
 
-  'button-value': sensor('push-button'),
-  'ir-photo-reflector-value': sensor('ir-photo-reflector'),
-  'light-sensor-value': sensor('light-sensor'),
-  'sound-sensor-value': sensor('sound-sensor'),
-  'touch-sensor-value': sensor('touch-sensor'),
+  'button-value': digital_sensor('push-button'),
+  'touch-sensor-value': digital_sensor('touch-sensor'),
+
+  'ir-photo-reflector-value': analog_sensor('ir-photo-reflector'),
+  'light-sensor-value': analog_sensor('light-sensor'),
+  'sound-sensor-value': analog_sensor('sound-sensor'),
 
   '3-axis-digital-accelerometer-value': blk => {
     const port = blk.port;

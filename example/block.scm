@@ -164,6 +164,9 @@
              ir-photo-reflector-value
              sound-sensor-value
              touch-sensor-value)))
+(define (digital-sensor-op? op)
+  (memq op '(button-value
+             touch-sensor-value)))
 
 ;; (get 'if 'lisp-indent-function)
 ;; (put 'match 'scheme-indent-function 1)
@@ -223,6 +226,10 @@
     [((? sensor-op? op) port)
      `((name . ,(symbol->string op))
        (port . ,(jsonfy port)))]
+    [((? digital-sensor-op? op) port mode)
+     `((name . ,(symbol->string op))
+       (port . ,(jsonfy port))
+       (mode . ,(jsonfy mode)))]
     [(`3-axis-digital-accelerometer-value port direction)
      `((name . "3-axis-digital-accelerometer-value")
        (port . ,(jsonfy port))

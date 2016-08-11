@@ -1,0 +1,146 @@
+{
+  "port-settings": {
+    "A0": "push-button",
+    "K6": "touch-sensor",
+    "V2": "led",
+    "V3": "led"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "ON"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "ON"
+        },
+        {
+          "name": "wait",
+          "secs": 1
+        },
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "OFF"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "OFF"
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "button-value",
+                  "port": "A0"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "ON"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "OFF"
+                }
+              ]
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "touch-sensor-value",
+                  "port": "K6"
+                },
+                "y": 1
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "OFF"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "ON"
+                }
+              ]
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "button-value",
+                "port": "A0",
+                "mode": "ON"
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "ON"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "OFF"
+                }
+              ]
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "touch-sensor-value",
+                "port": "K6",
+                "mode": "OFF"
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "OFF"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "ON"
+                }
+              ]
+            },
+            {
+              "name": "wait",
+              "secs": 0.5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
