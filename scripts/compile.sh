@@ -9,6 +9,8 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
 
 (cat ../code/firmata_base.cpp;
  cat ../code/firmata_base.h;
+ echo '#define FIRMATA_BASE';
+ cat ../code/trouble_shooting.h;
  cat ../code/koov.c;
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 

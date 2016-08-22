@@ -6,18 +6,27 @@
 #endif
 #define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
 
+static void (*current_loop)() = firmata_base::loop;
 void
 setup()
 {
 
-  firmata_base::setup();
+  pinMode(A1, INPUT_PULLUP);
+  pinMode(A3, INPUT_PULLUP);
+
+  if (digitalRead(A1) == LOW && digitalRead(A3) == LOW) {
+    trouble_shooting::setup();
+    current_loop = trouble_shooting::loop;
+  } else {
+    firmata_base::setup();
+  }
 }
 
 void
 loop()
 {
 
-  firmata_base::loop();
+  (*current_loop)();
 }
 
 #define setup KoovSetup
