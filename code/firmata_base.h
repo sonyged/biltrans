@@ -851,6 +851,8 @@ public:
 
 class DualStream: public Stream {
   Stream *serial;
+  unsigned long current;
+
   void decideSerial() {
     int avail = Serial.available();
     if (avail) {
@@ -870,9 +872,16 @@ class DualStream: public Stream {
     return serial ? *serial : nullStream;
   }
   public:
-  DualStream(): serial(0) {}
+  DualStream(): serial(0), current(0) {}
   int available() {
     int avail = currentSerial().available();
+
+    if (avail) {
+      current = millis();
+    } else {
+      if (millis() - current > 10 * 1000)
+	serial = 0;
+    }
     return avail;
   }
   int read() {
