@@ -1086,6 +1086,13 @@ bts01_dbi()
 }
 
 static void
+bts01_ccp()
+{
+
+  bts01_cmd("AT+CCP=0006,0006,0001,0190\r", "OK");
+}
+
+static void
 bts01_sbo()
 {
 
@@ -1140,6 +1147,7 @@ void setup()
 
   if (0)
     bts01_dbi();
+  bts01_ccp();
   bts01_sbo();
 #endif
 
