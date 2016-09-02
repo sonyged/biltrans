@@ -73,6 +73,10 @@ static void delay_with_chech(unsigned long msec)
 }
 #define DELAY(S)	delay_with_chech((S) * 1000UL)
 
+/*
+ * 74 .. 5863 Hz.
+ */
+
 const word BZR_C3  = 130;  // do
 const word BZR_CS3 = 139;  // do#
 const word BZR_D3  = 147;  // re
@@ -152,18 +156,29 @@ const word BTONE[] = {
 
 #define TONENUM	((sizeof(BTONE)/sizeof(word))-1)
 #define BHZ(num)  (BTONE[(byte)(min(max(0, (num-48)),TONENUM))])
-static word last_pitch = 0;
+static word last_pitch[14] = { 0, };
+static void
+BUZZER_INIT()
+{
+
+  for (int pin = 0; pin < sizeof(last_pitch) / sizeof(last_pitch[0]); pin++)
+    last_pitch[pin] = 0;
+}
+
 static void
 BUZZER_CONTROL(int port, int mode, int freq)
 {
+  if (port >= sizeof(last_pitch) / sizeof(last_pitch[0]))
+    return;
+
   if (mode == ON) {
     word pitch = BHZ(freq);
-    if (pitch != last_pitch) {
+    if (pitch != last_pitch[port]) {
       tone(port, pitch);
-      last_pitch = pitch;
+      last_pitch[port] = pitch;
     }
   } else {
-    last_pitch = 0;
+    last_pitch[port] = 0;
     noTone(port);
   }
 }

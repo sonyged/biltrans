@@ -794,6 +794,8 @@ void systemResetCallback()
 {
   isResetting = true;
 
+  BUZZER_INIT();
+
   // initialize a defalt state
   // TODO: option to load config from EEPROM instead of default
 

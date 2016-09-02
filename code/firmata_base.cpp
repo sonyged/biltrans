@@ -29,6 +29,7 @@
 #include <Firmata.h>
 
 #include "Arduino.h"
+static void BUZZER_INIT();
 static void BUZZER_CONTROL(int port, int mode, int freq);
 static void ACCEL_UPDATE(int *, int *, int *);
 static void KoovSetup();
