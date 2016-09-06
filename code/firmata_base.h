@@ -496,6 +496,12 @@ void reportDigitalCallback(byte port, int value)
  * SYSEX-BASED commands
  *============================================================================*/
 
+static void bts01_write(const String &s, void *args);
+static void bts01_cmd(const char *cmd,
+		      unsigned int timeout = 5000,
+		      void (*handler)(const String &, void *) = 0,
+		      void *args = 0);
+
 void sysexCallback(byte command, byte argc, byte *argv)
 {
   byte mode;
@@ -742,17 +748,48 @@ void sysexCallback(byte command, byte argc, byte *argv)
 	  }
 	  break;
 	case 0x02:		// BTS01
-	  /*
-	   * Request:
-	   *    0e 02 01
-	   *
-	   * Response:
-	   *    0e 02 01
-	   */
 	  if (argc > 1) {
 	    switch (argv[1]) {
-	    case 0x01:
+	    case 0x01:		/* Reset BTS01 */
+	      /*
+	       * Request:
+	       *    0e 02 01
+	       *
+	       * Response:
+	       *    0e 02 01
+	       */
 	      bts01_reset();
+	      Firmata.write(START_SYSEX);
+	      Firmata.write(0x0e);
+	      Firmata.write(0x02);
+	      Firmata.write(0x01);
+	      Firmata.write(END_SYSEX);
+	      break;
+	    case 0x02:		/* Exec generic AT command */
+	      if (argc > 3) {
+		/*
+		 * Request:
+		 *    0e 02 02 AA BB CC ...
+		 *
+		 *    timeout: (AA << 7) + BB
+		 *    command: CC ..
+		 *
+		 * Response:
+		 *    0e 02 03 reply string
+		 */
+		unsigned int timeout = (argv[2] << 7) + argv[3];
+		String cmd;
+		for (int i = 4; i < argc; i++) {
+		  char c = argv[i];
+		  cmd.concat(c);
+		}
+		Firmata.write(START_SYSEX);
+		Firmata.write(0x0e);
+		Firmata.write(0x02);
+		Firmata.write(0x02);
+		bts01_cmd(cmd.c_str(), timeout, bts01_write, 0);
+		Firmata.write(END_SYSEX);
+	      }
 	      break;
 	    }
 	  }
@@ -963,10 +1000,25 @@ findString(const String &str, const char key[])
 
 static bool enableFirmata = false;
 static bool setupFirmata = true;
+static void periodc_jobs();
+
+/*
+ * True if need to bail out.
+ */
+static bool
+check_intr()
+{
+  if (dualStream.available()) {
+    enableFirmata = true;
+    return true;
+  }
+  periodc_jobs();
+  return false;
+}
+
 #define CHECK_INTR				\
   do {						\
-    if (firmata_base::dualStream.available()) {	\
-      firmata_base::enableFirmata = true;	\
+    if (firmata_base::check_intr()) {		\
       return;					\
     }						\
   } while (0)
@@ -1043,6 +1095,7 @@ void FirmataLoop()
 }
 
 #define USE_BLE
+static bool bts01_failure = false;
 static void
 bts01_reset()
 {
@@ -1053,22 +1106,52 @@ bts01_reset()
   digitalWrite(43, LOW);
   delay(1);
   digitalWrite(43, HIGH);
+  bts01_failure = false;
 }
 
 static void
-bts01_cmd(const char *cmd, const char *expect)
+bts01_cmd(const char *cmd, unsigned int timeout,
+	  void (*handler)(const String &, void *), void *args)
 {
-  int ok = 0;
+  int done = 0;
+  unsigned int start = millis();
+  static const char *const terminal[] = {
+    "OK\r\n",
+    "ACK\r\n",
+    "ERROR="
+  };
+
+  drain(Serial);
+  Serial.print(cmd);
   do {
-    drain(Serial);
-    Serial.print(cmd);
-    do {
-      String str = Serial.readString();
-      ok = findString(str, expect);
-      if (!ok)
-	delay(10);
-    } while (!ok && Serial.available());
-  } while (!ok);
+    String str = Serial.readString();
+    if (handler)
+      (*handler)(str, args);
+    int i = 0;
+    for (; i < sizeof(terminal) / sizeof(terminal[0]); i++) {
+      done = findString(str, terminal[i]);
+      if (done) {
+	if (i == 2)
+	  bts01_failure = bts01_failure || true;
+	break;
+      }
+    }
+    if (!done) {
+      if (millis() - start > timeout)
+	return;
+      delay(10);
+    }
+  } while (!done && Serial.available());
+  return;
+}
+
+static void
+bts01_write(const String &s, void *args)
+{
+  const unsigned int len = s.length();
+
+  for (int i = 0; i < len; i++)
+    Firmata.write(s[i]);
 }
 
 static void
@@ -1076,7 +1159,7 @@ bts01_rvn()
 {
 
   // response is \r\nVN=x.yz\r\n\r\nOK\r\n
-  bts01_cmd("AT+RVN\r", "OK");
+  bts01_cmd("AT+RVN\r");
 }
 
 
@@ -1084,21 +1167,21 @@ static void
 bts01_dbi()
 {
 
-  bts01_cmd("AT+DBI=ALL\r", "OK");
+  bts01_cmd("AT+DBI=ALL\r");
 }
 
 static void
 bts01_ccp()
 {
 
-  bts01_cmd("AT+CCP=0006,0006,0001,0190\r", "OK");
+  bts01_cmd("AT+CCP=0006,0006,0001,0190\r");
 }
 
 static void
 bts01_sbo()
 {
 
-  bts01_cmd("AT+SBO\r", "ACK");
+  bts01_cmd("AT+SBO\r");
 }
 
 void setup()
@@ -1121,9 +1204,7 @@ void setup()
 /*
  * Resetting BTS01 is now done in bootloader.
  */
-#if 0
   bts01_reset();
-#endif
 
   // to use a port other than Serial, such as Serial1 on an Arduino Leonardo or Mega,
   // Call begin(baud) on the alternate serial port and pass it to Firmata to begin like this:
@@ -1163,6 +1244,38 @@ void setup()
 /*==============================================================================
  * LOOP()
  *============================================================================*/
+#define PIN_USB 20
+#define PIN_BLE 21
+#define PIN_AUTO 1
+#define PIN_LIVE 0
+#define LED_OFF(pin) do {			\
+  pinMode((pin), OUTPUT);			\
+  digitalWrite((pin), HIGH);			\
+} while (0)
+#define LED_ON(pin) do {			\
+  pinMode((pin), OUTPUT);			\
+  digitalWrite((pin), LOW);			\
+} while (0)
+
+static void
+periodc_jobs()
+{
+  if (dualStream.connectMode() == DualStream::NOT_CONNECTED &&
+      bts01_failure) {
+#define INTERVAL 100
+    static unsigned int blink_timer = 0;
+    unsigned int now = millis();
+    if (now - blink_timer > INTERVAL) {
+      if ((now / INTERVAL) % 2)
+	LED_ON(PIN_BLE);
+      else
+	LED_OFF(PIN_BLE);
+      blink_timer = now;
+    }
+#undef INTERVAL
+  }
+}
+
 void loop()
 {
 #if 0
@@ -1179,19 +1292,6 @@ void loop()
       setupFirmata = false;
     }
   }
-
-#define PIN_USB 20
-#define PIN_BLE 21
-#define PIN_AUTO 1
-#define PIN_LIVE 0
-#define LED_OFF(pin) do {			\
-  pinMode((pin), OUTPUT);			\
-  digitalWrite((pin), HIGH);			\
-} while (0)
-#define LED_ON(pin) do {			\
-  pinMode((pin), OUTPUT);			\
-  digitalWrite((pin), LOW);			\
-} while (0)
 
   switch (dualStream.connectMode()) {
   case DualStream::NOT_CONNECTED:
