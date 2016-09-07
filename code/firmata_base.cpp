@@ -27,6 +27,7 @@
 #include <Wire.h>
 #include <MMA8653.h>
 #include <Firmata.h>
+#include <Reset.h>
 
 #include "Arduino.h"
 static void BUZZER_INIT();

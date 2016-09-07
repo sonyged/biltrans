@@ -747,7 +747,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
 	    Firmata.write(END_SYSEX);
 	  }
 	  break;
-	case 0x02:		// BTS01
+	case 0x02:		// Generic KOOV control
 	  if (argc > 1) {
 	    switch (argv[1]) {
 	    case 0x01:		/* Reset BTS01 */
@@ -789,6 +789,18 @@ void sysexCallback(byte command, byte argc, byte *argv)
 		Firmata.write(0x02);
 		bts01_cmd(cmd.c_str(), timeout, bts01_write, 0);
 		Firmata.write(END_SYSEX);
+	      }
+	      break;
+	    case 0x03:		/* Reset */
+	      if (argc > 2) {
+		/*
+		 * Request:
+		 *    0e 02 03 AA BB
+		 *
+		 *    ticks: (AA << 7) + BB
+		 */
+		unsigned int ticks = (argv[2] << 7) + argv[3];
+		initiateReset(ticks);
 	      }
 	      break;
 	    }
