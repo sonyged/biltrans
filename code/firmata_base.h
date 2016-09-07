@@ -1025,7 +1025,7 @@ check_intr()
 
 void FirmataSetup()
 {
-  Firmata.setFirmwareNameAndVersion("koov-1.0.1", FIRMATA_MAJOR_VERSION,
+  Firmata.setFirmwareNameAndVersion(KOOV_VERSION, FIRMATA_MAJOR_VERSION,
 				    FIRMATA_MINOR_VERSION);
 
   Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);

@@ -30,6 +30,8 @@
 
 #include "Arduino.h"
 
+#define KOOV_VERSION	"koov-1.0.2"
+
 static void KoovSetup();
 static void KoovLoop();
 
