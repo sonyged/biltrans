@@ -167,7 +167,7 @@ function emit_setup()
   const initalizer = {
     'multi-led': port => { return `INIT_MULTILED()`; },
     led: port => { return `pinMode(${port}, OUTPUT)`; },
-    buzzer: port => { return `pinMode(${port}, OUTPUT)`; },
+    buzzer: port => { return `BUZZER_CONTROL(${port}, OFF, 0)`; },
     'servo-motor': port => { return `INIT_SERVO_MOTOR(${port})`; },
     'dc-motor': port => { return `INIT_DC_MOTOR(${port})`; },
     'push-button': port => { return `INIT_PUSH_BUTTON(${port})`; },
@@ -191,11 +191,26 @@ function emit_setup()
   );
 }
 
+function emit_forever(blks)
+{
+  return [].concat(
+    'for (;;) {',
+    'CHECK_INTR;',
+    blks,
+    '}');
+}
+
 const BLKTRANS = {
   'background-thread': blk => { return ''; },
 
   'when-green-flag-clicked': blk => {
-    return [].concat('void loop()', '{', emit_blocks(blk.blocks), '}' );
+    return [].concat(
+      'void loop()', '{',
+      emit_blocks(blk.blocks),
+      /* if above blocks exits, loop forever */
+      [ 'setup();' ].concat(emit_forever([])).map(indent),
+      '}'
+    );
   },
 
   function: blk => {
@@ -209,11 +224,7 @@ const BLKTRANS = {
   },
 
   forever: blk => {
-    return [].concat(
-      'for (;;) {',
-      'CHECK_INTR;',
-      emit_blocks(blk.blocks),
-      '}');
+    return emit_forever(emit_blocks(blk.blocks));
   },
 
   'repeat-until': blk => {

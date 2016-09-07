@@ -75,6 +75,8 @@ static void delay_with_chech(unsigned long msec)
 
 /*
  * 74 .. 5863 Hz.
+ *
+ * f = 440 * exp2((d - 69) / 12.0);
  */
 
 const word BZR_C3  = 130;  // do

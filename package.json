@@ -1,6 +1,6 @@
 {
   "name": "biltrans",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "block intermediate language translatro",
   "main": "biltrans.js",
   "scripts": {
