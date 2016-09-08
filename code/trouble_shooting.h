@@ -432,6 +432,8 @@ trouble_setup()
   x = accel.getX();
   y = accel.getY();
   z = accel.getZ();
+
+  SerialUSB.begin(57600);
 }  //  setup
 
 enum {
@@ -487,6 +489,14 @@ digital_sensor(int port)
 static void
 trouble_loop()
 {
+
+  if (SerialUSB.available()) {
+    do {
+      uint8_t c = SerialUSB.read();
+    } while (SerialUSB.available());
+    SerialUSB.println(KOOV_VERSION);
+  }
+
   {
     if (digital_sensor(PORT_K2) ||
         digital_sensor(PORT_K3) ||

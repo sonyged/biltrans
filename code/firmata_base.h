@@ -1037,7 +1037,7 @@ check_intr()
 
 void FirmataSetup()
 {
-  Firmata.setFirmwareNameAndVersion("koov-1.0.0", FIRMATA_MAJOR_VERSION,
+  Firmata.setFirmwareNameAndVersion(KOOV_VERSION, FIRMATA_MAJOR_VERSION,
 				    FIRMATA_MINOR_VERSION);
 
   Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
@@ -1236,10 +1236,9 @@ void setup()
   while (!Serial)
     ;
 #endif
-  delay(1); // following AT commands does not complete without this
+  delay(10); // following AT commands does not complete without this
 
-  if (0)
-    bts01_rvn();
+  bts01_rvn();
 
   if (0)
     bts01_dbi();
