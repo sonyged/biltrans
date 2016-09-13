@@ -152,7 +152,7 @@
     ((>) 'greater-than?)
     (else op)))
 (define (binary-op? op)
-  (memq (map-op op) '(and or less-than? greater-than? equal?)))
+  (memq (map-op op) '(and or mod less-than? greater-than? equal?)))
 (define (turn-op? op)
   (memq op '(turn-cw turn-ccw)))
 (define (change-op? op)
@@ -287,6 +287,10 @@
      `((name . "pick-random")
        (from . ,(jsonfy from))
        (to . ,(jsonfy to)))]
+    [('timer)
+     '((name . "timer"))]
+    [('reset-timer)
+     '((name . "reset-timer"))]
     [('loudness)
      '((name . "loudness"))]
     [('stop what)

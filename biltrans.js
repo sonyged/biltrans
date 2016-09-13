@@ -136,6 +136,10 @@ const EXPTRANS = {
           blk.direction === 'y' ? 2 : 3;
     use_port(port, '3-axis-digital-accelerometer');
     return `ACCELEROMETER_VALUE(${portsym(port)}, ${direction})`;
+  },
+
+  timer: blk => {
+    return 'TIMER()';
   }
 };
 
@@ -187,7 +191,10 @@ function emit_setup()
     }).map(stmtfy);
   };
   return [].concat(
-    'void setup()', '{', emit_config().map(indent), '}'
+    'void setup()', '{',
+    emit_config().map(indent),
+    [ 'RESET_TIMER();' ].map(indent),
+    '}'
   );
 }
 
@@ -355,6 +362,10 @@ const BLKTRANS = {
 
   breakpoint: blk => {
     return '/* breakpoint */';
+  },
+
+  'reset-timer': blk => {
+    return 'RESET_TIMER()';
   },
 };
 

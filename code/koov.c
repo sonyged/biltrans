@@ -355,3 +355,18 @@ MULTILED(int r, int g, int b)
   analogWrite(LED_MULTI_GREEN, analogMax - g);
   analogWrite(LED_MULTI_BLUE, analogMax - b);
 }
+
+static unsigned int timer_start;
+static void
+RESET_TIMER()
+{
+
+  timer_start = millis();
+}
+
+static unsigned int
+TIMER()
+{
+
+  return (millis() - timer_start) / 1000;
+}
