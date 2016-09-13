@@ -14,13 +14,13 @@
      (forever
       (wait 0.01)
       (if-then-else
-       (= (mod (timer) 5) 0)
+       (= (mod (timer) 5) 3)
        (then
         (turn-led V2 ON)
-	(turn-led V3 OFF))
+        (turn-led V3 OFF))
        (else
         (turn-led V2 OFF)
-	(turn-led V3 ON)))))))
+        (turn-led V3 ON)))))))
 (define *port-mappings*
   '())
 

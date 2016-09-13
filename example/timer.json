@@ -1,0 +1,73 @@
+{
+  "port-settings": {
+    "V2": "led",
+    "V3": "led"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "reset-timer"
+        },
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "OFF"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "OFF"
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "wait",
+              "secs": 0.01
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "mod",
+                  "x": {
+                    "name": "timer"
+                  },
+                  "y": 5
+                },
+                "y": 3
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "ON"
+                },
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "OFF"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "OFF"
+                },
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "ON"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
