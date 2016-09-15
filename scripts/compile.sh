@@ -1,9 +1,9 @@
 #!/bin/sh
 
-cd $(dirname $0) || exit 2
+cd $(dirname $0) || exit 20
 
 BUILDDIR=${1:-/tmp/build}
-test -d "${BUILDDIR}" || exit 2
+test -d "${BUILDDIR}" || exit 21
 
 SKETCH_CPP=${2:-sketch_mar07b.cpp}
 
@@ -14,6 +14,5 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  cat ../code/koov.c;
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 
-sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 2
+sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 22
 cat ${BUILDDIR}/${SKETCH_CPP}.hex
-
