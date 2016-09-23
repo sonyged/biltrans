@@ -37,9 +37,7 @@ namespace firmata_base {
 // the minimum interval for sampling analog input
 #define MINIMUM_SAMPLING_INTERVAL   1
 
-static void bts01_reset();
-static void bts01_sbo();
-static void bts01_dbi();
+static void koov_sysex(byte argc, byte *argv);
 void reportAnalogCallback(byte analogPin, int value);
 void sysexCallback(byte command, byte argc, byte *argv);
 void enableI2CPins();
@@ -497,7 +495,7 @@ void reportDigitalCallback(byte port, int value)
  *============================================================================*/
 
 static void bts01_write(const String &s, void *args);
-static void bts01_cmd(const char *cmd,
+static bool bts01_cmd(const char *cmd,
 		      unsigned int timeout = 5000,
 		      void (*handler)(const String &, void *) = 0,
 		      void *args = 0);
@@ -708,105 +706,8 @@ void sysexCallback(byte command, byte argc, byte *argv)
 	}
       }
       break;
-    case 0x0e:
-      {
-	if (argc == 0)
-	  break;
-	switch (argv[0]) {
-	case 0x01:		// accel.
-	  /*
-	   * Request:
-	   *    0e 01 AA
-	   *          AA: 01 -> X, 02 -> Y, 03 -> Z
-	   * Response:
-	   *    0e 01 AA BB CC
-	   *          BB: V & 0x7f
-	   *          CC: (V >> 7) & 0x7f
-	   *          V = BB | (((signed char)(CC << 1)) << 6)
-	   */
-	  if (argc > 1) {
-	    int v = 0, x, y, z;
-	    ACCEL_UPDATE(&x, &y, &z);
-	    switch (argv[1]) {
-	    case 0x01:
-	      v = x;
-	      break;
-	    case 0x02:
-	      v = y;
-	      break;
-	    case 0x03:
-	      v = z;
-	      break;
-	    }
-	    Firmata.write(START_SYSEX);
-	    Firmata.write(0x0e);
-	    Firmata.write(0x01);
-	    Firmata.write(argv[1]);
-	    Firmata.write(v & 0x7f);
-	    Firmata.write((v >> 7) & 0x7f);
-	    Firmata.write(END_SYSEX);
-	  }
-	  break;
-	case 0x02:		// Generic KOOV control
-	  if (argc > 1) {
-	    switch (argv[1]) {
-	    case 0x01:		/* Reset BTS01 */
-	      /*
-	       * Request:
-	       *    0e 02 01
-	       *
-	       * Response:
-	       *    0e 02 01
-	       */
-	      bts01_reset();
-	      Firmata.write(START_SYSEX);
-	      Firmata.write(0x0e);
-	      Firmata.write(0x02);
-	      Firmata.write(0x01);
-	      Firmata.write(END_SYSEX);
-	      break;
-	    case 0x02:		/* Exec generic AT command */
-	      if (argc > 3) {
-		/*
-		 * Request:
-		 *    0e 02 02 AA BB CC ...
-		 *
-		 *    timeout: (AA << 7) + BB
-		 *    command: CC ..
-		 *
-		 * Response:
-		 *    0e 02 03 reply string
-		 */
-		unsigned int timeout = (argv[2] << 7) + argv[3];
-		String cmd;
-		for (int i = 4; i < argc; i++) {
-		  char c = argv[i];
-		  cmd.concat(c);
-		}
-		Firmata.write(START_SYSEX);
-		Firmata.write(0x0e);
-		Firmata.write(0x02);
-		Firmata.write(0x02);
-		bts01_cmd(cmd.c_str(), timeout, bts01_write, 0);
-		Firmata.write(END_SYSEX);
-	      }
-	      break;
-	    case 0x03:		/* Reset */
-	      if (argc > 2) {
-		/*
-		 * Request:
-		 *    0e 02 03 AA BB
-		 *
-		 *    ticks: (AA << 7) + BB
-		 */
-		unsigned int ticks = (argv[2] << 7) + argv[3];
-		initiateReset(ticks);
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
+    case 0x0e:			/* koov extension */
+      koov_sysex(argc, argv);
       break;
   }
 }
@@ -1119,14 +1020,16 @@ bts01_reset()
   digitalWrite(43, LOW);
   delay(1);
   digitalWrite(43, HIGH);
+  delay(10);
   bts01_failure = false;
 }
 
-static void
+static bool
 bts01_cmd(const char *cmd, unsigned int timeout,
 	  void (*handler)(const String &, void *), void *args)
 {
   int done = 0;
+  bool retval = false;
   unsigned int start = millis();
   static const char *const terminal[] = {
     "OK\r\n",
@@ -1144,18 +1047,21 @@ bts01_cmd(const char *cmd, unsigned int timeout,
     for (; i < sizeof(terminal) / sizeof(terminal[0]); i++) {
       done = findString(str, terminal[i]);
       if (done) {
-	if (i == 2)
+	if (i == 2) {
 	  bts01_failure = bts01_failure || true;
+	  retval = false;
+	} else
+	  retval = true;
 	break;
       }
     }
     if (!done) {
       if (millis() - start > timeout)
-	return;
+	return retval;
       delay(10);
     }
   } while (!done && Serial.available());
-  return;
+  return retval;
 }
 
 static void
@@ -1167,34 +1073,192 @@ bts01_write(const String &s, void *args)
     Firmata.write(s[i]);
 }
 
-static void
+static bool
 bts01_rvn()
 {
 
   // response is \r\nVN=x.yz\r\n\r\nOK\r\n
-  bts01_cmd("AT+RVN\r");
+  return bts01_cmd("AT+RVN\r");
 }
 
 
-static void
+static bool
 bts01_dbi()
 {
 
-  bts01_cmd("AT+DBI=ALL\r");
+  return bts01_cmd("AT+DBI=ALL\r");
 }
 
-static void
+static bool
 bts01_ccp()
 {
 
-  bts01_cmd("AT+CCP=0006,0006,0001,0190\r");
+  return bts01_cmd("AT+CCP=0010,0028,0001,0190\r");
 }
 
-static void
+static bool
 bts01_sbo()
 {
 
-  bts01_cmd("AT+SBO\r");
+  return bts01_cmd("AT+SBO\r");
+}
+
+static void
+koov_sysex(byte argc, byte *argv)
+{
+  if (argc == 0)
+    return;
+  switch (argv[0]) {
+  case 0x01:		// accel.
+    /*
+     * Request:
+     *    0e 01 AA
+     *          AA: 01 -> X, 02 -> Y, 03 -> Z
+     * Response:
+     *    0e 01 AA BB CC
+     *          BB: V & 0x7f
+     *          CC: (V >> 7) & 0x7f
+     *          V = BB | (((signed char)(CC << 1)) << 6)
+     */
+    if (argc > 1) {
+      int v = 0, x, y, z;
+      ACCEL_UPDATE(&x, &y, &z);
+      switch (argv[1]) {
+      case 0x01:
+	v = x;
+	break;
+      case 0x02:
+	v = y;
+	break;
+      case 0x03:
+	v = z;
+	break;
+      }
+      Firmata.write(START_SYSEX);
+      Firmata.write(0x0e);
+      Firmata.write(0x01);
+      Firmata.write(argv[1]);
+      Firmata.write(v & 0x7f);
+      Firmata.write((v >> 7) & 0x7f);
+      Firmata.write(END_SYSEX);
+    }
+    break;
+  case 0x02:		// Generic KOOV control
+    if (argc > 1) {
+      switch (argv[1]) {
+      case 0x01:		/* Reset with AT commands */
+	if (argc > 1) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4 ...
+	   * ------------------------
+	   *    0e 02 01 AA BB CC ...
+	   *
+	   *    timeout: (AA << 7) + BB
+	   *    command: CC ..
+	   *
+	   * Response:
+	   *    0e 02 01
+	   */
+
+	  unsigned int timeout = 0;
+	  if (argc > 3)
+	    timeout = (argv[2] << 7) + argv[3];
+	  const bool ble_connected =
+	    dualStream.connectMode() == DualStream::BLE_CONNECTED;
+
+	  Firmata.write(START_SYSEX);
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x01);
+	  Firmata.write(END_SYSEX);
+
+	  bts01_reset();
+	  String cmd;
+	  for (int i = 4; i < argc; i++) {
+	    char c = argv[i];
+	    if (c == '\n')
+	      continue;
+	    cmd.concat(c);
+	    if (c == '\r') {
+	      bts01_cmd(cmd.c_str(), timeout);
+	      cmd = "";
+	    }
+	  }
+	  if (ble_connected)
+	    bts01_sbo();
+	}
+	break;
+      case 0x02:		/* Exec generic AT command */
+	if (argc > 3) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4 ...
+	   * ------------------------
+	   *    0e 02 02 AA BB CC ...
+	   *
+	   *    timeout: (AA << 7) + BB
+	   *    command: CC ..
+	   *
+	   * Response:
+	   *    0e 02 03 reply string
+	   */
+	  unsigned int timeout = (argv[2] << 7) + argv[3];
+	  String cmd;
+	  for (int i = 4; i < argc; i++) {
+	    char c = argv[i];
+	    cmd.concat(c);
+	  }
+	  Firmata.write(START_SYSEX);
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x02);
+	  bts01_cmd(cmd.c_str(), timeout, bts01_write, 0);
+	  Firmata.write(END_SYSEX);
+	}
+	break;
+      case 0x03:		/* Reset Firmata */
+	if (argc > 2) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3
+	   * ------------------------
+	   *    0e 02 03 AA BB
+	   *
+	   *    ticks: (AA << 7) + BB
+	   */
+	  unsigned int ticks = (argv[2] << 7) + argv[3];
+	  initiateReset(ticks);
+	}
+	break;
+      case 0x04:		/* buzzer */
+	if (argc > 4) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 04 AA BB CC
+	   *
+	   *    pin: AA
+	   *    mode: BB
+	   *    freq: CC
+	   *
+	   * Response:
+	   *    0e 02 03 reply string
+	   */
+	  int pin = argv[2];
+	  int mode = argv[3];
+	  int freq = argv[4];
+
+	  if (IS_PIN_DIGITAL(pin)) {
+	    BUZZER_CONTROL(PIN_TO_DIGITAL(pin), mode ? HIGH : LOW, freq);
+	  }
+	}
+	break;
+      }
+    }
+    break;
+  }
 }
 
 void setup()

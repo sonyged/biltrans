@@ -21,6 +21,19 @@ const gensym = (() => {
   return (prefix => { return `${prefix}${counter++}`; });
 })();
 
+let symbols = {};
+
+function intern(prefix, name)
+{
+  const sym = symbols[name];
+
+  if (sym)
+    return sym;
+
+  symbols[name] = gensym(`${prefix}sym`);
+  return symbols[name];
+}
+
 function uniop(block, op)
 {
 
@@ -54,19 +67,19 @@ function symbolize(str)
 function blkvar(blk)
 {
 
-  return `V${symbolize(blk.variable)}`;
+  return intern('V', blk.variable);
 }
 
 function blkfunc(blk)
 {
 
-  return `F${symbolize(blk.function)}`;
+  return intern('F', blk.function);
 }
 
 function sensor_name(n)
 {
 
-    return symbolize(n).toUpperCase();
+  return symbolize(n).toUpperCase();
 }
 
 function analog_sensor(type)
