@@ -71,6 +71,25 @@ ENCODED_SCRIPT=$(node -e "
     console.log(JSON.stringify(JSON.stringify(${SCRIPT})))
 ")
 
+HTTPSTAT=$(dirname $0)/httpstat.py
+
+[ -f "${HTTPSTAT}" ] || {
+    exec 1>&2
+    echo Download httpstat.py by typing following commands:
+    cat <<EOF
+
+cd $(dirname $0)
+wget https://raw.githubusercontent.com/reorx/httpstat/master/httpstat.py
+EOF
+    exit 2;
+}
+
+exec python ${HTTPSTAT} https://$HOST/compile.json -v \
+    -u ${USERPASS} \
+    -X POST \
+    -d '{ "program": '"${ENCODED_SCRIPT}"' }' \
+    -H 'Content-Type: application/json'
+
 exec curl -v \
     -u ${USERPASS} \
     -o /dev/null \
