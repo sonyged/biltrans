@@ -96,29 +96,29 @@ CHECK_INTR;
       expect: 'if (false) {\n} else {\n}'
     },
     { block: { name: 'call-function', function: 'ok' },
-      expect: 'Fok();'
+      expect: 'Fsym2();'
     },
     { block: { name: 'variable-ref', variable: 'bite' },
-      expect: 'Vbite;'
+      expect: 'Vsym3;'
     },
     { block: { name: 'set-variable-to', variable: 'bite',
 	       value: { name: 'not',
 			x: { name: 'variable-ref', variable: 'bite' } } },
-      expect: 'Vbite = !Vbite;'
+      expect: 'Vsym3 = !Vsym3;'
     },
     { block: { name: 'change-variable-by', variable: 'bite',
 	       value: { name: 'plus',
 			x: { name: 'variable-ref', variable: 'bite' },
 			y: 20 } },
-      expect: 'Vbite += Vbite + 20;'
+      expect: 'Vsym3 += Vsym3 + 20;'
     },
     {
       block: { name: 'variable', variable: 'bite', value: 0 },
-      expect: 'float Vbite = 0;'
+      expect: 'float Vsym3 = 0;'
     },
     {
       block: { name: 'function', function: 'ok', blocks: [] },
-      expect: 'void Fok()\n{\n}'
+      expect: 'void Fsym2()\n{\n}'
     },
     {
       block: { name: 'wait', secs: 0.2 },
@@ -135,21 +135,26 @@ CHECK_INTR;
 	]
       },
       expect: `\
-static void Fok();
-static void Fng();
-float Vx = 0;
-float Vy = 0;
-void Fok()
+static void Fsym2();
+static void Fsym4();
+float Vsym5 = 0;
+float Vsym6 = 0;
+void Fsym2()
 {
 }
-void Fng()
+void Fsym4()
 {
 }
 void loop()
 {
+  setup();
+  for (;;) {
+  CHECK_INTR;
+  }
 }
 void setup()
 {
+  RESET_TIMER();
 }`
     },
   ];
