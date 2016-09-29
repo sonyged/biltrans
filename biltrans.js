@@ -76,6 +76,12 @@ function blkfunc(blk)
   return intern('F', blk.function);
 }
 
+function blklist(blk)
+{
+
+  return intern('L', blk.list);
+}
+
 function sensor_name(n)
 {
 
@@ -129,6 +135,18 @@ const EXPTRANS = {
 
   'variable-ref': blk => {
     return blkvar(blk);
+  },
+
+  'list-length': blk => {
+    return `LIST_LENGTH(${blklist(blk)})`;
+  },
+
+  'list-contains?': blk => {
+    return `LIST_CONTAINS(${blklist(blk)}, ${emit_exp(blk.value)})`;
+  },
+
+  'list-ref': blk => {
+    return `LIST_REF(${blklist(blk)}, ${emit_exp(blk.position)})`;
   },
 
   'pick-random': blk => {
@@ -241,6 +259,32 @@ const BLKTRANS = {
 
   variable: blk => {
     return `float ${blkvar(blk)} = ${emit_exp(blk.value)}`;
+  },
+
+  list: blk => {
+    return `void *${blklist(blk)} = 0`;
+  },
+
+  'list-add': blk => {
+    const value = emit_exp(blk.value);
+    return `LIST_ADD(${blklist(blk)}, ${value})`;
+  },
+
+  'list-delete': blk => {
+    const position = emit_exp(blk.position);
+    return `LIST_DELETE(${blklist(blk)}, ${position})`;
+  },
+
+  'list-replace': blk => {
+    const position = emit_exp(blk.position);
+    const value = emit_exp(blk.value);
+    return `LIST_REPLACE(${blklist(blk)}, ${position}, ${value})`;
+  },
+
+  'list-insert': blk => {
+    const position = emit_exp(blk.position);
+    const value = emit_exp(blk.value);
+    return `LIST_INSERT(${blklist(blk)}, ${position}, ${value})`;
   },
 
   forever: blk => {
@@ -457,11 +501,11 @@ function emit_script(script)
   return emit_blocks(blocks, true);
 }
 
-/* sort order: variable << function << others */
+/* sort order: variable|list << function << others */
 function compare_script(a, b)
 {
   const f = x => { return x.name === 'function'; };
-  const v = x => { return x.name === 'variable'; };
+  const v = x => { return x.name === 'variable' || x.name === 'list'; };
 
   if (a.name === b.name)
     return 0;

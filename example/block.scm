@@ -125,7 +125,7 @@
 ;;;
 ;;; Data blocks
 ;;;  Variable block
-;;;   set-varibale-to VARIABLE VALUE
+;;;   set-variable-to VARIABLE VALUE
 ;;;   change-varibale-by VARIABLE VALUE
 ;;;   variable-ref VARIABLE
 ;;;  List block
@@ -276,6 +276,38 @@
     [(`variable-ref variable)
      `((name . "variable-ref")
        (variable . ,(jsonfy variable)))]
+    [(`list list)
+     `((name . "list")
+       (list . ,(jsonfy list)))]
+    [(`list-length list)
+     `((name . "list-length")
+       (list . ,(jsonfy list)))]
+    [(`list-contains? list value)
+     `((name . "list-contains?")
+       (list . ,(jsonfy list))
+       (value . ,(jsonfy value)))]
+    [(`list-add list value)
+     `((name . "list-add")
+       (list . ,(jsonfy list))
+       (value . ,(jsonfy value)))]
+    [(`list-delete list position)
+     `((name . "list-delete")
+       (list . ,(jsonfy list))
+       (position . ,(jsonfy position)))]
+    [(`list-insert list position value)
+     `((name . "list-insert")
+       (list . ,(jsonfy list))
+       (position . ,(jsonfy position))
+       (value . ,(jsonfy value)))]
+    [(`list-replace list position value)
+     `((name . "list-replace")
+       (list . ,(jsonfy list))
+       (position . ,(jsonfy position))
+       (value . ,(jsonfy value)))]
+    [(`list-ref list position)
+     `((name . "list-ref")
+       (list . ,(jsonfy list))
+       (position . ,(jsonfy position)))]
     [(`call-function function)
      `((name . "call-function")
        (function . ,(jsonfy function)))]

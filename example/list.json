@@ -1,0 +1,156 @@
+{
+  "port-settings": {
+    "V2": "led",
+    "V3": "led"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "set-variable-to",
+          "variable": "incr",
+          "value": 1
+        },
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "OFF"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "OFF"
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "wait",
+              "secs": 0.01
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "variable-ref",
+                  "variable": "incr"
+                },
+                "y": 0
+              },
+              "then-blocks": [
+                {
+                  "name": "list-delete",
+                  "list": "lst",
+                  "position": 0
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "list-add",
+                  "list": "lst",
+                  "value": 3
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "greater-than?",
+                "x": {
+                  "name": "list-length",
+                  "list": "lst"
+                },
+                "y": 30
+              },
+              "blocks": [
+                {
+                  "name": "set-variable-to",
+                  "variable": "incr",
+                  "value": 0
+                }
+              ]
+            },
+            {
+              "name": "if-then",
+              "condition": {
+                "name": "equal?",
+                "x": {
+                  "name": "list-length",
+                  "list": "lst"
+                },
+                "y": 0
+              },
+              "blocks": [
+                {
+                  "name": "set-variable-to",
+                  "variable": "incr",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "name": "call-function",
+              "function": "led"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "list": "lst"
+    },
+    {
+      "name": "variable",
+      "variable": "incr",
+      "value": 0
+    },
+    {
+      "name": "function",
+      "function": "led",
+      "blocks": [
+        {
+          "name": "if-then-else",
+          "condition": {
+            "name": "equal?",
+            "x": {
+              "name": "mod",
+              "x": {
+                "name": "list-length",
+                "list": "lst"
+              },
+              "y": 5
+            },
+            "y": 3
+          },
+          "then-blocks": [
+            {
+              "name": "turn-led",
+              "port": "V2",
+              "mode": "ON"
+            },
+            {
+              "name": "turn-led",
+              "port": "V3",
+              "mode": "OFF"
+            }
+          ],
+          "else-blocks": [
+            {
+              "name": "turn-led",
+              "port": "V2",
+              "mode": "OFF"
+            },
+            {
+              "name": "turn-led",
+              "port": "V3",
+              "mode": "ON"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

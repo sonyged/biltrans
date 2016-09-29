@@ -157,6 +157,46 @@ void setup()
   RESET_TIMER();
 }`
     },
+    {
+      block: { name: 'list', list: 'lst' },
+      expect: 'void *Lsym7 = 0;'
+    },
+    {
+      block: { name: 'plus', x: { name: 'list-length', list: 'lst' }, y: 5 },
+      expect: 'LIST_LENGTH(Lsym7) + 5;'
+    },
+    {
+      block: { name: 'list-contains?', list: 'lst',
+               value: { name: 'plus', x: 8, y: 7 } },
+      expect: 'LIST_CONTAINS(Lsym7, (8 + 7));'
+    },
+    {
+      block: { name: 'list-ref', list: 'lst',
+               position: { name: 'plus', x: 8, y: 7 } },
+      expect: 'LIST_REF(Lsym7, (8 + 7));'
+    },
+    {
+      block: { name: 'list-add', list: 'lst',
+               value: { name: 'plus', x: 8, y: 7 } },
+      expect: 'LIST_ADD(Lsym7, (8 + 7));'
+    },
+    {
+      block: { name: 'list-delete', list: 'lst',
+               position: { name: 'plus', x: 8, y: 7 } },
+      expect: 'LIST_DELETE(Lsym7, (8 + 7));'
+    },
+    {
+      block: { name: 'list-replace', list: 'lst',
+               position: { name: 'plus', x: 8, y: 7 },
+               value: { name: 'minus', x: 6, y: 3 }},
+      expect: 'LIST_REPLACE(Lsym7, (8 + 7), (6 - 3));'
+    },
+    {
+      block: { name: 'list-insert', list: 'lst',
+               position: { name: 'multiply', x: 8, y: 7 },
+               value: { name: 'divide', x: 6, y: 3 }},
+      expect: 'LIST_INSERT(Lsym7, (8 * 7), (6 / 3));'
+    },
   ];
 
   tests.forEach(test => {

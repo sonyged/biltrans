@@ -12,6 +12,7 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  echo '#define FIRMATA_BASE';
  cat ../code/trouble_shooting.h;
  cat ../code/koov.c;
+ cat ../code/listlib.h;
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 
 sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 22
