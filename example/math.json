@@ -60,50 +60,101 @@
                                           "x": {
                                             "name": "and",
                                             "x": {
-                                              "name": "equal?",
+                                              "name": "and",
                                               "x": {
-                                                "name": "math",
-                                                "op": "abs",
-                                                "x": 5
+                                                "name": "and",
+                                                "x": {
+                                                  "name": "and",
+                                                  "x": {
+                                                    "name": "equal?",
+                                                    "x": {
+                                                      "name": "math",
+                                                      "op": "abs",
+                                                      "x": 5
+                                                    },
+                                                    "y": 5
+                                                  },
+                                                  "y": {
+                                                    "name": "equal?",
+                                                    "x": {
+                                                      "name": "math",
+                                                      "op": "abs",
+                                                      "x": -5
+                                                    },
+                                                    "y": 5
+                                                  }
+                                                },
+                                                "y": {
+                                                  "name": "equal?",
+                                                  "x": {
+                                                    "name": "math",
+                                                    "op": "sqrt",
+                                                    "x": 9
+                                                  },
+                                                  "y": 3
+                                                }
                                               },
-                                              "y": 5
+                                              "y": {
+                                                "name": "equal?",
+                                                "x": {
+                                                  "name": "math",
+                                                  "op": "sqrt",
+                                                  "x": 16
+                                                },
+                                                "y": 4
+                                              }
                                             },
                                             "y": {
                                               "name": "equal?",
                                               "x": {
                                                 "name": "math",
-                                                "op": "abs",
-                                                "x": -5
+                                                "op": "sin",
+                                                "x": 0
                                               },
-                                              "y": 5
+                                              "y": 0
                                             }
                                           },
                                           "y": {
                                             "name": "equal?",
                                             "x": {
                                               "name": "math",
-                                              "op": "sqrt",
-                                              "x": 9
+                                              "op": "sin",
+                                              "x": {
+                                                "name": "divide",
+                                                "x": 180,
+                                                "y": 2
+                                              }
                                             },
-                                            "y": 3
+                                            "y": 1
                                           }
                                         },
                                         "y": {
                                           "name": "equal?",
                                           "x": {
                                             "name": "math",
-                                            "op": "sqrt",
-                                            "x": 16
+                                            "op": "cos",
+                                            "x": 0
                                           },
-                                          "y": 4
+                                          "y": 1
                                         }
                                       },
                                       "y": {
                                         "name": "equal?",
                                         "x": {
-                                          "name": "math",
-                                          "op": "sin",
-                                          "x": 0
+                                          "name": "round",
+                                          "x": {
+                                            "name": "multiply",
+                                            "x": 10000000,
+                                            "y": {
+                                              "name": "math",
+                                              "op": "cos",
+                                              "x": {
+                                                "name": "divide",
+                                                "x": 180,
+                                                "y": 2
+                                              }
+                                            }
+                                          }
                                         },
                                         "y": 0
                                       }
@@ -112,22 +163,22 @@
                                       "name": "equal?",
                                       "x": {
                                         "name": "math",
-                                        "op": "sin",
-                                        "x": {
-                                          "name": "divide",
-                                          "x": 180,
-                                          "y": 2
-                                        }
+                                        "op": "tan",
+                                        "x": 0
                                       },
-                                      "y": 1
+                                      "y": 0
                                     }
                                   },
                                   "y": {
                                     "name": "equal?",
                                     "x": {
                                       "name": "math",
-                                      "op": "cos",
-                                      "x": 0
+                                      "op": "tan",
+                                      "x": {
+                                        "name": "divide",
+                                        "x": 180,
+                                        "y": 4
+                                      }
                                     },
                                     "y": 1
                                   }
@@ -135,20 +186,9 @@
                                 "y": {
                                   "name": "equal?",
                                   "x": {
-                                    "name": "round",
-                                    "x": {
-                                      "name": "multiply",
-                                      "x": 10000000,
-                                      "y": {
-                                        "name": "math",
-                                        "op": "cos",
-                                        "x": {
-                                          "name": "divide",
-                                          "x": 180,
-                                          "y": 2
-                                        }
-                                      }
-                                    }
+                                    "name": "math",
+                                    "op": "ln",
+                                    "x": 1
                                   },
                                   "y": 0
                                 }
@@ -157,42 +197,38 @@
                                 "name": "equal?",
                                 "x": {
                                   "name": "math",
-                                  "op": "tan",
-                                  "x": 0
+                                  "op": "ln",
+                                  "x": 2.71828182846
                                 },
-                                "y": 0
+                                "y": 1
                               }
                             },
                             "y": {
                               "name": "equal?",
                               "x": {
                                 "name": "math",
-                                "op": "tan",
-                                "x": {
-                                  "name": "divide",
-                                  "x": 180,
-                                  "y": 4
-                                }
+                                "op": "log",
+                                "x": 1
                               },
-                              "y": 1
+                              "y": 0
                             }
                           },
                           "y": {
                             "name": "equal?",
                             "x": {
                               "name": "math",
-                              "op": "ln",
-                              "x": 1
+                              "op": "log",
+                              "x": 10
                             },
-                            "y": 0
+                            "y": 1
                           }
                         },
                         "y": {
                           "name": "equal?",
                           "x": {
                             "name": "math",
-                            "op": "ln",
-                            "x": 2.71828182846
+                            "op": "e^",
+                            "x": 0
                           },
                           "y": 1
                         }
@@ -200,19 +236,33 @@
                       "y": {
                         "name": "equal?",
                         "x": {
-                          "name": "math",
-                          "op": "log",
-                          "x": 1
+                          "name": "round",
+                          "x": {
+                            "name": "multiply",
+                            "x": 10000000,
+                            "y": {
+                              "name": "math",
+                              "op": "e^",
+                              "x": 1
+                            }
+                          }
                         },
-                        "y": 0
+                        "y": {
+                          "name": "round",
+                          "x": {
+                            "name": "multiply",
+                            "x": 10000000,
+                            "y": 2.71828182846
+                          }
+                        }
                       }
                     },
                     "y": {
                       "name": "equal?",
                       "x": {
                         "name": "math",
-                        "op": "log",
-                        "x": 10
+                        "op": "10^",
+                        "x": 0
                       },
                       "y": 1
                     }
@@ -221,34 +271,20 @@
                     "name": "equal?",
                     "x": {
                       "name": "math",
-                      "op": "e^",
-                      "x": 0
+                      "op": "10^",
+                      "x": 1
                     },
-                    "y": 1
+                    "y": 10
                   }
                 },
                 "y": {
                   "name": "equal?",
                   "x": {
-                    "name": "round",
-                    "x": {
-                      "name": "multiply",
-                      "x": 10000000,
-                      "y": {
-                        "name": "math",
-                        "op": "e^",
-                        "x": 1
-                      }
-                    }
+                    "name": "math",
+                    "op": "10^",
+                    "x": 5
                   },
-                  "y": {
-                    "name": "round",
-                    "x": {
-                      "name": "multiply",
-                      "x": 10000000,
-                      "y": 2.71828182846
-                    }
-                  }
+                  "y": 100000
                 }
               },
               "then-blocks": [
