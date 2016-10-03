@@ -150,9 +150,22 @@
     ((=) 'equal?)
     ((<) 'less-than?)
     ((>) 'greater-than?)
+    ((+) 'plus)
+    ((-) 'minus)
+    ((*) 'multiply)
+    ((/) 'divide)
+    ((%) 'mod)
+    ((&&) 'and)
+    ((||) 'or)
+    ((!) 'not)
     (else op)))
 (define (binary-op? op)
-  (memq (map-op op) '(and or mod less-than? greater-than? equal?)))
+  (memq (map-op op) '(and or mod less-than? greater-than? equal?
+                          plus minus multiply divide)))
+(define (unary-op? op)
+  (memq (map-op op) '(not round)))
+(define (math-op? op)
+  (memq op '(abs sqrt sin cos tan ln log |e^| |10^|)))
 (define (turn-op? op)
   (memq op '(turn-cw turn-ccw)))
 (define (change-op? op)
@@ -212,10 +225,19 @@
     [('key-pressed? key)
      `((name . "key-pressed?")
        (key . ,key))]
+    [((? binary-op? op) x y z ..1)
+     (jsonfy `(,op ,(jsonfy `(,op ,x ,y)) ,@z))]
     [((? binary-op? op) x y)
      `((name . ,(symbol->string (map-op op)))
        (x . ,(jsonfy x))
        (y . ,(jsonfy y)))]
+    [((? unary-op? op) x)
+     `((name . ,(symbol->string (map-op op)))
+       (x . ,(jsonfy x)))]
+    [((? math-op? op) x)
+     `((name . "math")
+       (op . ,(symbol->string op))
+       (x . ,(jsonfy x)))]
     [((? turn-op? op) degrees)
      `((name . ,(symbol->string op))
        (degrees . ,(jsonfy degrees)))]
@@ -238,6 +260,11 @@
      `((name . "turn-led")
        (port . ,(jsonfy port))
        (mode . ,(jsonfy mode)))]
+    [(`multi-led r g b)
+     `((name . "multi-led")
+       (r . ,(jsonfy r))
+       (g . ,(jsonfy g))
+       (b . ,(jsonfy b)))]
     [(`buzzer-on port frequency)
      `((name . "buzzer-on")
        (port . ,(jsonfy port))
@@ -267,6 +294,10 @@
        (mode . ,(jsonfy mode)))]
     [(`set-variable-to variable value)
      `((name . "set-variable-to")
+       (variable . ,(jsonfy variable))
+       (value . ,(jsonfy value)))]
+    [(`change-variable-by variable value)
+     `((name . "change-variable-by")
        (variable . ,(jsonfy variable))
        (value . ,(jsonfy value)))]
     [(`variable variable value)
@@ -319,6 +350,8 @@
      `((name . "pick-random")
        (from . ,(jsonfy from))
        (to . ,(jsonfy to)))]
+    [('breakpoint)
+     '((name . "breakpoint"))]
     [('timer)
      '((name . "timer"))]
     [('reset-timer)
@@ -330,7 +363,8 @@
        (what . ,what))]
     [('wait secs)
      `((name . "wait")
-       (secs . ,secs))]
+       (secs . ,(jsonfy secs)))]
+    [(('name . name) . _) e]            ; already converted to json
     [(? number? x) x]
     [(? string? x) x]
     [(? symbol? x) (symbol->string x)]
@@ -478,12 +512,12 @@
                     (touch-sensor-value . touch-sensor))) => cdr)
         (else (error "uknown op code" op))))
 
-(define (port-settings script)
+(define (port-settings script allow-conflict)
   (let1 settings '()
     (define (use-port op port)
       (let1 part (op->part op)
         (cond ((assq port settings) =>
-               (^s (unless (eq? part (cdr s))
+               (^s (unless (or (eq? part (cdr s)) allow-conflict)
                      (error "port is already used" s part))))
               (else
                (push! settings (cons port part))))))
@@ -502,9 +536,10 @@
     (sort (map (^x (cons (car x) (symbol->string (cdr x)))) settings)
           (^[x y] (string<? (symbol->string x) (symbol->string y))) car)))
 
-(define (block-list->json scripts port-mappings)
+(define (block-list->json scripts port-mappings :key (allow-conflict #f))
   (let1 mapped-scripts (map-ports port-mappings scripts)
-    (let1 json (acons 'port-settings (port-settings mapped-scripts)
+    (let1 json (acons 'port-settings (port-settings mapped-scripts
+                                                    allow-conflict)
                       (acons 'scripts (blocks->json mapped-scripts) '()))
       (construct-json json))))
 

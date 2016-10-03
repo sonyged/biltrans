@@ -1,0 +1,284 @@
+{
+  "port-settings": {
+    "V2": "led",
+    "V3": "led"
+  },
+  "scripts": [
+    {
+      "name": "when-green-flag-clicked",
+      "blocks": [
+        {
+          "name": "reset-timer"
+        },
+        {
+          "name": "turn-led",
+          "port": "V2",
+          "mode": "OFF"
+        },
+        {
+          "name": "turn-led",
+          "port": "V3",
+          "mode": "OFF"
+        },
+        {
+          "name": "forever",
+          "blocks": [
+            {
+              "name": "wait",
+              "secs": 0.01
+            },
+            {
+              "name": "if-then-else",
+              "condition": {
+                "name": "and",
+                "x": {
+                  "name": "and",
+                  "x": {
+                    "name": "and",
+                    "x": {
+                      "name": "and",
+                      "x": {
+                        "name": "and",
+                        "x": {
+                          "name": "and",
+                          "x": {
+                            "name": "and",
+                            "x": {
+                              "name": "and",
+                              "x": {
+                                "name": "and",
+                                "x": {
+                                  "name": "and",
+                                  "x": {
+                                    "name": "and",
+                                    "x": {
+                                      "name": "and",
+                                      "x": {
+                                        "name": "and",
+                                        "x": {
+                                          "name": "and",
+                                          "x": {
+                                            "name": "and",
+                                            "x": {
+                                              "name": "equal?",
+                                              "x": {
+                                                "name": "math",
+                                                "op": "abs",
+                                                "x": 5
+                                              },
+                                              "y": 5
+                                            },
+                                            "y": {
+                                              "name": "equal?",
+                                              "x": {
+                                                "name": "math",
+                                                "op": "abs",
+                                                "x": -5
+                                              },
+                                              "y": 5
+                                            }
+                                          },
+                                          "y": {
+                                            "name": "equal?",
+                                            "x": {
+                                              "name": "math",
+                                              "op": "sqrt",
+                                              "x": 9
+                                            },
+                                            "y": 3
+                                          }
+                                        },
+                                        "y": {
+                                          "name": "equal?",
+                                          "x": {
+                                            "name": "math",
+                                            "op": "sqrt",
+                                            "x": 16
+                                          },
+                                          "y": 4
+                                        }
+                                      },
+                                      "y": {
+                                        "name": "equal?",
+                                        "x": {
+                                          "name": "math",
+                                          "op": "sin",
+                                          "x": 0
+                                        },
+                                        "y": 0
+                                      }
+                                    },
+                                    "y": {
+                                      "name": "equal?",
+                                      "x": {
+                                        "name": "math",
+                                        "op": "sin",
+                                        "x": {
+                                          "name": "divide",
+                                          "x": 180,
+                                          "y": 2
+                                        }
+                                      },
+                                      "y": 1
+                                    }
+                                  },
+                                  "y": {
+                                    "name": "equal?",
+                                    "x": {
+                                      "name": "math",
+                                      "op": "cos",
+                                      "x": 0
+                                    },
+                                    "y": 1
+                                  }
+                                },
+                                "y": {
+                                  "name": "equal?",
+                                  "x": {
+                                    "name": "round",
+                                    "x": {
+                                      "name": "multiply",
+                                      "x": 10000000,
+                                      "y": {
+                                        "name": "math",
+                                        "op": "cos",
+                                        "x": {
+                                          "name": "divide",
+                                          "x": 180,
+                                          "y": 2
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "y": 0
+                                }
+                              },
+                              "y": {
+                                "name": "equal?",
+                                "x": {
+                                  "name": "math",
+                                  "op": "tan",
+                                  "x": 0
+                                },
+                                "y": 0
+                              }
+                            },
+                            "y": {
+                              "name": "equal?",
+                              "x": {
+                                "name": "math",
+                                "op": "tan",
+                                "x": {
+                                  "name": "divide",
+                                  "x": 180,
+                                  "y": 4
+                                }
+                              },
+                              "y": 1
+                            }
+                          },
+                          "y": {
+                            "name": "equal?",
+                            "x": {
+                              "name": "math",
+                              "op": "ln",
+                              "x": 1
+                            },
+                            "y": 0
+                          }
+                        },
+                        "y": {
+                          "name": "equal?",
+                          "x": {
+                            "name": "math",
+                            "op": "ln",
+                            "x": 2.71828182846
+                          },
+                          "y": 1
+                        }
+                      },
+                      "y": {
+                        "name": "equal?",
+                        "x": {
+                          "name": "math",
+                          "op": "log",
+                          "x": 1
+                        },
+                        "y": 0
+                      }
+                    },
+                    "y": {
+                      "name": "equal?",
+                      "x": {
+                        "name": "math",
+                        "op": "log",
+                        "x": 10
+                      },
+                      "y": 1
+                    }
+                  },
+                  "y": {
+                    "name": "equal?",
+                    "x": {
+                      "name": "math",
+                      "op": "e^",
+                      "x": 0
+                    },
+                    "y": 1
+                  }
+                },
+                "y": {
+                  "name": "equal?",
+                  "x": {
+                    "name": "round",
+                    "x": {
+                      "name": "multiply",
+                      "x": 10000000,
+                      "y": {
+                        "name": "math",
+                        "op": "e^",
+                        "x": 1
+                      }
+                    }
+                  },
+                  "y": {
+                    "name": "round",
+                    "x": {
+                      "name": "multiply",
+                      "x": 10000000,
+                      "y": 2.71828182846
+                    }
+                  }
+                }
+              },
+              "then-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "ON"
+                },
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "OFF"
+                }
+              ],
+              "else-blocks": [
+                {
+                  "name": "turn-led",
+                  "port": "V2",
+                  "mode": "OFF"
+                },
+                {
+                  "name": "turn-led",
+                  "port": "V3",
+                  "mode": "ON"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

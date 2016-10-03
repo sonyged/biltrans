@@ -133,6 +133,38 @@ const EXPTRANS = {
     return [`(int)(${emit_exp(blk.x)})`, '%', `(int)(${emit_exp(blk.y)})`];
   },
 
+  math: blk => {
+    const deg2rad = x => `((${x}) / 180.0 * M_PI)`;
+    if (blk.op === 'abs') {
+      return `(float)fabs(${emit_exp(blk.x)})`;
+    }
+    if (blk.op === 'sqrt') {
+      return `(float)sqrt(${emit_exp(blk.x)})`;
+    }
+    if (blk.op === 'sin') {
+      return `(float)sin(${deg2rad(emit_exp(blk.x))})`;
+    }
+    if (blk.op === 'cos') {
+      return `(float)cos(${deg2rad(emit_exp(blk.x))})`;
+    }
+    if (blk.op === 'tan') {
+      return `(float)tan(${deg2rad(emit_exp(blk.x))})`;
+    }
+    if (blk.op === 'ln') {
+      return `(float)log(${emit_exp(blk.x)})`
+    }
+    if (blk.op === 'log') {
+      return `(float)log10(${emit_exp(blk.x)})`
+    }
+    if (blk.op === 'e^') {
+      return `(float)exp(${emit_exp(blk.x)})`
+    }
+    if (blk.op === '10^') {
+      return `(float)pow(10, ${emit_exp(blk.x)})`
+    }
+    return `error! ${blk.name}(${blk.op})`;
+  },
+
   'variable-ref': blk => {
     return blkvar(blk);
   },
@@ -351,7 +383,7 @@ const BLKTRANS = {
   'buzzer-on': blk => {
     const port = blkport(blk);
     use_port(blk.port, 'buzzer');
-    return `BUZZER_CONTROL(${port}, ON, ${blk.frequency})`;
+    return `BUZZER_CONTROL(${port}, ON, ${emit_value(blk.frequency)})`;
   },
 
   'buzzer-off': blk => {
@@ -378,7 +410,7 @@ const BLKTRANS = {
   'set-dcmotor-power': blk => {
     const port = blkport(blk);
     use_port(blk.port, 'dc-motor');
-    return `SET_DCMOTOR_POWER(${port}, ${blk.power})`;
+    return `SET_DCMOTOR_POWER(${port}, ${emit_value(blk.power)})`;
   },
 
   'turn-dcmotor-on': blk => {
