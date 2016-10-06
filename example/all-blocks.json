@@ -1,5 +1,11 @@
 {
   "port-settings": {
+    "A0": "push-button",
+    "A1": "push-button",
+    "A2": "push-button",
+    "A3": "push-button",
+    "K0": "3-axis-digital-accelerometer",
+    "K1": "3-axis-digital-accelerometer",
     "K2": "light-sensor",
     "K3": "light-sensor",
     "K4": "light-sensor",

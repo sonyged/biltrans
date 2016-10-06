@@ -505,12 +505,12 @@
                     (turn-dcmotor-off . dc-motor)
                     (light-sensor-value . light-sensor)
                     (button-value . push-button)
-                    (3-axis-digital-accelerometer
-                     . 3-axis-digital-accelerometer-value)
+                    (3-axis-digital-accelerometer-value
+                     . 3-axis-digital-accelerometer)
                     (ir-photo-reflector-value . ir-photo-reflector)
                     (sound-sensor-value . sound-sensor)
                     (touch-sensor-value . touch-sensor))) => cdr)
-        (else (error "uknown op code" op))))
+        (else (error "unknown op code" op))))
 
 (define (port-settings script allow-conflict)
   (let1 settings '()
@@ -524,7 +524,7 @@
     (define (traverse item)
       (cond ((pair? item)
              (match item
-               [((? sensor-op? op) port)
+               [((? sensor-op? op) port . _)
                 (use-port op port)]
                [((? port-op? op) port rest ...)
                 (use-port op port)]

@@ -1,5 +1,6 @@
 {
   "port-settings": {
+    "K0": "3-axis-digital-accelerometer",
     "V2": "led",
     "V3": "led"
   },
