@@ -19,10 +19,10 @@
 (define *scripts*
   `((when-green-flag-clicked
      (if-then
-      (= (button-value A0) 0)
+      (button-value A0 ON)
       (call-function "photo"))
      (if-then
-      (= (button-value A1) 0)
+      (button-value A1 ON)
       (call-function "kamituki")))
      
     (function
@@ -99,7 +99,7 @@
       (wait 2)
 
       (if-then
-       (= (touch-sensor-value A3) 0)
+       (touch-sensor-value A3 ON)
        (repeat
 	5
 	(turn-led A4 ON)

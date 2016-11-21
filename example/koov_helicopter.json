@@ -31,12 +31,9 @@
             {
               "name": "if-then",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "button-value",
-                  "port": "A0"
-                },
-                "y": 0
+                "name": "button-value",
+                "port": "A0",
+                "mode": "ON"
               },
               "blocks": [
                 {
@@ -55,12 +52,9 @@
             {
               "name": "if-then",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "button-value",
-                  "port": "A1"
-                },
-                "y": 0
+                "name": "button-value",
+                "port": "A1",
+                "mode": "ON"
               },
               "blocks": [
                 {
@@ -79,12 +73,9 @@
             {
               "name": "if-then",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "button-value",
-                  "port": "A2"
-                },
-                "y": 0
+                "name": "button-value",
+                "port": "A2",
+                "mode": "ON"
               },
               "blocks": [
                 {

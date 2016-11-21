@@ -3,7 +3,7 @@ JSON=crocodile_bite_ir.json crocodile_bite.json \
 	koov_s_armcar_touchsensor.json koov_whale_shark_aqa.json \
 	koov_yadokari.json servo-motor.json koov_dog.json koov_monkey.json \
 	koov_guiter.json accelerometer.json button.json \
-	koov_s_armcar_touchsensor_0806.json \
+	koov_s_armcar_touchsensor_0806.json koov_asahigani.json \
 	crocodile_bite_0809.json digital-sensor.json buzzer-oneshot.json \
 	timer.json list.json all-blocks.json math.json
 

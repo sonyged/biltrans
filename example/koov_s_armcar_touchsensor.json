@@ -85,12 +85,9 @@
                     {
                       "name": "if-then",
                       "condition": {
-                        "name": "equal?",
-                        "x": {
-                          "name": "touch-sensor-value",
-                          "port": "K2"
-                        },
-                        "y": 0
+                        "name": "touch-sensor-value",
+                        "port": "K2",
+                        "mode": "ON"
                       },
                       "blocks": [
                         {

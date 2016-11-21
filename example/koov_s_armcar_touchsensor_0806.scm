@@ -11,10 +11,10 @@
      (set-servomotor-degree D11 160)
      (set-servomotor-degree D9 20)
      (if-then
-      (= (button-value A1) 0)
+      (button-value A1 ON)
       (call-function "photo"))
      (if-then
-      (= (button-value A3) 0)
+      (button-value A3 ON)
       (call-function "no_photo")))
     (function
      photo
@@ -34,7 +34,7 @@
 	(turn-dcmotor-on M1 REVERSE)
 	(turn-dcmotor-on M2 REVERSE)
 	(if-then
-	 (= (touch-sensor-value A0) 0)
+	 (touch-sensor-value A0 ON)
 	 (call-function touch))))))
     (function
      no_photo
@@ -48,7 +48,7 @@
       (turn-dcmotor-on M1 REVERSE)
       (turn-dcmotor-on M2 REVERSE)
       (if-then
-       (= (touch-sensor-value A0) 0)
+       (touch-sensor-value A0 ON)
        (call-function touch))))
     (function
      touch

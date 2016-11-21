@@ -16,13 +16,13 @@
      (forever
       ;; old-style
       (if-then-else
-       (= (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (turn-led V2 ON))
        (else
         (turn-led V2 OFF)))
       (if-then-else
-       (= (touch-sensor-value K6) 1)
+       (touch-sensor-value K6 OFF)
        (then
         (turn-led V3 OFF))
        (else

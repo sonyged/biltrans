@@ -26,12 +26,9 @@
         {
           "name": "if-then",
           "condition": {
-            "name": "equal?",
-            "x": {
-              "name": "button-value",
-              "port": "A1"
-            },
-            "y": 0
+            "name": "button-value",
+            "port": "A1",
+            "mode": "ON"
           },
           "blocks": [
             {
@@ -43,12 +40,9 @@
         {
           "name": "if-then",
           "condition": {
-            "name": "equal?",
-            "x": {
-              "name": "button-value",
-              "port": "A3"
-            },
-            "y": 0
+            "name": "button-value",
+            "port": "A3",
+            "mode": "ON"
           },
           "blocks": [
             {
@@ -137,12 +131,9 @@
                     {
                       "name": "if-then",
                       "condition": {
-                        "name": "equal?",
-                        "x": {
-                          "name": "touch-sensor-value",
-                          "port": "K2"
-                        },
-                        "y": 0
+                        "name": "touch-sensor-value",
+                        "port": "K2",
+                        "mode": "ON"
                       },
                       "blocks": [
                         {
@@ -209,12 +200,9 @@
             {
               "name": "if-then",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "touch-sensor-value",
-                  "port": "K2"
-                },
-                "y": 0
+                "name": "touch-sensor-value",
+                "port": "K2",
+                "mode": "ON"
               },
               "blocks": [
                 {

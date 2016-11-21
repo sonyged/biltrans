@@ -47,12 +47,9 @@
             {
               "name": "if-then-else",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "button-value",
-                  "port": "A0"
-                },
-                "y": 0
+                "name": "button-value",
+                "port": "A0",
+                "mode": "ON"
               },
               "then-blocks": [
                 {

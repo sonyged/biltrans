@@ -12,10 +12,10 @@
      (set-servomotor-degree D10 90)
      (forever
       (if-then
-       (equal? (button-value A0) 0)
+       (button-value A0 ON)
        (call-function fb))
       (if-then
-       (equal? (button-value A1) 0)
+       (button-value A1 ON)
        (call-function turn))))
     (function
      fb
@@ -43,25 +43,25 @@
     (function
      body
      (if-then-else
-      (equal? (button-value A1) 0)
+      (button-value A1 ON)
       (then
        (call-function turn))
       (else
        ,(servomotor-synchronized-motion 1 '((D9 . 80) (D10 . 115)))))
      (if-then-else
-      (equal? (button-value A1) 0)
+      (button-value A1 ON)
       (then
        (call-function turn))
       (else
        ,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 65)))))
      (if-then-else
-      (equal? (button-value A1) 0)
+      (button-value A1 ON)
       (then
        (call-function turn))
       (else
        ,(servomotor-synchronized-motion 1 '((D9 . 100) (D10 . 115)))))
      (if-then-else
-      (equal? (button-value A1) 0)
+      (button-value A1 ON)
       (then
        (call-function turn))
       (else
@@ -69,31 +69,31 @@
     (function
      turn
      (repeat-until
-      (equal? (button-value A0) 0)
+      (button-value A0 ON)
       (set-dcmotor-power M1 80)
       (set-dcmotor-power M2 30)
       (turn-dcmotor-on M1 REVERSE)
       (turn-dcmotor-on M2 NORMAL)
       (if-then-else
-       (equal? (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (call-function fb))
        (else
         ,(servomotor-synchronized-motion 1 '((D9 . 75) (D10 . 115)))))
       (if-then-else
-       (equal? (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (call-function fb))
        (else
         ,(servomotor-synchronized-motion 1 '((D10 . 65)))))
       (if-then-else
-       (equal? (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (call-function fb))
        (else
         ,(servomotor-synchronized-motion 1 '((D10 . 115)))))
       (if-then-else
-       (equal? (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (call-function turn))
        (else

@@ -24,7 +24,7 @@
 	(turn-dcmotor-on M1 REVERSE)
 	(turn-dcmotor-on M2 REVERSE)
 	(if-then
-	 (= (touch-sensor-value A0) 0)
+	 (touch-sensor-value A0 ON)
 	 (call-function touch))))))
     (function
      touch

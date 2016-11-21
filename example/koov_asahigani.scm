@@ -15,21 +15,21 @@
         10
         '((D2 90) (D4 90) (D9 90) (D10 90) (D11 90) (D12 90)))
       (if-then
-       (= (touch-sensor-value A0) 0)
+       (touch-sensor-value A0 ON)
        (wait 0.5)
        (if-then
-        (= (touch-sensor-value A1) 1)
+        (touch-sensor-value A1 OFF)
         (call-function walk01))
        (if-then
-        (= (touch-sensor-value A1) 0)
+        (touch-sensor-value A1 ON)
         (call-function walk02)))
       (if-then
-       (and (= (touch-sensor-value A0) 1) (= (touch-sensor-value A1) 0))
+       (and (touch-sensor-value A0 OFF) (touch-sensor-value A1 ON))
        (call-function eat))))
     (function
      eat
      (repeat-until
-      (= (touch-sensor-value A1) 1)
+      (touch-sensor-value A1 OFF)
       ,(servomotor-synchronized-motion 8 '((D2 125) (D4 90)))
       ,(servomotor-synchronized-motion 10 '((D2 90) (D4 90)))
       ,(servomotor-synchronized-motion 8 '((D2 90) (D4 125)))
@@ -37,7 +37,7 @@
     (function
      walk01
      (repeat-until
-      (= (touch-sensor-value A0) 1)
+      (touch-sensor-value A0 OFF)
       ,(servomotor-synchronized-motion
         14
         '((D2 95) (D4 105) (D9 75) (D10 65) (D11 105) (D12 115)))
@@ -47,7 +47,7 @@
     (function
      walk02
      (repeat-until
-      (and (= (touch-sensor-value A0) 1) (= (touch-sensor-value A1) 1))
+      (and (touch-sensor-value A0 OFF) (touch-sensor-value A1 OFF))
       ,(servomotor-synchronized-motion
         14
         '((D2 120) (D4 120) (D9 90) (D10 75) (D11 105) (D12 105)))

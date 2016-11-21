@@ -17,7 +17,7 @@
       (turn-led V3 ON)
       (wait 0.2)
       (if-then-else
-       (= (button-value A0) 0)
+       (button-value A0 ON)
        (then
         (turn-led V2 ON)
         (wait 0.5))

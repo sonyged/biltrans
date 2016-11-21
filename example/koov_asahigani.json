@@ -85,12 +85,9 @@
             {
               "name": "if-then",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "touch-sensor-value",
-                  "port": "K6"
-                },
-                "y": 0
+                "name": "touch-sensor-value",
+                "port": "K6",
+                "mode": "ON"
               },
               "blocks": [
                 {
@@ -100,12 +97,9 @@
                 {
                   "name": "if-then",
                   "condition": {
-                    "name": "equal?",
-                    "x": {
-                      "name": "touch-sensor-value",
-                      "port": "K7"
-                    },
-                    "y": 1
+                    "name": "touch-sensor-value",
+                    "port": "K7",
+                    "mode": "OFF"
                   },
                   "blocks": [
                     {
@@ -117,12 +111,9 @@
                 {
                   "name": "if-then",
                   "condition": {
-                    "name": "equal?",
-                    "x": {
-                      "name": "touch-sensor-value",
-                      "port": "K7"
-                    },
-                    "y": 0
+                    "name": "touch-sensor-value",
+                    "port": "K7",
+                    "mode": "ON"
                   },
                   "blocks": [
                     {
@@ -138,20 +129,14 @@
               "condition": {
                 "name": "and",
                 "x": {
-                  "name": "equal?",
-                  "x": {
-                    "name": "touch-sensor-value",
-                    "port": "K6"
-                  },
-                  "y": 1
+                  "name": "touch-sensor-value",
+                  "port": "K6",
+                  "mode": "OFF"
                 },
                 "y": {
-                  "name": "equal?",
-                  "x": {
-                    "name": "touch-sensor-value",
-                    "port": "K7"
-                  },
-                  "y": 0
+                  "name": "touch-sensor-value",
+                  "port": "K7",
+                  "mode": "ON"
                 }
               },
               "blocks": [
@@ -172,12 +157,9 @@
         {
           "name": "repeat-until",
           "condition": {
-            "name": "equal?",
-            "x": {
-              "name": "touch-sensor-value",
-              "port": "K7"
-            },
-            "y": 1
+            "name": "touch-sensor-value",
+            "port": "K7",
+            "mode": "OFF"
           },
           "blocks": [
             {
@@ -255,12 +237,9 @@
         {
           "name": "repeat-until",
           "condition": {
-            "name": "equal?",
-            "x": {
-              "name": "touch-sensor-value",
-              "port": "K6"
-            },
-            "y": 1
+            "name": "touch-sensor-value",
+            "port": "K6",
+            "mode": "OFF"
           },
           "blocks": [
             {
@@ -348,20 +327,14 @@
           "condition": {
             "name": "and",
             "x": {
-              "name": "equal?",
-              "x": {
-                "name": "touch-sensor-value",
-                "port": "K6"
-              },
-              "y": 1
+              "name": "touch-sensor-value",
+              "port": "K6",
+              "mode": "OFF"
             },
             "y": {
-              "name": "equal?",
-              "x": {
-                "name": "touch-sensor-value",
-                "port": "K7"
-              },
-              "y": 1
+              "name": "touch-sensor-value",
+              "port": "K7",
+              "mode": "OFF"
             }
           },
           "blocks": [

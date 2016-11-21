@@ -39,12 +39,9 @@
             {
               "name": "if-then-else",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "button-value",
-                  "port": "A0"
-                },
-                "y": 0
+                "name": "button-value",
+                "port": "A0",
+                "mode": "ON"
               },
               "then-blocks": [
                 {
@@ -64,12 +61,9 @@
             {
               "name": "if-then-else",
               "condition": {
-                "name": "equal?",
-                "x": {
-                  "name": "touch-sensor-value",
-                  "port": "K6"
-                },
-                "y": 1
+                "name": "touch-sensor-value",
+                "port": "K6",
+                "mode": "OFF"
               },
               "then-blocks": [
                 {

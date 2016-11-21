@@ -13,13 +13,13 @@
      (set-servomotor-degree D9 90)
      (forever
       (if-then
-       (= (button-value A0) 0)
+       (button-value A0 ON)
        ,(servomotor-synchronized-motion 4 '((D9 . 90))))
       (if-then
-       (= (button-value A1) 0)
+       (button-value A1 ON)
        ,(servomotor-synchronized-motion 3 '((D9 . 130))))
       (if-then
-       (= (button-value A2) 0)
+       (button-value A2 ON)
        ,(servomotor-synchronized-motion 3 '((D9 . 50))))))))
 
 (define *port-mappings*
