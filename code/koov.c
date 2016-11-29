@@ -235,6 +235,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
   // If there are not servomotors setting angle, do nothing.
   if (number == 0) return;
 
+  time = min(max(0, time), 100) / 5; /* 0..100 -> 0..20 */
   time = min(max(0, (20 - time)), 20);
 
   // Get maximum difference between current angle and target angle.
