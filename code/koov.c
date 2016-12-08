@@ -5,6 +5,9 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 #define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
+#define INTERPOLATE(x, maxx, minx, maxy, miny)			\
+  ((((maxy) - (miny)) * (clamp((minx), (maxx), (x)) - (minx)) /	\
+    ((double)((maxx) - (minx)))) + (miny))
 
 static void (*current_loop)() = firmata_base::loop;
 void
@@ -131,6 +134,65 @@ INIT_DC_MOTOR(int port)
   digitalWrite(LED_MULTI_FET, HIGH);
 }
 
+#ifndef ARRAYCOUNT
+#define ARRAYCOUNT(a)	((sizeof (a)) / sizeof((a)[0]))
+#endif
+#define INTERPOLATE(x, minx, maxx, miny, maxy)			\
+  ((((maxy) - (miny)) * (clamp((minx), (maxx), (x)) - (minx)) /	\
+    ((double)((maxx) - (minx)))) + (miny))
+
+static struct rpm_table {
+  int power;
+  double rpm;
+} normal_rpm_table[] = {
+  { 10, 0 },
+  { 20, 0 },
+  { 30, 22.5 },
+  { 40, 35.4 },
+  { 50, 45.7 },
+  { 60, 58.2 },
+  { 70, 65.8 },
+  { 80, 68.2 },
+  { 90, 69.7 },
+  { 100, 71.2 },
+}, reverse_rpm_table[] = {
+  { 10, 0 },
+  { 20, 3.8 },
+  { 30, 8.3 },
+  { 40, 15.2 },
+  { 50, 19.2 },
+  { 60, 29.9 },
+  { 70, 48.6 },
+  { 80, 58.5 },
+  { 90, 65.5 },
+  { 100, 71.3 },
+};
+
+#define DCMOTOR_RPM_MAX 70
+#define DCMOTOR_RPM_MIN 25
+
+/*
+ * Correct dcmotor power for each direction.
+ */
+static double
+dcmotor_correct(double power, bool normal)
+{
+  double rpm = INTERPOLATE(power, 1, 100, DCMOTOR_RPM_MIN, DCMOTOR_RPM_MAX);
+  struct rpm_table *table = normal ? normal_rpm_table : reverse_rpm_table;
+  const int count =
+    normal ? ARRAYCOUNT(normal_rpm_table) : ARRAYCOUNT (reverse_rpm_table);
+
+  for (int i = 1; i < count; i++) {
+    struct rpm_table *cur = &table[i];
+    struct rpm_table *prev = &table[i - 1];
+
+    if (prev->rpm < rpm && rpm <= cur->rpm) {
+      return INTERPOLATE(rpm, prev->rpm, cur->rpm, prev->power, cur->power);
+    }
+  }
+  return 0;
+}
+
 static const int analogMax = 255;
 static void
 DCMOTOR_CONTROL(int port)
@@ -142,10 +204,18 @@ DCMOTOR_CONTROL(int port)
   switch (dcMotorState[port].mode) {
   case DCMOTOR_NORMAL:
     digitalWrite(dport, LOW);
+    if (power > 0) {
+      double dpower = dcmotor_correct(power, true);
+      power = INTERPOLATE(dpower, 0, 100, 0, analogMax);
+    }
     analogWrite(aport, power);
     break;
   case DCMOTOR_REVERSE:
     digitalWrite(dport, HIGH);
+    if (power > 0) {
+      double dpower = dcmotor_correct(power, false);
+      power = INTERPOLATE(dpower, 0, 100, 0, analogMax);
+    }
     analogWrite(aport, analogMax - power);
     break;
   case DCMOTOR_COAST:
@@ -163,15 +233,12 @@ static void
 SET_DCMOTOR_POWER(int port, int power)
 {
 
-  power = clamp(0, 100, power);
-  power = map(power, 0, 100, 0, analogMax);
-
   switch (port) {
   default:
     return;
   case PORT_V0:
   case PORT_V1:
-    dcMotorState[port].power = power;
+    dcMotorState[port].power = clamp(0, 100, power);
     break;
   }
   DCMOTOR_CONTROL(port);
