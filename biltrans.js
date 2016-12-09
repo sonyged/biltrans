@@ -283,6 +283,12 @@ const BLKTRANS = {
     );
   },
 
+  /*
+   * Ignore fragment pseudo block.  It is a placeholder to hold work
+   * in progress blocks.
+   */
+  fragment: blk => [],
+
   function: blk => {
     return [].concat(
       `void ${blkfunc(blk)}()`, '{', emit_blocks(blk.blocks), '}'
