@@ -176,7 +176,7 @@ ACCEL_UPDATE(int *x, int *y, int *z)
   *y = accel.getY();
   *z = accel.getZ();
 
-#define ACCEL_MAP(n)  (map((n), -100, 100, -128, 127))
+#define ACCEL_MAP(n)  (map((n), -128, 127, -100, 100))
   *x = ACCEL_MAP(*x);
   *y = ACCEL_MAP(*y);
   *z = ACCEL_MAP(*z);
