@@ -5,9 +5,6 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 #define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
-#define INTERPOLATE(x, maxx, minx, maxy, miny)			\
-  ((((maxy) - (miny)) * (clamp((minx), (maxx), (x)) - (minx)) /	\
-    ((double)((maxx) - (minx)))) + (miny))
 
 static void (*current_loop)() = firmata_base::loop;
 void
@@ -145,6 +142,7 @@ static struct rpm_table {
   int power;
   double rpm;
 } normal_rpm_table[] = {
+  { 0, 0 },
   { 10, 0 },
   { 20, 0 },
   { 30, 22.5 },
@@ -156,6 +154,7 @@ static struct rpm_table {
   { 90, 69.7 },
   { 100, 71.2 },
 }, reverse_rpm_table[] = {
+  { 0, 0 },
   { 10, 0 },
   { 20, 3.8 },
   { 30, 8.3 },
@@ -171,13 +170,12 @@ static struct rpm_table {
 #define DCMOTOR_RPM_MAX 70
 #define DCMOTOR_RPM_MIN 25
 
-/*
- * Correct dcmotor power for each direction.
- */
+#define DCMOTOR_POWER_SWITCH 10
+
+#if 0
 static double
-dcmotor_correct(double power, bool normal)
+dcmotor_rpm(double power, bool normal)
 {
-  double rpm = INTERPOLATE(power, 1, 100, DCMOTOR_RPM_MIN, DCMOTOR_RPM_MAX);
   struct rpm_table *table = normal ? normal_rpm_table : reverse_rpm_table;
   const int count =
     normal ? ARRAYCOUNT(normal_rpm_table) : ARRAYCOUNT (reverse_rpm_table);
@@ -185,8 +183,37 @@ dcmotor_correct(double power, bool normal)
   for (int i = 1; i < count; i++) {
     struct rpm_table *cur = &table[i];
     struct rpm_table *prev = &table[i - 1];
+    if (prev->power <= power && power <= cur->power) {
+      return INTERPOLATE(power, prev->power, cur->power, prev->rpm, cur->rpm);
+    }
+  }
+  return 0;
+}
+#endif
 
-    if (prev->rpm < rpm && rpm <= cur->rpm) {
+/*
+ * Correct dcmotor power for each direction.
+ */
+static double
+dcmotor_correct(double power, bool normal)
+{
+  struct rpm_table *table = normal ? normal_rpm_table : reverse_rpm_table;
+  const int count =
+    normal ? ARRAYCOUNT(normal_rpm_table) : ARRAYCOUNT (reverse_rpm_table);
+
+  if (power < DCMOTOR_POWER_SWITCH) {
+    double power_switch = dcmotor_correct(DCMOTOR_POWER_SWITCH, normal);
+    return power_switch * power / DCMOTOR_POWER_SWITCH;
+  }
+
+  double rpm = INTERPOLATE(power, DCMOTOR_POWER_SWITCH, 100,
+			   DCMOTOR_RPM_MIN, DCMOTOR_RPM_MAX);
+
+  for (int i = 1; i < count; i++) {
+    struct rpm_table *cur = &table[i];
+    struct rpm_table *prev = &table[i - 1];
+
+    if (prev->rpm <= rpm && rpm <= cur->rpm) {
       return INTERPOLATE(rpm, prev->rpm, cur->rpm, prev->power, cur->power);
     }
   }
