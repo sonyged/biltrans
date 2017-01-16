@@ -7,6 +7,8 @@
 #define clamp(MIN, MAX, VALUE)	(max((MIN), min((MAX), (VALUE))))
 
 static void (*current_loop)() = firmata_base::loop;
+static void DCMOTOR_CONTROL(int port);
+
 void
 setup()
 {
@@ -104,14 +106,16 @@ enum dcMotroMode {
   DCMOTOR_BRAKE
 };
 
+const int DCMOTOR_INITIAL_POWER = 30;
+
 static struct {
   int aport;
   int dport;
   int power;
   enum dcMotroMode mode;
 } dcMotorState[2] = {
-  { 4, 5, 0, DCMOTOR_COAST },
-  { 12, 10, 0, DCMOTOR_COAST }
+  { 4, 5, DCMOTOR_INITIAL_POWER, DCMOTOR_COAST },
+  { 12, 10, DCMOTOR_INITIAL_POWER, DCMOTOR_COAST }
 };
 
 static void
@@ -125,10 +129,13 @@ INIT_DC_MOTOR(int port)
   case PORT_V1:
     pinMode(dcMotorState[port].dport, OUTPUT);
     pinMode(dcMotorState[port].aport, OUTPUT);
+    dcMotorState[port].mode = DCMOTOR_COAST;
+    dcMotorState[port].power = clamp(0, 100, DCMOTOR_INITIAL_POWER);
     break;
   }
   pinMode(LED_MULTI_FET, OUTPUT);
   digitalWrite(LED_MULTI_FET, HIGH);
+  DCMOTOR_CONTROL(port);
 }
 
 #ifndef ARRAYCOUNT
