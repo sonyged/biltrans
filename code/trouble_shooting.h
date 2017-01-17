@@ -1,5 +1,8 @@
 /* -*- mode: c ; indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
  */
+
 #include <Wire.h>
 #include <MMA8653.h>
 #include <Servo.h>

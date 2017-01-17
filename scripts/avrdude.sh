@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# Copyright (c) 2017 Sony Global Education, Inc.
+#
 
 : ${ARDUINO_APP:=${HOME}/Applications/Arduino-1.7.10.app}
 TOOLDIR=${ARDUINO_APP}/Contents/Java/hardware/tools

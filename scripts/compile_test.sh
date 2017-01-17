@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# Copyright (c) 2017 Sony Global Education, Inc.
+#
 
 # Set basic authentication information to USERPASS environment variable.
 # export USERPASS=user:pass

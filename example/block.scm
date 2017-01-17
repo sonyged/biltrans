@@ -1,5 +1,7 @@
 ;;; -*- indent-tabs-mode: nil -*-
 ;;;
+;;; Copyright (c) 2017 Sony Global Education, Inc.
+;;;
 ;;; Convert block intermediate language written in S-expression to JSON.
 ;;;
 

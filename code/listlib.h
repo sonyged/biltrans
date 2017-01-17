@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 #define LIST_LENGTH(l)		(list_length(&(l)))
 #define LIST_CONTAINS(l, v)	(list_contains(&(l), (v)))
 #define LIST_REF(l, p)		(list_ref(&(l), (p)))

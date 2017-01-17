@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 #ifndef min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #endif

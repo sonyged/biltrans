@@ -1,5 +1,7 @@
 /* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
  *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ *
  */
 
 'use strict';

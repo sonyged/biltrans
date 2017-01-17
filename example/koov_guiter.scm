@@ -1,4 +1,7 @@
 ;;; -*- indent-tabs-mode: nil -*-
+;;;
+;;; Copyright (c) 2017 Sony Global Education, Inc.
+;;;
 ;;; cd ..
 ;;; gosh ./example/koov_helicopter.scm  | jq .
 

@@ -1,14 +1,14 @@
 {
   "name": "biltrans",
-  "version": "1.0.15",
-  "description": "block intermediate language translatro",
+  "version": "1.0.16",
+  "description": "block intermediate language translator",
   "main": "biltrans.js",
   "scripts": {
     "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --recursive -R spec -r should",
     "posttest": "./node_modules/.bin/istanbul check-coverage && rm -rf coverage"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Sony Global Education, Inc.",
+  "license": "SEE LICENSE in ./LICENSE",
   "dependencies": {
     "debug": "latest"
   },

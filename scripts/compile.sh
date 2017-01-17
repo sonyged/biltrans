@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# Copyright (c) 2017 Sony Global Education, Inc.
+#
 
 cd $(dirname $0) || exit 20
 

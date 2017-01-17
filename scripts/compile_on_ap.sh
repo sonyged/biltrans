@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# Copyright (c) 2017 Sony Global Education, Inc.
+#
 
 [ $# -gt 0 ] || exit 10
 test -f "$1" || exit 11
