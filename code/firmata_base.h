@@ -1103,6 +1103,9 @@ bts01_sbo()
   return bts01_cmd("AT+SBO\r");
 }
 
+/*
+ * Handler for 0x0e.  argc doesn't count 0x0e.
+ */
 static void
 koov_sysex(byte argc, byte *argv)
 {
@@ -1111,7 +1114,7 @@ koov_sysex(byte argc, byte *argv)
   switch (argv[0]) {
   case 0x01:		// accel.
     /*
-     * Request:
+     * Request:			(argc == 2)
      *    0e 01 AA
      *          AA: 01 -> X, 02 -> Y, 03 -> Z
      * Response:
@@ -1244,7 +1247,6 @@ koov_sysex(byte argc, byte *argv)
 	   *    freq: CC
 	   *
 	   * Response:
-	   *    0e 02 03 reply string
 	   */
 	  int pin = argv[2];
 	  int mode = argv[3];
@@ -1253,6 +1255,44 @@ koov_sysex(byte argc, byte *argv)
 	  if (IS_PIN_DIGITAL(pin)) {
 	    BUZZER_CONTROL(PIN_TO_DIGITAL(pin), mode ? HIGH : LOW, freq);
 	  }
+	}
+	break;
+      case 0x05:		/* servomotor-synchronized-motion */
+	if (argc > 5) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4  5  6
+	   * ------------------------
+	   *    0e 02 05 AA BB CC DD ...
+	   *
+	   *    time: AA
+	   *    number: BB
+	   *    pin: CC
+	   *    degree: DD
+	   *
+	   * Response:
+	   */
+	  byte time = argv[2];
+	  int number = argv[3];
+	  struct servo_sync ss[8];
+
+	  if (number > sizeof(ss) / sizeof(ss[0]))
+	    number = sizeof(ss) / sizeof(ss[0]);
+	  if (number < ((argc - 4) / 2))
+	    number = ((argc - 4) / 2);
+
+	  struct servo_sync *p = &ss[0];
+	  for (int i = 0; i < number; i++) {
+	    int pin = argv[4 + i * 2];
+
+	    if (IS_PIN_DIGITAL(pin) && pinConfig[pin] == PIN_MODE_SERVO) {
+	      p->port = PIN_TO_DIGITAL(pin);
+	      p->degree = argv[5 + i * 2];
+	      p++;
+	    }
+	  }
+
+	  SERVOMOTOR_SYNCHRONIZED_MOTION(ss, p - ss, time);
 	}
 	break;
       }

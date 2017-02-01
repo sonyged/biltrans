@@ -31,7 +31,7 @@
 
 #include "Arduino.h"
 
-#define KOOV_VERSION	"koov-1.0.4"
+#define KOOV_VERSION	"koov-1.0.5"
 
 static void KoovSetup();
 static void KoovLoop();
@@ -182,3 +182,11 @@ ACCEL_UPDATE(int *x, int *y, int *z)
   *z = ACCEL_MAP(*z);
 #undef ACCEL_MAP
 }
+
+struct servo_sync {
+  byte port;
+  byte degree;
+};
+
+static void
+SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time);
