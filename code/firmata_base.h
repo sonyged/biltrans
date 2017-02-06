@@ -1268,7 +1268,7 @@ koov_sysex(byte argc, byte *argv)
 	   *    time: AA
 	   *    number: BB
 	   *    pin: CC
-	   *    degree: DD
+	   *    degree: DD (0..180)
 	   *
 	   * Response:
 	   */
@@ -1293,6 +1293,36 @@ koov_sysex(byte argc, byte *argv)
 	  }
 
 	  SERVOMOTOR_SYNCHRONIZED_MOTION(ss, p - ss, time);
+	}
+	break;
+      case 0x06:		/* melody */
+	if (argc > 4) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 06 AA BB CC ...
+	   *
+	   *    pin: AA
+	   *    tone: v = ((BB & 0x7e) >> 1)
+	   *        if v == 0, buzzer-off
+	   *        if v != 0, freq = v + 47
+	   *    secs: (((BB & 0x01) << 8) | CC) * 10
+	   *
+	   * Response:
+	   */
+	  byte pin = argv[2];
+
+	  if (IS_PIN_DIGITAL(pin)) {
+	    for (int i = 3; i < argc - 1; i += 2) {
+	      byte tone = (argv[i] & 0x7e) >> 1;
+	      byte freq = tone ? tone + 47 : 0;
+	      int ms = ((((argv[i] & 0x01) ? 0x100 : 0) | argv[i + 1]) * 10);
+
+	      BUZZER_CONTROL(PIN_TO_DIGITAL(pin), tone ? HIGH : LOW, freq);
+	      delay(ms);
+	    }
+	  }
 	}
 	break;
       }
