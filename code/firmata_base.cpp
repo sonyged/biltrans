@@ -31,7 +31,7 @@
 
 #include "Arduino.h"
 
-#define KOOV_VERSION	"koov-1.0.6"
+#define KOOV_VERSION	"koov-1.0.7"
 
 static void KoovSetup();
 static void KoovLoop();
@@ -190,3 +190,5 @@ struct servo_sync {
 
 static void
 SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time);
+static void
+MULTILED(int r, int g, int b);

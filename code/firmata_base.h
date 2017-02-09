@@ -1325,6 +1325,26 @@ koov_sysex(byte argc, byte *argv)
 	  }
 	}
 	break;
+      case 0x07:		/* multi-led */
+	if (argc > 4) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 07 AA BB CC
+	   *
+	   *    R: AA		// 0 .. 100
+	   *    G: BB		// 0 .. 100
+	   *    B: CC		// 0 .. 100
+	   *
+	   * Response:
+	   */
+	  byte r = argv[2];
+	  byte g = argv[3];
+	  byte b = argv[4];
+	  MULTILED(r, g, b);
+	}
+	break;
       }
     }
     break;
