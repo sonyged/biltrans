@@ -299,17 +299,7 @@ void setPinModeCallback(byte pin, int mode)
       break;
     case OUTPUT:
       if (IS_PIN_DIGITAL(pin)) {
-        switch (PIN_TO_DIGITAL(pin)) {
-        case 18:                /* Multi LED FET */
-        case 13:                /* Multi LED R */
-        case 12:                /* Multi LED G */
-        case 10:                /* Multi LED B */
-          digitalWrite(PIN_TO_DIGITAL(pin), HIGH); /* turn off multi led */
-          break;
-        default:
-          digitalWrite(PIN_TO_DIGITAL(pin), LOW); // disable PWM
-          break;
-        }
+        digitalWrite(PIN_TO_DIGITAL(pin), LOW); // disable PWM
         pinMode(PIN_TO_DIGITAL(pin), OUTPUT);
         pinConfig[pin] = OUTPUT;
       }
