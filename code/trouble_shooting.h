@@ -56,7 +56,7 @@ struct action {
   short a_interval;               /* interval in msec */
   short a_arg;
   void (*a_action)(struct periodic *);
-} __attribute__((packed));
+};
 
 struct periodic {
   const unsigned int p_count;
