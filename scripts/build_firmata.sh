@@ -99,11 +99,9 @@ WIRE_OBJS="
  ${BUILDDIR}/Wire/Wire.cpp.o"
 
 FIRMATA_SRCS="
- ${FIRMATA_DIR}/Firmata.cpp
- ${FIRMATA_DIR}/utility/EthernetClientStream.cpp"
+ ${FIRMATA_DIR}/Firmata.cpp"
 FIRMATA_OBJS="
- ${BUILDDIR}/Firmata/Firmata.cpp.o
- ${BUILDDIR}/Firmata/utility/EthernetClientStream.cpp.o"
+ ${BUILDDIR}/Firmata/Firmata.cpp.o"
 
 OBJS="${BUILDDIR}/syscalls.c.o ${SKETCH_CPP}.o
  ${SERVO_OBJS} ${MMA8653_OBJS} ${WIRE_OBJS} ${FIRMATA_OBJS}
