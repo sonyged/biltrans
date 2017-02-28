@@ -184,7 +184,8 @@ for file in ${LIBSRCS}; do
 done
 
 eval ${CXX} ${LDFLAGS} -Wl,--start-group ${OBJS} -Wl,--end-group \
-    -Wl,--section-start=.text=0x4000 
+    -Wl,--section-start=.text=0x4000 2> ${BUILDDIR}/linker.err
+grep -q 'undefined reference' ${BUILDDIR}/linker.err && exit 2
 
 ${OBJCOPY} -O binary ${SKETCH_CPP}.elf ${SKETCH_CPP}.bin 
 ${OBJCOPY} -O ihex -R .eeprom ${SKETCH_CPP}.elf ${SKETCH_CPP}.hex 
