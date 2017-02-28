@@ -21,6 +21,12 @@ setup()
   pinMode(A1, INPUT_PULLUP);
   pinMode(A3, INPUT_PULLUP);
 
+#if defined(FUNCTION_TEST_01)
+  if ((digitalRead(4) == HIGH && digitalRead(5) == HIGH)) {
+    function_test::function_test_setup();
+    current_loop = function_test::function_test_loop;
+  } else
+#endif /* defined(FUNCTION_TEST_01) */
   if (digitalRead(A1) == LOW && digitalRead(A3) == LOW) {
     trouble_shooting::setup();
     current_loop = trouble_shooting::loop;

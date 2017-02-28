@@ -14,6 +14,12 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  cat ../code/firmata_base.h;
  echo '#define FIRMATA_BASE';
  cat ../code/trouble_shooting.h;
+ if [ -n "${ENABLE_FUNCTION_TEST_01}" ]; then
+     echo '#define FUNCTION_TEST_01';
+     echo '#if defined(FUNCTION_TEST_01)';
+     cat ../code/function_test_01.h;
+     echo '#endif /* defined(FUNCTION_TEST_01) */';
+ fi
  cat ../code/koov.c;
  cat ../code/listlib.h;
  cat) > ${BUILDDIR}/${SKETCH_CPP}
