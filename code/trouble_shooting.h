@@ -53,10 +53,10 @@ Servo myservo[ARRAYCOUNT(pinServo)];  //
 
 struct periodic;
 struct action {
-  int a_interval;               /* interval in msec */
+  short a_interval;               /* interval in msec */
+  short a_arg;
   void (*a_action)(struct periodic *);
-  int a_arg;
-};
+} __attribute__((packed));
 
 struct periodic {
   const unsigned int p_count;
@@ -160,15 +160,15 @@ dcMotorActionReverse(struct periodic *p)
   dcMotorReverse(periodic_arg(p));
 }
 
-struct action dcMotorActions[] = {
-  { 3000, dcMotorActionNormal, 255 },
-  { 1000, dcMotorActionStop },
-  { 3000, dcMotorActionReverse, 255 },
-  { 1000, dcMotorActionBrake },
-  { 3000, dcMotorActionNormal, 128 },
-  { 1000, dcMotorActionStop },
-  { 3000, dcMotorActionReverse, 128 },
-  { 1000, dcMotorActionBrake },
+const struct action dcMotorActions[] = {
+  { 3000, 255, dcMotorActionNormal },
+  { 1000, 0, dcMotorActionStop },
+  { 3000, 255, dcMotorActionReverse },
+  { 1000, 0, dcMotorActionBrake },
+  { 3000, 128, dcMotorActionNormal },
+  { 1000, 0, dcMotorActionStop },
+  { 3000, 128, dcMotorActionReverse },
+  { 1000, 0, dcMotorActionBrake },
 };
 
 struct periodic dcMotorPeriodic = {
@@ -223,11 +223,11 @@ servoMotorActionReverse(struct periodic *p)
   servoMotorCalcDegree = servoMotorDegreeReverse;
 }
 
-struct action servoMotorActions[] = {
-  { 3000, servoMotorActionNormal },
-  { 1000, servoMotorActionStop },
-  { 3000, servoMotorActionReverse },
-  { 1000, servoMotorActionStop },
+const struct action servoMotorActions[] = {
+  { 3000, 0, servoMotorActionNormal },
+  { 1000, 0, servoMotorActionStop },
+  { 3000, 0, servoMotorActionReverse },
+  { 1000, 0, servoMotorActionStop },
 };
 
 struct periodic servoMotorPeriodic = {
@@ -268,24 +268,24 @@ toneNone(struct periodic *p)
     noTone(tonePin());
 }
 
-struct action buzzerActions[] = {
-  { 150, toneAction, NOTE_C4, },
-  { 150, toneAction, NOTE_E4, },
-  { 150, toneAction, NOTE_G4, },
-  { 150, toneAction, NOTE_C5, },
+const struct action buzzerActions[] = {
+  { 150, NOTE_C4, toneAction, },
+  { 150, NOTE_E4, toneAction, },
+  { 150, NOTE_G4, toneAction, },
+  { 150, NOTE_C5, toneAction, },
 
-  { 150, toneAction, NOTE_C5, },
-  { 150, toneAction, NOTE_E5, },
-  { 150, toneAction, NOTE_G5, },
-  { 150, toneAction, NOTE_C6, },
+  { 150, NOTE_C5, toneAction, },
+  { 150, NOTE_E5, toneAction, },
+  { 150, NOTE_G5, toneAction, },
+  { 150, NOTE_C6, toneAction, },
 
-  { 150, toneAction, NOTE_G5, },
-  { 150, toneAction, NOTE_C6, },
-  { 150, toneAction, NOTE_E6, },
-  { 150, toneAction, NOTE_G6, },
-  { 150, toneAction, NOTE_C7, },
+  { 150, NOTE_G5, toneAction, },
+  { 150, NOTE_C6, toneAction, },
+  { 150, NOTE_E6, toneAction, },
+  { 150, NOTE_G6, toneAction, },
+  { 150, NOTE_C7, toneAction, },
 
-  { 150 * 8, toneNone }
+  { 150 * 8, 0, toneNone }
 };
 
 struct periodic buzzerPeriodic = {
@@ -367,9 +367,9 @@ ledActionOff(struct periodic *p)
   ledOff();
 }
 
-struct action ledActions[] = {
-  { 1000, ledActionOn },
-  { 1000, ledActionOff },
+const struct action ledActions[] = {
+  { 1000, 0, ledActionOn },
+  { 1000, 0, ledActionOff },
 };
 
 struct periodic ledPeriodic = {
@@ -392,8 +392,8 @@ accelActionInit(struct periodic *p)
   accelInit();
 }
 
-struct action accelActions[] = {
-  { 1000, accelActionInit },
+const struct action accelActions[] = {
+  { 1000, 0, accelActionInit },
 };
 
 struct periodic accelPeriodic = {
@@ -627,9 +627,9 @@ prologLedActionToggle(struct periodic *p)
   }
 }
 
-struct action prologLedActions[] = {
-  { PROLOG_LED_INTERVAL, prologLedActionToggle, 1 },
-  { PROLOG_LED_INTERVAL, prologLedActionToggle, 0 },
+const struct action prologLedActions[] = {
+  { PROLOG_LED_INTERVAL, 1, prologLedActionToggle },
+  { PROLOG_LED_INTERVAL, 0, prologLedActionToggle },
 };
 
 static int multiLedColor;
@@ -654,13 +654,13 @@ prologMultiLedPWM(struct periodic *p)
     return map(tick, 0, interval, 255, 0); /* OFF -> ON */
 }
 
-struct action prologMultiLedActions[] = {
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_RED },
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_GREEN },
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_BLUE },
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_YELLOW },
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_MAGENTA },
-  { PROLOG_LED_INTERVAL, prologMultiLedActionToggle, LED_CYAN },
+const struct action prologMultiLedActions[] = {
+  { PROLOG_LED_INTERVAL, LED_RED, prologMultiLedActionToggle },
+  { PROLOG_LED_INTERVAL, LED_GREEN, prologMultiLedActionToggle },
+  { PROLOG_LED_INTERVAL, LED_BLUE, prologMultiLedActionToggle },
+  { PROLOG_LED_INTERVAL, LED_YELLOW, prologMultiLedActionToggle },
+  { PROLOG_LED_INTERVAL, LED_MAGENTA, prologMultiLedActionToggle },
+  { PROLOG_LED_INTERVAL, LED_CYAN, prologMultiLedActionToggle },
 };
 
 static void (*current_loop)() = 0;
@@ -676,9 +676,9 @@ prologExit(struct periodic *p)
   current_loop = trouble_loop;
 }
 
-struct action prologExitActions[] = {
-  { PROLOG_LED_INTERVAL * 6, actionNop },
-  { 0, prologExit },
+const struct action prologExitActions[] = {
+  { PROLOG_LED_INTERVAL * 6, 0, actionNop },
+  { 0, 0, prologExit },
 };
 
 struct periodic prologLedPeriodic[] = {
