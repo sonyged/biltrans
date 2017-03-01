@@ -49,13 +49,14 @@ let symbols = {};
 
 function intern(prefix, name)
 {
-  const sym = symbols[name];
+  const uniq = `${prefix}${name}`;
+  const sym = symbols[uniq];
 
   if (sym)
     return sym;
 
-  symbols[name] = gensym(`${prefix}sym`);
-  return symbols[name];
+  symbols[uniq] = gensym(`${prefix}sym`);
+  return symbols[uniq];
 }
 
 function uniop(block, op)

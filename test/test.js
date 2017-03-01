@@ -199,6 +199,27 @@ void setup()
                value: { name: 'divide', x: 6, y: 3 }},
       expect: 'LIST_INSERT(Lsym7, (8 * 7), (6 / 3));'
     },
+    {
+      block: { name: 'when-green-flag-clicked',
+               blocks: [
+                 { name: 'variable', variable: 'same', value: 0 },
+                 { name: 'function', function: 'same', blocks: [] },
+                 { name: 'list', list: 'same' },
+               ] },
+      expect: `\
+void loop()
+{
+  float Vsym8 = 0;
+  void Fsym9()
+  {
+  }
+  void *Lsym10 = 0;
+  setup();
+  for (;;) {
+  CHECK_INTR;
+  }
+}`
+    },
   ];
 
   tests.forEach(test => {
