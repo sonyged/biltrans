@@ -207,6 +207,11 @@ const EXPTRANS = {
   },
 
   'pick-random': blk => {
+    /*
+     * Use long random(long, long) declared in
+     * arduino/samd/cores/arduino/WMath.h, not the one provided by
+     * stdlib.
+     */
     return `random(${emit_exp(blk.from)}, (${emit_exp(blk.to)} + 1))`;
   },
 
