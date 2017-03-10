@@ -1,6 +1,6 @@
 {
   "name": "biltrans",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "block intermediate language translator",
   "main": "biltrans.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "debug": "latest"
   },
   "devDependencies": {
+    "bson": "latest",
     "mocha": "latest",
     "istanbul": "latest",
     "should": "latest"
