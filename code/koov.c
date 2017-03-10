@@ -321,7 +321,7 @@ SERVO_MOTOR(int port, int value)
   int pin = port + 8;
   int servoNo = firmata_base::servoPinMap[pin];
   if (servoNo < MAX_SERVOS)
-    firmata_base::servos[servoNo].write(value);
+    firmata_base::servos[servoNo].write(clamp(0, 180, value));
 }
 static void
 INIT_SERVO_MOTOR(int port)
