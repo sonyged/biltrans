@@ -187,6 +187,7 @@ struct servo_sync {
   byte port;
   byte degree;
 };
+#define servo_sync servo_sync
 
 static void
 SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time);
