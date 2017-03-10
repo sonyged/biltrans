@@ -929,10 +929,10 @@ check_intr()
   return false;
 }
 
-#define CHECK_INTR				\
+#define CHECK_INTR(x)				\
   do {						\
     if (firmata_base::check_intr()) {		\
-      return;					\
+      return x;					\
     }						\
   } while (0)
 

@@ -73,16 +73,17 @@ loop()
 #define PORT_A3 PORT_K5
 
 #define TURN_LED(P, M)  digitalWrite((P), (M))
-static void delay_with_chech(unsigned long msec)
+static int delay_with_check(unsigned long msec, int rv_ok, int rv_intr)
 {
   while (msec > 0) {
     unsigned long t = msec < 10 ? msec : 10;
     delay(t);
-    CHECK_INTR;
+    CHECK_INTR(rv_intr);
     msec -= t;
   }
+  return rv_ok;
 }
-#define DELAY(S)	delay_with_chech((S) * 1000UL)
+#define DELAY(S)	delay_with_check((S) * 1000UL, 0, 0)
 
 enum accel_port { PORT_K0 = 0, PORT_K1 };
 

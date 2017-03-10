@@ -295,7 +295,7 @@ function emit_forever(blks)
 {
   return [].concat(
     'for (;;) {',
-    'CHECK_INTR;',
+    'CHECK_INTR();',
     blks,
     '}');
 }
@@ -362,7 +362,7 @@ const BLKTRANS = {
   'repeat-until': blk => {
     return [].concat(
       `while (!(${emit_value(blk.condition)})) {`,
-      'CHECK_INTR;',
+      'CHECK_INTR();',
       emit_blocks(blk.blocks),
       '}');
   },
@@ -370,7 +370,7 @@ const BLKTRANS = {
   'wait-until': blk => {
     return [].concat(
       `while (!(${emit_value(blk.condition)})) {`,
-      'CHECK_INTR;',
+      'CHECK_INTR();',
       '  DELAY(0.02);',
       '}');
   },
@@ -379,7 +379,7 @@ const BLKTRANS = {
     const v = gensym('i');
     return [].concat(
       `for (int ${v} = 0; ${v} < ${emit_value(blk.count)}; ${v}++) {`,
-      'CHECK_INTR;', 
+      'CHECK_INTR();', 
       emit_blocks(blk.blocks),
       '}');
   },

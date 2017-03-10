@@ -54,18 +54,18 @@ describe('translate operator', function() {
 describe('translate controls', function() {
   const tests = [
     { block: { name: 'forever', blocks: [] },
-      expect: 'for (;;) {\nCHECK_INTR;\n}' },
+      expect: 'for (;;) {\nCHECK_INTR();\n}' },
     { block: { name: 'forever', blocks: [
       { name: 'turn-led', port: 'A4', mode: 'ON' }
     ] },
-      expect: 'for (;;) {\nCHECK_INTR;\n  TURN_LED(PORT_A4, ON);\n}' },
+      expect: 'for (;;) {\nCHECK_INTR();\n  TURN_LED(PORT_A4, ON);\n}' },
     { block: { name: 'forever', blocks: [
       { name: 'turn-led', port: 'A4', mode: 'ON' },
       { name: 'turn-led', port: 'A5', mode: 'OFF' }
     ] },
       expect: `\
 for (;;) {
-CHECK_INTR;
+CHECK_INTR();
   TURN_LED(PORT_A4, ON);
   TURN_LED(PORT_A5, OFF);
 }` },
@@ -77,9 +77,9 @@ CHECK_INTR;
     ] },
       expect: `\
 for (int i0 = 0; i0 < 5; i0++) {
-CHECK_INTR;
+CHECK_INTR();
   for (int i1 = 0; i1 < 3; i1++) {
-  CHECK_INTR;
+  CHECK_INTR();
     TURN_LED(PORT_A4, ON);
     TURN_LED(PORT_A5, OFF);
   }
@@ -151,7 +151,7 @@ void loop()
 {
   setup();
   for (;;) {
-  CHECK_INTR;
+  CHECK_INTR();
   }
 }
 void setup()
@@ -216,7 +216,7 @@ void loop()
   void *Lsym10 = 0;
   setup();
   for (;;) {
-  CHECK_INTR;
+  CHECK_INTR();
   }
 }`
     },
