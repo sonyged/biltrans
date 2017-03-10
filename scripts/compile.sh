@@ -22,6 +22,12 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  fi
  cat ../code/koov.c;
  cat ../code/listlib.h;
+ if [ -n "${ENABLE_INTERP}" ]; then
+     cat ../code/string_dict.h;
+     cat ../code/interp.h;
+     cat ../code/interp.c;
+     cat ../code/interp_glue.c;
+ fi
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 
 sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 22
