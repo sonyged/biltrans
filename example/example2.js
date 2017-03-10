@@ -12,9 +12,9 @@ const scripts_led = {
           name: 'repeat',
           count: 10,
           blocks: [
-            { name: 'turn-led', port: 'A1', mode: 'ON' },
+            { name: 'turn-led', port: 'V2', mode: 'ON' },
             { name: 'wait', secs: 1 },
-            { name: 'turn-led', port: 'A1', mode: 'OFF' },
+            { name: 'turn-led', port: 'V2', mode: 'OFF' },
             { name: 'wait', secs: 1 }
           ]
         }
@@ -114,5 +114,5 @@ const scripts_servo = {
 };
 
 module.exports = {
-  scripts: scripts_servo
+  scripts: scripts_led
 };
