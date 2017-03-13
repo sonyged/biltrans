@@ -22,7 +22,7 @@ const capture = (cmd, opts) => {
 describe('translate {}', function() {
   const trans = bilbinary.translator({});
 
-  it('should be {} in bson', function() {
+  it('should be {} in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x05, 0x00, 0x00, 0x00, 0x00
     ]));
@@ -32,7 +32,7 @@ describe('translate {}', function() {
 describe('translate []', function() {
   const trans = bilbinary.translator([]);
 
-  it('should be [] in bson', function() {
+  it('should be [] in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x05, 0x00, 0x00, 0x00, 0x00
     ]));
@@ -42,7 +42,7 @@ describe('translate []', function() {
 describe('translate { x: {} }', function() {
   const trans = bilbinary.translator({ x: {} });
 
-  it('should be { x: {} } in bson', function() {
+  it('should be { x: {} } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0d, 0x00, 0x00, 0x00, 0x03, 0x55,
       0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -53,7 +53,7 @@ describe('translate { x: {} }', function() {
 describe('translate { x: [] }', function() {
   const trans = bilbinary.translator({ x: [] });
 
-  it('should be { x: [] } in bson', function() {
+  it('should be { x: [] } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0d, 0x00, 0x00, 0x00, 0x04, 0x55,
       0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -64,7 +64,7 @@ describe('translate { x: [] }', function() {
 describe('translate { x: 2 }', function() {
   const trans = bilbinary.translator({ x: 2 });
 
-  it('should be { x: 2 } in bson', function() {
+  it('should be { x: 2 } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0c, 0x00, 0x00, 0x00, 0x10, 0x55,
       0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
@@ -75,7 +75,7 @@ describe('translate { x: 2 }', function() {
 describe('translate { x: "x" }', function() {
   const trans = bilbinary.translator({ x: "x" });
 
-  it('should be { x: "x" } in bson', function() {
+  it('should be { x: "x" } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0a, 0x00, 0x00, 0x00, 0x02, 0x55,
       0x00, 0x55, 0x00, 0x00
@@ -86,7 +86,7 @@ describe('translate { x: "x" }', function() {
 describe('translate { x: "y" }', function() {
   const trans = bilbinary.translator({ x: "y" });
 
-  it('should be { x: "y" } in bson', function() {
+  it('should be { x: "y" } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0a, 0x00, 0x00, 0x00, 0x02, 0x55,
       0x00, 0x56, 0x00, 0x00,
@@ -97,7 +97,7 @@ describe('translate { x: "y" }', function() {
 describe('translate { x: { y: 1 } }', function() {
   const trans = bilbinary.translator({ x: { y: 1 } });
 
-  it('should be { x: { y: 1 } } in bson', function() {
+  it('should be { x: { y: 1 } } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x14, 0x00, 0x00, 0x00, 0x03, 0x55,
       0x00, 0x0c, 0x00, 0x00, 0x00, 0x10,
@@ -109,7 +109,7 @@ describe('translate { x: { y: 1 } }', function() {
 describe('translate { x: [ 8 ] }', function() {
   const trans = bilbinary.translator({ x: [ 8 ] });
 
-  it('should be { x: [ 8 ] } in bson', function() {
+  it('should be { x: [ 8 ] } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x14, 0x00, 0x00, 0x00, 0x04, 0x55,
       0x00, 0x0c, 0x00, 0x00, 0x00, 0x10,
@@ -121,7 +121,7 @@ describe('translate { x: [ 8 ] }', function() {
 describe('translate { name: wait }', function() {
   const trans = bilbinary.translator({ name: 'wait' });
 
-  it('should be { name: wait } in bson', function() {
+  it('should be { name: wait } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x0a, 0x00, 0x00, 0x00, 0x02,
       0x41, 0x00, 0x06, 0x00, 0x00
@@ -132,7 +132,7 @@ describe('translate { name: wait }', function() {
 describe('translate wait', function() {
   const trans = bilbinary.translator({ name: 'wait', secs: 0.6 });
 
-  it('should be wait in bson', function() {
+  it('should be wait in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
       0x11, 0x00, 0x00, 0x00, 0x02, 0x41, 0x00,
       0x06, 0x00, 0x01, 0x45, 0x00,
@@ -171,7 +171,7 @@ describe('execute wait', function() {
     }
   ]});
 
-  it('should execute wait in bson', function() {
+  it('should execute wait in binary format', function() {
     const output = capture('./test/test_binary', {
       input: trans.translate()
     });
@@ -221,7 +221,7 @@ describe('execute repeat', function() {
     { name: 'variable', variable: 'v1', value: 0 }
   ]});
 
-  it('should execute repeat in bson', function() {
+  it('should execute repeat in binary format', function() {
     const output = capture('./test/test_binary', {
       input: trans.translate()
     });
