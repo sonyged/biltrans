@@ -13,7 +13,7 @@ typedef const char *ntype;
 #endif
 
 enum {
-  BT_DOUBLE = 0x01,
+  BT_NUMBER = 0x01,
   BT_STRING = 0x02,
   BT_DOCUMENT = 0x03,
   BT_ARRAY = 0x04,

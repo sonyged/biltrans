@@ -232,8 +232,8 @@ elist_find(const uint8_t *end, ssize_t *resid,
 
     r -= skip_name(end, r);
     switch (*p) {
-    case BT_DOUBLE:
-      r -= 8;
+    case BT_NUMBER:
+      r -= 4;
       break;
     case BT_STRING:
 #if defined(INT_E_NAME)
@@ -1219,6 +1219,7 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
   int err;
   union {
     double d;
+    float f;
     int32_t i32;
     int64_t i64;
     uint8_t b[8];
@@ -1240,12 +1241,12 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
   case BT_ARRAY:
     *resid -= skip_name(end, *resid);
     return exec_elist(env, end, resid);
-  case BT_DOUBLE:
+  case BT_NUMBER:
     *resid -= skip_name(end, *resid);
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 4; i++)
       u.b[i] = *(end - *resid + i);
-    env->e_value = u.d;		/* convert from double to vtype */
-    *resid -= 8;
+    env->e_value = u.f;		/* convert from float to vtype */
+    *resid -= 4;
     return ERROR_OK;
   case BT_INT32:
     *resid -= skip_name(end, *resid);
