@@ -10,10 +10,136 @@
 #include "string_dict.h"
 #endif
 
+#if defined(INT_E_NAME)
+#define N_NAME Sname
+#define N_BLOCKS Sblocks
+#define N_THEN_BLOCKS Sthen_blocks
+#define N_ELSE_BLOCKS Selse_blocks
+#define N_COUNT Scount
+#define N_CONDITION Scondition
+#define N_PORT Sport
+#define N_MODE Smode
+#define N_SECS Ssecs
+#define N_POWER Spower
+#define N_SPEED Sspeed
+#define N_DEGREE Sdegree
+#define N_VALUE Svalue
+#define N_DIRECTION Sdirection
+#define N_FREQUENCY Sfrequency
+#define N_OP Sop
+#define N_R Sr
+#define N_G Sg
+#define N_B Sb
+#define N_X Sx
+#define N_Y Sy
+#define N_Z Sz
+#define N_FROM Sfrom
+#define N_TO Sto
+#define N_SET_SERVOMOTOR_DEGREE Sset_servomotor_degree
+#define N_FUNCTION Sfunction
+#define N_VARIABLE Svariable
+#define N_LIST Slist
+#define N_ON SON
+#define N_OFF SOFF
+#define N_NORMAL SNORMAL
+#define N_REVERSE SREVERSE
+#define N_COAST SCOAST
+#define N_BRAKE SBRAKE
+#define N_PORT_SETTINGS Sport_settings
+#define N_SCRIPTS Sscripts
+
+#define N_V0 SV0
+#define N_V1 SV1
+#define N_V2 SV2
+#define N_V3 SV3
+#define N_V4 SV4
+#define N_V5 SV5
+#define N_V6 SV6
+#define N_V7 SV7
+#define N_V8 SV8
+#define N_V9 SV9
+
+#define N_K0 SK0
+#define N_K1 SK1
+#define N_K2 SK2
+#define N_K3 SK3
+#define N_K4 SK4
+#define N_K5 SK5
+#define N_K6 SK6
+#define N_K7 SK7
+
+#define N_A0 SA0
+#define N_A1 SA1
+#define N_A2 SA2
+#define N_A3 SA3
+#else
+#define N_NAME "name"
+#define N_BLOCKS "blocks"
+#define N_THEN_BLOCKS "then-blocks"
+#define N_ELSE_BLOCKS "else-blocks"
+#define N_COUNT "count"
+#define N_CONDITION "condition"
+#define N_PORT "port"
+#define N_MODE "mode"
+#define N_SECS "secs"
+#define N_POWER "power"
+#define N_SPEED "speed"
+#define N_DEGREE "degree"
+#define N_VALUE "value"
+#define N_DIRECTION "direction"
+#define N_FREQUENCY "frequency"
+#define N_OP "op"
+#define N_R "r"
+#define N_G "g"
+#define N_B "b"
+#define N_X "x"
+#define N_Y "y"
+#define N_Z "z"
+#define N_FROM "from"
+#define N_TO "to"
+#define N_SET_SERVOMOTOR_DEGREE "set-servomotor-degree"
+#define N_FUNCTION "function"
+#define N_VARIABLE "variable"
+#define N_LIST "list"
+#define N_ON "ON"
+#define N_OFF "OFF"
+#define N_NORMAL "NORMAL"
+#define N_REVERSE "REVERSE"
+#define N_COAST "COAST"
+#define N_BRAKE "BRAKE"
+#define N_PORT_SETTINGS "port-settings"
+#define N_SCRIPTS "scripts"
+
+#define N_V0 "V0"
+#define N_V1 "V1"
+#define N_V2 "V2"
+#define N_V3 "V3"
+#define N_V4 "V4"
+#define N_V5 "V5"
+#define N_V6 "V6"
+#define N_V7 "V7"
+#define N_V8 "V8"
+#define N_V9 "V9"
+
+#define N_K0 "K0"
+#define N_K1 "K1"
+#define N_K2 "K2"
+#define N_K3 "K3"
+#define N_K4 "K4"
+#define N_K5 "K5"
+#define N_K6 "K6"
+#define N_K7 "K7"
+
+#define N_A0 "A0"
+#define N_A1 "A1"
+#define N_A2 "A2"
+#define N_A3 "A3"
+#endif
+
 typedef float vtype;
 
-static int arg_string(const uint8_t *, ssize_t, const char *, const char **);
-static int arg_u32(const uint8_t *, ssize_t, const char *, uint32_t *);
+static int arg_string(const uint8_t *, ssize_t, ntype, ntype *);
+static int arg_u32(const uint8_t *, ssize_t, ntype, uint32_t *);
 
 static int
 read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
@@ -27,11 +153,38 @@ read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
 }
 
 static int
+name_equal(ntype x, ntype y)
+{
+#if defined(INT_E_NAME)
+  return x == y;
+#else
+  return strcmp(x, y) == 0;
+#endif
+}
+
+static ntype
+name_at(const uint8_t *at)
+{
+#if defined(INT_E_NAME)
+  return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
+#else
+  return (ntype)at;		/* const char * */
+#endif
+}
+
+/*
+ * Skip type and e_name.
+ */
+static int
 skip_name(const uint8_t *end, ssize_t resid)
 {
+#if defined(INT_E_NAME)
+  return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
+#else
   const char *e_name = (const char *)(end - resid) + 1;
 
   return 1 + strlen(e_name) + 1;
+#endif
 }
 
 /*
@@ -83,10 +236,14 @@ elist_find(const uint8_t *end, ssize_t *resid,
       r -= 8;
       break;
     case BT_STRING:
+#if defined(INT_E_NAME)
+      r -= 2;
+#else
       err = read32(end, r, &u32);
       if (err)
 	return err;
       r -= 4 + u32;
+#endif
       break;
     case BT_DOCUMENT:
     case BT_ARRAY:
@@ -113,35 +270,34 @@ static int
 compare_name(const uint8_t *end, ssize_t resid, void *arg)
 {
   const uint8_t *p = end - resid;
-  const char *e_name = (const char *)p + 1;
-  const char *name = (const char *)arg;
+  ntype e_name = name_at(p + 1);
+  ntype name = *(ntype *)arg;
 
-  return strcmp(name, e_name) == 0;
+  return name_equal(name, e_name);
 }
 
 /*
  * Looking for given name in the elist.
  */
 static int
-elist_lookup(const uint8_t *end, ssize_t *resid, const char *name)
+elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
 {
 
-  return elist_find(end, resid, compare_name, (void *)name);
+  return elist_find(end, resid, compare_name, (void *)&name);
 }
 
 static int
-compare_string(const uint8_t *end, ssize_t resid,
-	       const char *name, const char *value)
+compare_string(const uint8_t *end, ssize_t resid, ntype name, ntype value)
 {
-  const char *p = 0;
+  ntype p = 0;
 
   return arg_string(end, resid, name, &p) == ERROR_OK &&
-    strcmp(p, value) == 0;
+    name_equal(p, value);
 }
 
 typedef struct names {
-  const char *n_name;
-  const char *n_value;
+  ntype n_name;
+  ntype n_value;
 } names;
 
 static int
@@ -164,10 +320,10 @@ compare_names(const uint8_t *end, ssize_t resid, size_t n, const names *names)
 static int
 compare_function(const uint8_t *end, ssize_t resid, void *arg)
 {
-  const char *name = (const char *)arg;
+  ntype name = (ntype)arg;
   names names[] = {
-    { "name", "function" },
-    { "function", name },
+    { N_NAME, N_FUNCTION },
+    { N_FUNCTION, name },
   };
 
   return compare_names(end, resid, 2, names);
@@ -187,7 +343,7 @@ static int exec(env *env, const uint8_t *end, ssize_t *resid);
 static int exec_elist(env *env, const uint8_t *end, ssize_t *resid);
 
 static int
-arg_string(const uint8_t *end, ssize_t resid, const char *name, const char **v)
+arg_string(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
 {
   int err;
 
@@ -196,16 +352,19 @@ arg_string(const uint8_t *end, ssize_t resid, const char *name, const char **v)
     return err;
   if (*(end - resid) != BT_STRING)
     return ERROR_INVALID_TYPE;
-  resid -= skip_name(end, resid) + 4; /* skip name and string size */
+  resid -= skip_name(end, resid);
+#if !defined(INT_E_NAME)
+  resid -= 4;			/* skip string size */
+#endif
   if (resid <= 0)
     return ERROR_BUFFER_TOO_SHORT;
-  *v = (const char *)end - resid;
+  *v = name_at(end - resid);
   //printf("arg_string: %s = %s\n", name, *v);
   return ERROR_OK;
 }
 
 static int
-arg_u32(const uint8_t *end, ssize_t resid, const char *name, uint32_t *u32)
+arg_u32(const uint8_t *end, ssize_t resid, ntype name, uint32_t *u32)
 {
   int err;
 
@@ -224,7 +383,7 @@ arg_u32(const uint8_t *end, ssize_t resid, const char *name, uint32_t *u32)
 }
 
 static int
-exec_arg(env *env, const uint8_t *end, ssize_t resid, const char *name)
+exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
 {
   int err;
 
@@ -261,7 +420,7 @@ exec_unary(env *env, const uint8_t *end, ssize_t resid,
     env->e_stack = &err;
   }
 
-  err = exec_arg(env, end, resid, "x");
+  err = exec_arg(env, end, resid, N_X);
   if (err)
     return err;
   env->e_value = (*f)(env->e_value);
@@ -280,11 +439,11 @@ exec_binary(env *env, const uint8_t *end, ssize_t resid,
     env->e_stack = &err;
   }
 
-  err = exec_arg(env, end, resid, "x");
+  err = exec_arg(env, end, resid, N_X);
   if (err)
     return err;
   vtype x = env->e_value;
-  err = exec_arg(env, end, resid, "y");
+  err = exec_arg(env, end, resid, N_Y);
   if (err)
     return err;
   vtype y = env->e_value;
@@ -343,7 +502,7 @@ f_round(vtype x)
 
 static int
 lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
-	     const char *name, uint32_t limit)
+	     ntype name, uint32_t limit)
 {
   int err;
 
@@ -360,7 +519,7 @@ lookup_variable(env *env, const uint8_t *end, ssize_t resid,
 		uint32_t *u32)
 {
 
-  return lookup_index(end, resid, u32, "variable", env->e_nvars);
+  return lookup_index(end, resid, u32, N_VARIABLE, env->e_nvars);
 }
 
 static int
@@ -368,7 +527,7 @@ lookup_list(env *env, const uint8_t *end, ssize_t resid,
 	    uint32_t *u32)
 {
 
-  return lookup_index(end, resid, u32, "list", env->e_nlsts);
+  return lookup_index(end, resid, u32, N_LIST, env->e_nlsts);
 }
 
 static int
@@ -422,6 +581,7 @@ static int
 lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
 {
   lookup_function_args *lfa = (lookup_function_args *)arg;
+  ntype name;
   uint32_t u32;
   ssize_t nresid;
   int err;
@@ -430,14 +590,14 @@ lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
   if (err)
     return err;
 
-  err = arg_u32(end, nresid, "name", &u32);
+  err = arg_string(end, nresid, N_NAME, &name);
   if (err)
     return err;
 
-  if (u32 != Sfunction)
+  if (!name_equal(name, N_FUNCTION))
     return ERROR_OK;
 
-  err = arg_u32(end, nresid, "function", &u32);
+  err = arg_u32(end, nresid, N_FUNCTION, &u32);
   if (err)
     return err;
 
@@ -467,80 +627,80 @@ exec_function(env *env, uint32_t idx)
   if (err != ERROR_FOUND)
     return err;
 
-  return exec_arg(env, lfa.end, lfa.resid, "blocks");
+  return exec_arg(env, lfa.end, lfa.resid, N_BLOCKS);
 }
 
 static int
-mode_value(const char *mode)
+mode_value(ntype mode)
 {
-  if (strcmp(mode, "ON") == 0)
+  if (name_equal(mode, N_ON))
     return 1;
   return 0;
 }
 
 static int
-dcmode_value(const char *mode)
+dcmode_value(ntype mode)
 {
-  if (strcmp(mode, "NORMAL") == 0)
+  if (name_equal(mode, N_NORMAL))
     return 0;
-  if (strcmp(mode, "REVERSE") == 0)
+  if (name_equal(mode, N_REVERSE))
     return 1;
-  if (strcmp(mode, "COAST") == 0)
+  if (name_equal(mode, N_COAST))
     return 2;
-  if (strcmp(mode, "BRAKE") == 0)
+  if (name_equal(mode, N_BRAKE))
     return 3;
   return 0;
 }
 
 static int
-acceldir_value(const char *mode)
+acceldir_value(ntype mode)
 {
-  if (strcmp(mode, "x") == 0)
+  if (name_equal(mode, N_X))
     return 1;
-  if (strcmp(mode, "y") == 0)
+  if (name_equal(mode, N_Y))
     return 2;
-  if (strcmp(mode, "z") == 0)
+  if (name_equal(mode, N_Z))
     return 3;
   return 1;
 }
 
 static int
-port_value(const char *port)
+port_value(ntype port)
 {
   static const struct {
-    const char *port;
+    ntype port;
     int value;
   } pv[] = {
-    { "V0", 0 },
-    { "V1", 1 },
+    { N_V0, 0 },
+    { N_V1, 1 },
 
-    { "V2", 2 },
-    { "V3", 3 },
-    { "V4", 6 },
-    { "V5", 7 },
-    { "V6", 8 },
-    { "V7", 9 },
-    { "V8", 11 },
-    { "V9", 13 },
+    { N_V2, 2 },
+    { N_V3, 3 },
+    { N_V4, 6 },
+    { N_V5, 7 },
+    { N_V6, 8 },
+    { N_V7, 9 },
+    { N_V8, 11 },
+    { N_V9, 13 },
 
-    { "K0", 0 },
-    { "K1", 1 },
+    { N_K0, 0 },
+    { N_K1, 1 },
 
-    { "K2", 24 },
-    { "K3", 25 },
-    { "K4", 26 },
-    { "K5", 27 },
-    { "K6", 28 },
-    { "K7", 29 },
+    { N_K2, 24 },
+    { N_K3, 25 },
+    { N_K4, 26 },
+    { N_K5, 27 },
+    { N_K6, 28 },
+    { N_K7, 29 },
 
-    { "A0", 24 },
-    { "A1", 25 },
-    { "A2", 26 },
-    { "A3", 27 },
+    { N_A0, 24 },
+    { N_A1, 25 },
+    { N_A2, 26 },
+    { N_A3, 27 },
   };
 
   for (int i = 0; i < sizeof(pv) / sizeof(pv[0]); i++) {
-    if (strcmp(pv[i].port, port) == 0)
+    if (name_equal(pv[i].port, port))
       return pv[i].value;
   }
   return 0;
@@ -549,7 +709,8 @@ port_value(const char *port)
 static int
 setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
 {
-  const char *port = 0;
+  ntype port = 0;
+  ntype name;
   uint32_t u32;
   ssize_t nresid;
   int err;
@@ -558,18 +719,18 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
   if (err)
     return err;
 
-  err = arg_u32(end, nresid, "name", &u32);
+  err = arg_string(end, nresid, N_NAME, &name);
   if (err)
     return err;
 
-  if (u32 != Sset_servomotor_degree)
+  if (!name_equal(name, N_SET_SERVOMOTOR_DEGREE))
     return ERROR_INVALID_TYPE;
 
-  err = arg_string(end, nresid, "port", &port);
+  err = arg_string(end, nresid, N_PORT, &port);
   if (err)
     return err;
 
-  err = exec_arg(env, end, nresid, "degree");
+  err = exec_arg(env, end, nresid, N_DEGREE);
   if (err)
     return err;
 
@@ -587,7 +748,7 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
   int err;
 
   *count = 0;
-  err = elist_lookup(end, &resid, "blocks");
+  err = elist_lookup(end, &resid, N_BLOCKS);
   if (err)
     return err;
   if (*(end - resid) != BT_ARRAY)
@@ -615,9 +776,8 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
 static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
-  const char *p;
   ssize_t nresid;
-  uint32_t u32;
+  ntype name;
   int err;
 
   if ((void *)&err < env->e_stack) {
@@ -630,25 +790,23 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   if (err)
     return err;
 
-  err = arg_u32(end, nresid, "name", &u32);
+  err = arg_string(end, nresid, N_NAME, &name);
   if (err)
     return err;
-  //printf("exec_block: name = %s\n", p);
 
-  switch (u32) {
+  switch (name) {
   case Swhen_green_flag_clicked: {
-    //printf("exec_block: (when-green-flag-clicked) name = %s\n", p);
-    return exec_arg(env, end, nresid, "blocks");
+    return exec_arg(env, end, nresid, N_BLOCKS);
   }
 
   case Srepeat: {
-    err = exec_arg(env, end, nresid, "count");
+    err = exec_arg(env, end, nresid, N_COUNT);
     if (err)
       return err;
     ssize_t count = env->e_value;
     while (count-- > 0) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, "blocks");
+      err = exec_arg(env, end, nresid, N_BLOCKS);
       if (err)
 	return err;
     }
@@ -658,12 +816,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Srepeat_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, "condition");
+      err = exec_arg(env, end, nresid, N_CONDITION);
       if (err)
 	return err;
       if (env->e_value != 0)
 	break;
-      err = exec_arg(env, end, nresid, "blocks");
+      err = exec_arg(env, end, nresid, N_BLOCKS);
       if (err)
 	return err;
     }
@@ -673,7 +831,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Swait_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, "condition");
+      err = exec_arg(env, end, nresid, N_CONDITION);
       if (err)
 	return err;
       if (env->e_value != 0)
@@ -688,7 +846,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sforever: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, "blocks");
+      err = exec_arg(env, end, nresid, N_BLOCKS);
       if (err)
 	return err;
     }
@@ -696,25 +854,25 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sif_then: {
-    err = exec_arg(env, end, nresid, "condition");
+    err = exec_arg(env, end, nresid, N_CONDITION);
     if (err)
       return err;
     if (env->e_value != 0)
-      return exec_arg(env, end, nresid, "blocks");
+      return exec_arg(env, end, nresid, N_BLOCKS);
     return ERROR_OK;
   }
 
   case Sif_then_else: {
-    err = exec_arg(env, end, nresid, "condition");
+    err = exec_arg(env, end, nresid, N_CONDITION);
     if (err)
       return err;
     if (env->e_value != 0)
-      return exec_arg(env, end, nresid, "then-blocks");
-    return exec_arg(env, end, nresid, "else-blocks");
+      return exec_arg(env, end, nresid, N_THEN_BLOCKS);
+    return exec_arg(env, end, nresid, N_ELSE_BLOCKS);
   }
 
   case Swait: {
-    err = exec_arg(env, end, nresid, "secs");
+    err = exec_arg(env, end, nresid, N_SECS);
     if (err)
       return err;
     return EX_DELAY(env->e_value);
@@ -736,11 +894,11 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     EXEC_UNARY(round);
 
   case Smath: {
-    uint32_t op;
-    err = arg_u32(end, nresid, "op", &op);
+    ntype op;
+    err = arg_string(end, nresid, N_OP, &op);
     if (err)
       return err;
-    err = exec_arg(env, end, nresid, "x");
+    err = exec_arg(env, end, nresid, N_X);
     if (err)
       return err;
     switch (op) {
@@ -806,11 +964,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sturn_led: {
-    const char *port = 0, *mode = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    ntype mode = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = arg_string(end, nresid, "mode", &mode);
+    err = arg_string(end, nresid, N_MODE, &mode);
     if (err)
       return err;
     EX_TURN_LED(port_value(port), mode_value(mode));
@@ -819,15 +978,15 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   case Smulti_led: {
     vtype r, g, b;
-    err = exec_arg(env, end, nresid, "r");
+    err = exec_arg(env, end, nresid, N_R);
     if (err)
       return err;
     r = env->e_value;
-    err = exec_arg(env, end, nresid, "g");
+    err = exec_arg(env, end, nresid, N_G);
     if (err)
       return err;
     g = env->e_value;
-    err = exec_arg(env, end, nresid, "b");
+    err = exec_arg(env, end, nresid, N_B);
     if (err)
       return err;
     b = env->e_value;
@@ -836,11 +995,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sturn_dcmotor_on: {
-    const char *port = 0, *direction = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    ntype direction = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = arg_string(end, nresid, "direction", &direction);
+    err = arg_string(end, nresid, N_DIRECTION, &direction);
     if (err)
       return err;
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(direction));
@@ -848,11 +1008,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sturn_dcmotor_off: {
-    const char *port = 0, *mode = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    ntype mode = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = arg_string(end, nresid, "mode", &mode);
+    err = arg_string(end, nresid, N_MODE, &mode);
     if (err)
       return err;
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(mode));
@@ -860,11 +1021,11 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sset_dcmotor_power: {
-    const char *port = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = exec_arg(env, end, nresid, "power");
+    err = exec_arg(env, end, nresid, N_POWER);
     if (err)
       return err;
     EX_SET_DCMOTOR_POWER(port_value(port), env->e_value);
@@ -872,12 +1033,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sbuzzer_on: {
-    const char *port = 0;
+    ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, "port", &port);
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = exec_arg(env, end, nresid, "frequency");
+    err = exec_arg(env, end, nresid, N_FREQUENCY);
     if (err)
       return err;
     EX_BUZZER_CONTROL(port_value(port), 1, env->e_value);
@@ -885,9 +1046,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sbuzzer_off: {
-    const char *port = 0;
+    ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, "port", &port);
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
     EX_BUZZER_CONTROL(port_value(port), 0, 0);
@@ -895,12 +1056,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sset_servomotor_degree: {
-    const char *port = 0;
+    ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, "port", &port);
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = exec_arg(env, end, nresid, "degree");
+    err = exec_arg(env, end, nresid, N_DEGREE);
     if (err)
       return err;
     EX_SERVO_MOTOR(port_value(port), env->e_value);
@@ -908,7 +1069,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Sservomotor_synchronized_motion: {
-    err = exec_arg(env, end, nresid, "speed");
+    err = exec_arg(env, end, nresid, N_SPEED);
     if (err)
       return err;
     const int time = env->e_value;
@@ -923,8 +1084,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   case Sir_photo_reflector_value:
   case Slight_sensor_value: {
-    const char *port = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
     env->e_value = EX_ANALOG_SENSOR(port_value(port));
@@ -932,12 +1093,13 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case S3_axis_digital_accelerometer_value: {
-    const char *port = 0, *dir = 0;
+    ntype port = 0;
+    ntype dir = 0;
 
-    err = arg_string(end, nresid, "port", &port);
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = arg_string(end, nresid, "direction", &dir);
+    err = arg_string(end, nresid, N_DIRECTION, &dir);
     if (err)
       return err;
     env->e_value = EX_ACCELEROMETER_VALUE(port_value(port),
@@ -947,14 +1109,15 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   case Sbutton_value:
   case Stouch_sensor_value: {
-    const char *port = 0, *mode = 0;
-    err = arg_string(end, nresid, "port", &port);
+    ntype port = 0;
+    ntype mode = 0;
+    err = arg_string(end, nresid, N_PORT, &port);
     if (err)
       return err;
-    err = arg_string(end, nresid, "mode", &mode);
+    err = arg_string(end, nresid, N_MODE, &mode);
     if (err)
       return err;
-    if (strcmp(mode, "ON") == 0)
+    if (name_equal(mode, N_ON))
       env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
     else
       env->e_value = EX_DIGITAL_SENSOR(port_value(port)) != 0;
@@ -962,6 +1125,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Svariable_ref: {
+    uint32_t u32;
+
     err = lookup_variable(env, end, nresid, &u32);
     if (err)
       return err;
@@ -971,11 +1136,13 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   case Sset_variable_to:
   case Schange_variable_by: {
-    const int assign = u32 == Sset_variable_to;
+    const int assign = name == Sset_variable_to;
+    uint32_t u32;
+
     err = lookup_variable(env, end, nresid, &u32);
     if (err)
       return err;
-    err = exec_arg(env, end, nresid, "value");
+    err = exec_arg(env, end, nresid, N_VALUE);
     if (err)
       return err;
     if (assign)
@@ -986,18 +1153,20 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Scall_function: {
-    err = arg_u32(end, nresid, "function", &u32);
+    uint32_t u32;
+
+    err = arg_u32(end, nresid, N_FUNCTION, &u32);
     if (err)
       return err;
     return exec_function(env, u32);
   }
 
   case Spick_random: {
-    err = exec_arg(env, end, nresid, "from");
+    err = exec_arg(env, end, nresid, N_FROM);
     if (err)
       return err;
     const vtype from = env->e_value;
-    err = exec_arg(env, end, nresid, "to");
+    err = exec_arg(env, end, nresid, N_TO);
     if (err)
       return err;
     const vtype to = env->e_value;
@@ -1066,15 +1235,12 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
 
   switch (*p) {
   case BT_DOCUMENT:
-    //printf("e_name: %s\n", (const char *)p + 1);
     *resid -= skip_name(end, *resid);
     return exec_block(env, end, resid);
   case BT_ARRAY:
-    //printf("e_name: (array) %s\n", (const char *)p + 1);
     *resid -= skip_name(end, *resid);
     return exec_elist(env, end, resid);
   case BT_DOUBLE:
-    //printf("e_name: (double) %s\n", (const char *)p + 1);
     *resid -= skip_name(end, *resid);
     for (int i = 0; i < 8; i++)
       u.b[i] = *(end - *resid + i);
@@ -1082,7 +1248,6 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
     *resid -= 8;
     return ERROR_OK;
   case BT_INT32:
-    //printf("e_name: (i32) %s\n", (const char *)p + 1);
     *resid -= skip_name(end, *resid);
     for (int i = 0; i < 4; i++)
       u.b[i] = *(end - *resid + i);
@@ -1090,7 +1255,6 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
     *resid -= 4;
     return ERROR_OK;
   case BT_INT64:
-    //printf("e_name: (i64) %s\n", (const char *)p + 1);
     *resid -= skip_name(end, *resid);
     for (int i = 0; i < 8; i++)
       u.b[i] = *(end - *resid + i);
@@ -1133,20 +1297,27 @@ static int
 port_init(const uint8_t *end, ssize_t *resid)
 {
   const uint8_t *p = end - *resid;
-  uint32_t u32;
   int err;
 
   if (resid <= 0)
     return ERROR_OVERFLOW;
   if (*p != BT_STRING)
     return ERROR_INVALID_TYPE;
-  const char *port = (const char *)p + 1;
+  ntype port = name_at(p + 1);
   *resid -= skip_name(end, *resid);
+#if !defined(INT_E_NAME)
+  uint32_t u32;
   err = read32(end, *resid, &u32);
   if (err)
 	return err;
-  const char *part = (const char *)end - (*resid - 4);
-  *resid -= 4 + u32;
+  *resid -= 4;
+#endif
+  ntype part = name_at(end - *resid);
+#if defined(INT_E_NAME)
+  *resid -= 2;
+#else
+  *resid -= u32;
+#endif
   err = EX_PORT_INIT(port_value(port), part);
   return ERROR_OK;
 }
@@ -1157,7 +1328,7 @@ setup_ports(const uint8_t *end, ssize_t resid)
   ssize_t nresid;
   int err;
 
-  err = elist_lookup(end, &resid, "port-settings");
+  err = elist_lookup(end, &resid, N_PORT_SETTINGS);
   switch (err) {
   case ERROR_OK:
     if (*(end - resid) != BT_DOCUMENT)
@@ -1194,20 +1365,19 @@ static int
 parse_fvl(const uint8_t *end, ssize_t *resid, void *arg)
 {
   parse_fvl_args *pfa = (parse_fvl_args *)arg;
-  const char *p;
   ssize_t nresid;
-  uint32_t u32;
+  ntype name;
   int err;
 
   err = narrow_to_elist(&end, resid, &nresid);
   if (err)
     return err;
 
-  err = arg_u32(end, nresid, "name", &u32);
+  err = arg_string(end, nresid, N_NAME, &name);
   if (err)
     return err;
 
-  switch (u32) {
+  switch (name) {
   case Svariable:
     (*pfa->n_vars)++;
     return ERROR_OK;
@@ -1241,7 +1411,7 @@ exec_script(const uint8_t *end, ssize_t *resid)
   if (err)
     return err;
 
-  err = elist_lookup(end, resid, "scripts");
+  err = elist_lookup(end, resid, N_SCRIPTS);
   if (err)
     return err;
   if (*(end - *resid) != BT_ARRAY)

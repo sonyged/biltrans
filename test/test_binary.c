@@ -106,10 +106,14 @@ EX_ACCELEROMETER_VALUE(int port, int dir)
 }
 
 int
-EX_PORT_INIT(int port, const char *part)
+EX_PORT_INIT(int port, ntype part)
 {
 
+#if defined(INT_E_NAME)
+  printf("port-init %d %x\n", port, part);
+#else
   printf("port-init %d %s\n", port, part);
+#endif
   return ERROR_OK;
 }
 

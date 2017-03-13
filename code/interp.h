@@ -2,6 +2,16 @@
 #define INTERP_H
 int interp_exec(const uint8_t *p, ssize_t size);
 
+/*
+ * Type of e_name.
+ */
+#define INT_E_NAME
+#if defined(INT_E_NAME)
+typedef uint16_t ntype;
+#else
+typedef const char *ntype;
+#endif
+
 enum {
   BT_DOUBLE = 0x01,
   BT_STRING = 0x02,
@@ -73,5 +83,5 @@ void EX_SET_DCMOTOR_POWER(int port, int power);
 int EX_DIGITAL_SENSOR(int port);       /* 0 if LOW, 1 otherwise */
 float EX_ANALOG_SENSOR(int port);      /* 0 <= value <= 100 */
 int EX_ACCELEROMETER_VALUE(int, int);
-int EX_PORT_INIT(int, const char *);
+int EX_PORT_INIT(int, ntype);
 #endif /* !defined(INTERP_H) */

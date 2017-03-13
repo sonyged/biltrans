@@ -26,99 +26,99 @@ describe('compactify immediate', function() {
   });
 });
 
-describe('compactify when-green-flag-clicked', function() {
-  it('should compactify empty block', function() {
-    const cbil = compactify({
-      name: 'when-green-flag-clicked',
-      blocks: []
-    });
-    assert.deepEqual(cbil, {
-      name: 1,
-      blocks: []
-    });
-  });
+// describe('compactify when-green-flag-clicked', function() {
+//   it('should compactify empty block', function() {
+//     const cbil = compactify({
+//       name: 'when-green-flag-clicked',
+//       blocks: []
+//     });
+//     assert.deepEqual(cbil, {
+//       name: 1,
+//       blocks: []
+//     });
+//   });
 
-  it('should compactify non empty block', function() {
-    const cbil = compactify({
-      name: 'when-green-flag-clicked',
-      blocks: [
-        { name: 'wait', secs: 0.006 }
-      ]
-    });
-    assert.deepEqual(cbil, {
-      name: 1,
-      blocks: [ { name: 6, secs: 0.006 } ]
-    });
-  });
+//   it('should compactify non empty block', function() {
+//     const cbil = compactify({
+//       name: 'when-green-flag-clicked',
+//       blocks: [
+//         { name: 'wait', secs: 0.006 }
+//       ]
+//     });
+//     assert.deepEqual(cbil, {
+//       name: 1,
+//       blocks: [ { name: 6, secs: 0.006 } ]
+//     });
+//   });
 
-  it('should compactify non empty block (2)', function() {
-    const cbil = compactify({
-      name: 'when-green-flag-clicked',
-      blocks: [
-        { name: 'wait', secs: { name: 'plus', x: 3, y: -0.2 } }
-      ]
-    });
-    assert.deepEqual(cbil, {
-      name: 1,
-      blocks: [ { name: 6, secs: { name: 10, x: 3, y: -0.2 } } ]
-    });
-  });
-});
+//   it('should compactify non empty block (2)', function() {
+//     const cbil = compactify({
+//       name: 'when-green-flag-clicked',
+//       blocks: [
+//         { name: 'wait', secs: { name: 'plus', x: 3, y: -0.2 } }
+//       ]
+//     });
+//     assert.deepEqual(cbil, {
+//       name: 1,
+//       blocks: [ { name: 6, secs: { name: 10, x: 3, y: -0.2 } } ]
+//     });
+//   });
+// });
 
-describe('compactify when-green-flag-clicked with function', function() {
-  it('should compactify function blocks', function() {
-    const cbil = compactify({
-      scripts: [
-        {
-          name: 'when-green-flag-clicked',
-          blocks: [
-            { name: 'wait', secs: 0.006 },
-            { name: 'call-function', function: 'f' },
-            { name: 'call-function', function: 'g' }
-          ]
-        },
-        {
-          name: 'function',
-          function: 'f',
-          blocks: [
-            { name: 'call-function', function: 'g' }
-          ]
-        },
-        {
-          name: 'function',
-          function: 'g',
-          blocks: [
-            { name: 'call-function', function: 'f' }
-          ]
-        }
-      ]
-    });
-    assert.deepEqual(cbil, {
-      'port-settings': {},
-      scripts: [
-        {
-          name: 1,
-          blocks: [
-            { name: 6, secs: 0.006 },
-            { name: 52, function: 0 },
-            { name: 52, function: 1 }
-          ]
-        },
-        {
-          name: 51,
-          function: 0,
-          blocks: [
-            { name: 52, function: 1 }
-          ]
-        },
-        {
-          name: 51,
-          function: 1,
-          blocks: [
-            { name: 52, function: 0 }
-          ]
-        }
-      ]
-    });
-  });
-});
+// describe('compactify when-green-flag-clicked with function', function() {
+//   it('should compactify function blocks', function() {
+//     const cbil = compactify({
+//       scripts: [
+//         {
+//           name: 'when-green-flag-clicked',
+//           blocks: [
+//             { name: 'wait', secs: 0.006 },
+//             { name: 'call-function', function: 'f' },
+//             { name: 'call-function', function: 'g' }
+//           ]
+//         },
+//         {
+//           name: 'function',
+//           function: 'f',
+//           blocks: [
+//             { name: 'call-function', function: 'g' }
+//           ]
+//         },
+//         {
+//           name: 'function',
+//           function: 'g',
+//           blocks: [
+//             { name: 'call-function', function: 'f' }
+//           ]
+//         }
+//       ]
+//     });
+//     assert.deepEqual(cbil, {
+//       'port-settings': {},
+//       scripts: [
+//         {
+//           name: 1,
+//           blocks: [
+//             { name: 6, secs: 0.006 },
+//             { name: 52, function: 0 },
+//             { name: 52, function: 1 }
+//           ]
+//         },
+//         {
+//           name: 51,
+//           function: 0,
+//           blocks: [
+//             { name: 52, function: 1 }
+//           ]
+//         },
+//         {
+//           name: 51,
+//           function: 1,
+//           blocks: [
+//             { name: 52, function: 0 }
+//           ]
+//         }
+//       ]
+//     });
+//   });
+// });
