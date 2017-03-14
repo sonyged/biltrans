@@ -999,19 +999,18 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Smulti_led: {
-    vtype r, g, b;
     err = exec_arg(env, end, nresid, N_R);
     if (err)
       return err;
-    r = env->e_value;
+    vtype r = env->e_value;
     err = exec_arg(env, end, nresid, N_G);
     if (err)
       return err;
-    g = env->e_value;
+    vtype g = env->e_value;
     err = exec_arg(env, end, nresid, N_B);
     if (err)
       return err;
-    b = env->e_value;
+    vtype b = env->e_value;
     EX_MULTILED(r, g, b);
     return ERROR_OK;
   }

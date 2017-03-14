@@ -128,29 +128,28 @@ EX_ACCELEROMETER_VALUE(int port, int direction)
 }
 
 int
-EX_PORT_INIT(int port, const char *part)
+EX_PORT_INIT(int port, ntype part)
 {
 
-  if (strcmp(part, "multi-led") == 0)
+  if (part == Smulti_led)
     INIT_MULTILED();
-  if (strcmp(part, "led") == 0)
+  if (part == Sled)
     pinMode(port, OUTPUT);
-  if (strcmp(part, "dc-motor") == 0)
+  if (part == Sdc_motor)
     INIT_DC_MOTOR(port);
-  if (strcmp(part, "servo-motor") == 0)
+  if (part == Sservo_motor)
     INIT_SERVO_MOTOR(port);
-  if (strcmp(part, "buzzer") == 0)
+  if (part == Sbuzzer)
     BUZZER_CONTROL(port, OFF, 0);
-  if (strcmp(part, "light-sensor") == 0)
+  if (part == Slight_sensor)
     INIT_LIGHT_SENSOR(port);
-  if (strcmp(part, "touch-sensor") == 0)
+  if (part == Stouch_sensor)
     INIT_TOUCH_SENSOR(port);
-  if (strcmp(part, "ir-photo-reflector") == 0)
+  if (part == Sir_photo_reflector)
     INIT_IR_PHOTO_REFLECTOR(port);
-  if (strcmp(part, "3-axis-digital-accelerometer") == 0)
+  if (part == S3_axis_digital_accelerometer)
     INIT_3_AXIS_DIGITAL_ACCELEROMETER(port ? PORT_K1 : PORT_K0);
-  if (strcmp(part, "push-button") == 0)
+  if (part == Spush_button)
     INIT_PUSH_BUTTON(port);
   return ERROR_OK;
 }
-
