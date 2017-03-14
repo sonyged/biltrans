@@ -139,7 +139,7 @@
 typedef float vtype;
 
 static int arg_string(const uint8_t *, ssize_t, ntype, ntype *);
-static int arg_u32(const uint8_t *, ssize_t, ntype, uint32_t *);
+static int arg_int(const uint8_t *, ssize_t, ntype, int32_t *);
 
 static int
 read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
@@ -252,6 +252,12 @@ elist_find(const uint8_t *end, ssize_t *resid,
 	return err;
       r -= u32;
       break;
+    case BT_INT8:
+      r -= 1;
+      break;
+    case BT_INT16:
+      r -= 2;
+      break;
     case BT_INT32:
       r -= 4;
       break;
@@ -320,7 +326,7 @@ compare_names(const uint8_t *end, ssize_t resid, size_t n, const names *names)
 static int
 compare_function(const uint8_t *end, ssize_t resid, void *arg)
 {
-  ntype name = (ntype)arg;
+  ntype name = *(ntype *)arg;
   names names[] = {
     { N_NAME, N_FUNCTION },
     { N_FUNCTION, name },
@@ -364,7 +370,7 @@ arg_string(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
 }
 
 static int
-arg_u32(const uint8_t *end, ssize_t resid, ntype name, uint32_t *u32)
+arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
 {
   int err;
 
@@ -372,13 +378,27 @@ arg_u32(const uint8_t *end, ssize_t resid, ntype name, uint32_t *u32)
   if (err)
     return err;
   const uint8_t *p = end - resid;
-  if (*p != BT_INT32)
-    return ERROR_INVALID_TYPE;
   resid -= skip_name(end, resid);
-  err = read32(end, resid, u32); /* negative resid is also checked */
-  if (err)
-    return ERROR_BUFFER_TOO_SHORT;
-  //printf("arg_u32: %s = 0x%x\n", name, *u32);
+  const uint8_t *q = end - resid;
+  switch (*p) {
+  case BT_INT8:
+    if (resid < 1)
+      return ERROR_BUFFER_TOO_SHORT;
+    *i32 = (int8_t)q[0];
+    break;
+  case BT_INT16:
+    if (resid < 2)
+      return ERROR_BUFFER_TOO_SHORT;
+    *i32 = (int16_t)(q[0] | (q[1] << 8));
+    break;
+  case BT_INT32:
+    if (resid < 4)
+      return ERROR_BUFFER_TOO_SHORT;
+    *i32 = (int32_t)(q[0] | (q[1] << 8) | (q[0] << 16) | (q[1] << 24));
+  default:
+    return ERROR_INVALID_TYPE;
+  }
+  //printf("arg_int: %s = 0x%x\n", name, *u32);
   return ERROR_OK;
 }
 
@@ -505,12 +525,14 @@ lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
 	     ntype name, uint32_t limit)
 {
   int err;
+  int32_t i32;
 
-  err = arg_u32(end, resid, name, u32);
+  err = arg_int(end, resid, name, &i32);
   if (err)
     return err;
-  if (*u32 >= limit)
+  if (i32 < 0 || i32 >= limit)
     return ERROR_OUT_OF_RANGE;
+  *u32 = i32;
   return ERROR_OK;
 }
 
@@ -582,7 +604,7 @@ lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
 {
   lookup_function_args *lfa = (lookup_function_args *)arg;
   ntype name;
-  uint32_t u32;
+  int32_t i32;
   ssize_t nresid;
   int err;
 
@@ -597,11 +619,11 @@ lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
   if (!name_equal(name, N_FUNCTION))
     return ERROR_OK;
 
-  err = arg_u32(end, nresid, N_FUNCTION, &u32);
+  err = arg_int(end, nresid, N_FUNCTION, &i32);
   if (err)
     return err;
 
-  if (u32 != lfa->idx)
+  if (i32 != lfa->idx)
     return ERROR_OK;
 
   lfa->end = end;
@@ -1153,12 +1175,12 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   case Scall_function: {
-    uint32_t u32;
+    int32_t i32;
 
-    err = arg_u32(end, nresid, N_FUNCTION, &u32);
+    err = arg_int(end, nresid, N_FUNCTION, &i32);
     if (err)
       return err;
-    return exec_function(env, u32);
+    return exec_function(env, i32);
   }
 
   case Spick_random: {
@@ -1220,6 +1242,8 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
   union {
     double d;
     float f;
+    int8_t i8;
+    int16_t i16;
     int32_t i32;
     int64_t i64;
     uint8_t b[8];
@@ -1247,6 +1271,20 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.f;		/* convert from float to vtype */
     *resid -= 4;
+    return ERROR_OK;
+  case BT_INT8:
+    *resid -= skip_name(end, *resid);
+    for (int i = 0; i < 1; i++)
+      u.b[i] = *(end - *resid + i);
+    env->e_value = u.i8;	/* convert from 16 bit integer to vtype */
+    *resid -= 1;
+    return ERROR_OK;
+  case BT_INT16:
+    *resid -= skip_name(end, *resid);
+    for (int i = 0; i < 2; i++)
+      u.b[i] = *(end - *resid + i);
+    env->e_value = u.i16;	/* convert from 16 bit integer to vtype */
+    *resid -= 2;
     return ERROR_OK;
   case BT_INT32:
     *resid -= skip_name(end, *resid);
