@@ -23,6 +23,9 @@
   Last updated by Jeff Hoefs: November 7th, 2015
 */
 
+extern "C" {
+  extern uint32_t __koov_data_start__;
+};
 namespace firmata_base {
 
 #define I2C_WRITE                   B00000000
@@ -37,6 +40,12 @@ namespace firmata_base {
 // the minimum interval for sampling analog input
 #define MINIMUM_SAMPLING_INTERVAL   1
 
+struct flash_state {
+  uint32_t fs_offset;
+  uint16_t fs_value;
+  byte fs_shift;
+  byte fs_escape;
+} flash_state;
 static void koov_sysex(byte argc, byte *argv);
 void reportAnalogCallback(byte analogPin, int value);
 void sysexCallback(byte command, byte argc, byte *argv);
@@ -1343,6 +1352,124 @@ koov_sysex(byte argc, byte *argv)
 	  byte g = argv[3];
 	  byte b = argv[4];
 	  MULTILED(r, g, b);
+	}
+	break;
+      case 0x08:		/* flash erase */
+#define NVM_MEMORY        ((volatile uint16_t *)FLASH_ADDR)
+	if (argc > 0) {
+	  /*
+	   * Request:
+	   * offset 0  1
+	   * ------------------------
+	   *    0e 02 08
+	   *
+	   * Response:
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 08 AA
+	   *
+	   *    status: AA		// 0 on success
+	   */
+	  uint32_t addr = (uint32_t)&__koov_data_start__;
+
+	  while (addr < NVMCTRL_FLASH_SIZE) {
+	    NVMCTRL->STATUS.reg |= NVMCTRL_STATUS_MASK;
+	    /* Set address and command */
+	    NVMCTRL->ADDR.reg = addr / 2;
+	    NVMCTRL->CTRLA.reg =
+	      NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
+	    while (!(NVMCTRL->INTFLAG.bit.READY))
+	      ;
+	    addr += NVMCTRL_ROW_SIZE;
+	  }
+
+	  flash_state.fs_offset = (uint32_t)&__koov_data_start__;
+	  flash_state.fs_shift = 0;
+	  flash_state.fs_escape = 0;
+	  flash_state.fs_value = 0;
+
+	  Firmata.write(START_SYSEX); /* 0xf0 */
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x08);
+	  Firmata.write(0x00);
+	  Firmata.write(END_SYSEX); /* 0xf7 */
+	}
+	break;
+      case 0x09:		/* flash finish */
+	if (argc > 0) {
+	  /*
+	   * Request:
+	   * offset 0  1
+	   * ------------------------
+	   *    0e 02 09
+	   *
+	   * Response:
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 09 AA
+	   *
+	   *    status: AA		// 0 on success
+	   */
+	  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
+	    NVM_MEMORY[flash_state.fs_offset / 2] = 0xffff;
+	    flash_state.fs_offset += 2;
+	  }
+	  while (!(NVMCTRL->INTFLAG.bit.READY))
+	    ;
+	  Firmata.write(START_SYSEX); /* 0xf0 */
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x09);
+	  Firmata.write(0x00);
+	  Firmata.write(END_SYSEX); /* 0xf7 */
+	}
+	break;
+      case 0x0a:		/* write */
+	if (argc > 1) {
+	  /*
+	   * Request:
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 0a AA
+	   *
+	   *    AA: length
+	   *
+	   * Response:
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 0a AA
+	   *
+	   *    status: AA		// 0 on success
+	   */
+	  byte length = argv[2];
+	  int i = 3;
+	  while (i < 3 + length) {
+	    byte cc = argv[i++];
+	    if (flash_state.fs_escape) {
+	      cc = cc ? END_SYSEX : 0;
+	      flash_state.fs_escape = 0;
+	    } else {
+	      if (cc == 0) {	/* escape character */
+		flash_state.fs_escape = 1;
+		continue;
+	      }
+	    }
+	    flash_state.fs_value |= cc << flash_state.fs_shift;
+	    if (flash_state.fs_shift == 0)
+	      flash_state.fs_shift = 8;
+	    else {
+	      NVM_MEMORY[flash_state.fs_offset / 2] = flash_state.fs_value;
+	      flash_state.fs_offset += 2;
+	      flash_state.fs_value = flash_state.fs_shift = 0;
+	    }
+	  }
+	  Firmata.write(START_SYSEX); /* 0xf0 */
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x0a);
+	  Firmata.write(0x00);
+	  Firmata.write(END_SYSEX); /* 0xf7 */
 	}
 	break;
       }
