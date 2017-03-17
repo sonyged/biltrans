@@ -138,8 +138,8 @@
 
 typedef float vtype;
 
-static int arg_string(const uint8_t *, ssize_t, ntype, ntype *);
-static int arg_int(const uint8_t *, ssize_t, ntype, int32_t *);
+static int arg_string(const uint8_t *, ssize_t, int, ntype, ntype *);
+static int arg_int(const uint8_t *, ssize_t, int, ntype, int32_t *);
 
 static int
 read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
@@ -176,9 +176,11 @@ name_at(const uint8_t *at)
  * Skip type and e_name.
  */
 static int
-skip_name(const uint8_t *end, ssize_t resid)
+skip_name(const uint8_t *end, ssize_t resid, int array)
 {
 #if defined(INT_E_NAME)
+  if (array)
+    return 1;
   return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
 #else
   const char *e_name = (const char *)(end - resid) + 1;
@@ -186,6 +188,14 @@ skip_name(const uint8_t *end, ssize_t resid)
   return 1 + strlen(e_name) + 1;
 #endif
 }
+
+#define CALL(F, ...) do {						\
+  int err = (F)(__VA_ARGS__);						\
+  if (err) {								\
+    /* fprintf(stderr, #F ": %d: err = %d\n", __LINE__, err); */	\
+    return err;								\
+  }									\
+} while (0)
 
 /*
  * Narrow the region down to current elist.
@@ -196,9 +206,7 @@ narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
   uint32_t u32;
   int err;
 
-  err = read32(*end, *resid, &u32);
-  if (err)
-    return err;
+  CALL(read32, *end, *resid, &u32);
   if (u32 > *resid)
     return ERROR_INVALID_SIZE;
   if (u32 < 5)			/* minimum elist is int32 followed by 0 */
@@ -214,7 +222,7 @@ narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
  * Looking for given name in the elist.
  */
 static int
-elist_find(const uint8_t *end, ssize_t *resid,
+elist_find(const uint8_t *end, ssize_t *resid, int array,
 	   int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
 {
   ssize_t r = *resid;
@@ -230,7 +238,7 @@ elist_find(const uint8_t *end, ssize_t *resid,
       return ERROR_OK;
     }
 
-    r -= skip_name(end, r);
+    r -= skip_name(end, r, array);
     switch (*p) {
     case BT_NUMBER:
       r -= 4;
@@ -239,17 +247,13 @@ elist_find(const uint8_t *end, ssize_t *resid,
 #if defined(INT_E_NAME)
       r -= 2;
 #else
-      err = read32(end, r, &u32);
-      if (err)
-	return err;
+      CALL(read32, end, r, &u32);
       r -= 4 + u32;
 #endif
       break;
     case BT_DOCUMENT:
     case BT_ARRAY:
-      err = read32(end, r, &u32);
-      if (err)
-	return err;
+      CALL(read32, end, r, &u32);
       r -= u32;
       break;
     case BT_INT8:
@@ -286,18 +290,19 @@ compare_name(const uint8_t *end, ssize_t resid, void *arg)
  * Looking for given name in the elist.
  */
 static int
-elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
+elist_lookup(const uint8_t *end, ssize_t *resid, int array, ntype name)
 {
 
-  return elist_find(end, resid, compare_name, (void *)&name);
+  return elist_find(end, resid, array, compare_name, (void *)&name);
 }
 
 static int
-compare_string(const uint8_t *end, ssize_t resid, ntype name, ntype value)
+compare_string(const uint8_t *end, ssize_t resid, int array,
+	       ntype name, ntype value)
 {
   ntype p = 0;
 
-  return arg_string(end, resid, name, &p) == ERROR_OK &&
+  return arg_string(end, resid, array, name, &p) == ERROR_OK &&
     name_equal(p, value);
 }
 
@@ -307,24 +312,25 @@ typedef struct names {
 } names;
 
 static int
-compare_names(const uint8_t *end, ssize_t resid, size_t n, const names *names)
+compare_names(const uint8_t *end, ssize_t resid, int array,
+	      size_t n, const names *names)
 {
   const uint8_t *p = end - resid;
   ssize_t nresid;
 
   if (*p != BT_DOCUMENT)
     return 0;
-  resid -= skip_name(end, resid);
+  resid -= skip_name(end, resid, array);
   if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
     return 0;
   for (size_t i = 0; i < n; i++)
-    if (!compare_string(end, nresid, names[i].n_name, names[i].n_value))
+    if (!compare_string(end, nresid, 0, names[i].n_name, names[i].n_value))
       return 0;
   return 1;
 }
 
 static int
-compare_function(const uint8_t *end, ssize_t resid, void *arg)
+compare_function(const uint8_t *end, ssize_t resid, int array, void *arg)
 {
   ntype name = *(ntype *)arg;
   names names[] = {
@@ -332,7 +338,7 @@ compare_function(const uint8_t *end, ssize_t resid, void *arg)
     { N_FUNCTION, name },
   };
 
-  return compare_names(end, resid, 2, names);
+  return compare_names(end, resid, array, 2, names);
 }
 
 typedef struct env {
@@ -345,20 +351,18 @@ typedef struct env {
   vtype *e_vars;
   void **e_lsts;
 } env;
-static int exec(env *env, const uint8_t *end, ssize_t *resid);
-static int exec_elist(env *env, const uint8_t *end, ssize_t *resid);
+static int exec(env *env, const uint8_t *end, ssize_t *resid, int array);
+static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
 
 static int
-arg_string(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
+arg_string(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
 {
   int err;
 
-  err = elist_lookup(end, &resid, name);
-  if (err)
-    return err;
+  CALL(elist_lookup, end, &resid, array, name);
   if (*(end - resid) != BT_STRING)
     return ERROR_INVALID_TYPE;
-  resid -= skip_name(end, resid);
+  resid -= skip_name(end, resid, array);
 #if !defined(INT_E_NAME)
   resid -= 4;			/* skip string size */
 #endif
@@ -370,15 +374,13 @@ arg_string(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
 }
 
 static int
-arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
+arg_int(const uint8_t *end, ssize_t resid, int array, ntype name, int32_t *i32)
 {
   int err;
 
-  err = elist_lookup(end, &resid, name);
-  if (err)
-    return err;
+  CALL(elist_lookup, end, &resid, array, name);
   const uint8_t *p = end - resid;
-  resid -= skip_name(end, resid);
+  resid -= skip_name(end, resid, array);
   const uint8_t *q = end - resid;
   switch (*p) {
   case BT_INT8:
@@ -403,7 +405,7 @@ arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
 }
 
 static int
-exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
+exec_arg(env *env, const uint8_t *end, ssize_t resid, int array, ntype name)
 {
   int err;
 
@@ -413,23 +415,22 @@ exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
     env->e_stack = &err;
   }
 
-  err = elist_lookup(end, &resid, name);
-  if (err)
-    return err;
-  return exec(env, end, &resid);
+  CALL(elist_lookup, end, &resid, array, name);
+  CALL(exec, env, end, &resid, 0); /* execute single block */
+  return ERROR_OK;
 }
 
-#define EXEC_BINARY(name)				\
-  case S ## name: {					\
-    return exec_binary(env, end, nresid, f_ ## name);	\
+#define EXEC_BINARY(name)					\
+  case S ## name: {						\
+    return exec_binary(env, end, nresid, array, f_ ## name);	\
   }
-#define EXEC_UNARY(name)				\
-  case S ## name: {					\
-    return exec_unary(env, end, nresid, f_ ## name);	\
+#define EXEC_UNARY(name)					\
+  case S ## name: {						\
+    return exec_unary(env, end, nresid, array, f_ ## name);	\
   }
 
 static int
-exec_unary(env *env, const uint8_t *end, ssize_t resid,
+exec_unary(env *env, const uint8_t *end, ssize_t resid, int array,
 	   vtype (*f)(vtype x))
 {
   int err;
@@ -440,15 +441,13 @@ exec_unary(env *env, const uint8_t *end, ssize_t resid,
     env->e_stack = &err;
   }
 
-  err = exec_arg(env, end, resid, N_X);
-  if (err)
-    return err;
+  CALL(exec_arg, env, end, resid, array, N_X);
   env->e_value = (*f)(env->e_value);
-  return err;
+  return ERROR_OK;
 }
 
 static int
-exec_binary(env *env, const uint8_t *end, ssize_t resid,
+exec_binary(env *env, const uint8_t *end, ssize_t resid, int array,
 	    vtype (*f)(vtype x, vtype y))
 {
   int err;
@@ -459,16 +458,12 @@ exec_binary(env *env, const uint8_t *end, ssize_t resid,
     env->e_stack = &err;
   }
 
-  err = exec_arg(env, end, resid, N_X);
-  if (err)
-    return err;
+  CALL(exec_arg, env, end, resid, array, N_X);
   vtype x = env->e_value;
-  err = exec_arg(env, end, resid, N_Y);
-  if (err)
-    return err;
+  CALL(exec_arg, env, end, resid, array, N_Y);
   vtype y = env->e_value;
   env->e_value = (*f)(x, y);
-  return err;
+  return ERROR_OK;
 }
 
 #define DEFBINARY(name, op) \
@@ -527,9 +522,7 @@ lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
   int err;
   int32_t i32;
 
-  err = arg_int(end, resid, name, &i32);
-  if (err)
-    return err;
+  CALL(arg_int, end, resid, 0, name, &i32);
   if (i32 < 0 || i32 >= limit)
     return ERROR_OUT_OF_RANGE;
   *u32 = i32;
@@ -553,31 +546,27 @@ lookup_list(env *env, const uint8_t *end, ssize_t resid,
 }
 
 static int
-with_elist(const uint8_t *end, ssize_t *resid,
-	   int (*proc)(const uint8_t *, ssize_t, void *), void *arg)
+with_elist(const uint8_t *end, ssize_t *resid, int array,
+	   int (*proc)(const uint8_t *, ssize_t, int, void *), void *arg)
 {
   ssize_t nresid;
   uint32_t u32;
-  int err;
 
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
-
-  return (*proc)(end, nresid, arg);
+  CALL(narrow_to_elist, &end, resid, &nresid);
+  return (*proc)(end, nresid, array, arg);
 }
 
 static int
-foreach_document(const uint8_t *end, ssize_t resid, int end_of_document,
-		 int (*proc)(const uint8_t *end, ssize_t *resid, void *),
+foreach_document(const uint8_t *end, ssize_t resid, int array,
+		 int end_of_document,
+		 int (*proc)(const uint8_t *end, ssize_t *resid, int array,
+			     void *),
 		 void *arg)
 {
   ssize_t nresid;
   int err;
 
-  err = narrow_to_elist(&end, &resid, &nresid);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, &resid, &nresid);
 
   for (;;) {
     if (nresid <= 0)
@@ -586,10 +575,8 @@ foreach_document(const uint8_t *end, ssize_t resid, int end_of_document,
       return end_of_document;
     if (*(end - nresid) != BT_DOCUMENT)
       return ERROR_INVALID_TYPE;
-    nresid -= skip_name(end, nresid);
-    err = (*proc)(end, &nresid, arg);
-    if (err)
-      return err;
+    nresid -= skip_name(end, nresid, array);
+    CALL((*proc), end, &nresid, 0, arg);
   }
 }
 
@@ -600,7 +587,7 @@ typedef struct lookup_function_args {
 } lookup_function_args;
 
 static int
-lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
+lookup_function(const uint8_t *end, ssize_t *resid, int array, void *arg)
 {
   lookup_function_args *lfa = (lookup_function_args *)arg;
   ntype name;
@@ -608,20 +595,13 @@ lookup_function(const uint8_t *end, ssize_t *resid, void *arg)
   ssize_t nresid;
   int err;
 
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
-
-  err = arg_string(end, nresid, N_NAME, &name);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(arg_string, end, nresid, array, N_NAME, &name);
 
   if (!name_equal(name, N_FUNCTION))
     return ERROR_OK;
 
-  err = arg_int(end, nresid, N_FUNCTION, &i32);
-  if (err)
-    return err;
+  CALL(arg_int, end, nresid, array, N_FUNCTION, &i32);
 
   if (i32 != lfa->idx)
     return ERROR_OK;
@@ -644,12 +624,12 @@ exec_function(env *env, uint32_t idx)
   }
 
   lfa.idx = idx;
-  err = foreach_document(env->e_end, env->e_resid, ERROR_ELEMENT_NOT_FOUND,
+  err = foreach_document(env->e_end, env->e_resid, 1, ERROR_ELEMENT_NOT_FOUND,
 			 lookup_function, &lfa);
   if (err != ERROR_FOUND)
     return err;
 
-  return exec_arg(env, lfa.end, lfa.resid, N_BLOCKS);
+  return exec_arg(env, lfa.end, lfa.resid, 0, N_BLOCKS);
 }
 
 static int
@@ -729,7 +709,8 @@ port_value(ntype port)
 }
 
 static int
-setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
+setup_ss(env *env, const uint8_t *end, ssize_t *resid, int array,
+	 struct servo_sync *ss)
 {
   ntype port = 0;
   ntype name;
@@ -737,24 +718,14 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
   ssize_t nresid;
   int err;
 
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
-
-  err = arg_string(end, nresid, N_NAME, &name);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(arg_string, end, nresid, array, N_NAME, &name);
 
   if (!name_equal(name, N_SET_SERVOMOTOR_DEGREE))
     return ERROR_INVALID_TYPE;
 
-  err = arg_string(end, nresid, N_PORT, &port);
-  if (err)
-    return err;
-
-  err = exec_arg(env, end, nresid, N_DEGREE);
-  if (err)
-    return err;
+  CALL(arg_string, end, nresid, array, N_PORT, &port);
+  CALL(exec_arg, env, end, nresid, array, N_DEGREE);
 
   ss->port = port_value(port);
   ss->degree = env->e_value;
@@ -762,7 +733,7 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
 }
 
 static int
-init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
+init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
 		struct servo_sync *ss, size_t *count)
 {
   ssize_t nresid;
@@ -770,15 +741,11 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
   int err;
 
   *count = 0;
-  err = elist_lookup(end, &resid, N_BLOCKS);
-  if (err)
-    return err;
+  CALL(elist_lookup, end, &resid, array, N_BLOCKS);
   if (*(end - resid) != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  resid -= skip_name(end, resid);
-  err = narrow_to_elist(&end, &resid, &nresid);
-  if (err)
-    return err;
+  resid -= skip_name(end, resid, array);
+  CALL(narrow_to_elist, &end, &resid, &nresid);
   for (;;) {
     if (nresid <= 0)
       return ERROR_OVERFLOW;
@@ -788,16 +755,15 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
       return ERROR_TOOMANY_SERVO;
-    nresid -= skip_name(end, nresid);
-    err = setup_ss(env, end, &nresid, &ss[(*count)++]);
-    if (err)
-      return err;
+    nresid -= skip_name(end, nresid, 1);
+    CALL(setup_ss, env, end, &nresid, 0, &ss[(*count)++]);
   }
 }
 
 static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
+  const int array = 0;
   ssize_t nresid;
   ntype name;
   int err;
@@ -808,29 +774,20 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     env->e_stack = &err;
   }
 
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
-
-  err = arg_string(end, nresid, N_NAME, &name);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(arg_string, end, nresid, array, N_NAME, &name);
 
   switch (name) {
   case Swhen_green_flag_clicked: {
-    return exec_arg(env, end, nresid, N_BLOCKS);
+    return exec_arg(env, end, nresid, array, N_BLOCKS);
   }
 
   case Srepeat: {
-    err = exec_arg(env, end, nresid, N_COUNT);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_COUNT);
     ssize_t count = env->e_value;
     while (count-- > 0) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, N_BLOCKS);
-      if (err)
-	return err;
+      CALL(exec_arg, env, end, nresid, array, N_BLOCKS);
     }
     return ERROR_OK;
   }
@@ -838,14 +795,10 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Srepeat_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, N_CONDITION);
-      if (err)
-	return err;
+      CALL(exec_arg, env, end, nresid, array, N_CONDITION);
       if (env->e_value != 0)
 	break;
-      err = exec_arg(env, end, nresid, N_BLOCKS);
-      if (err)
-	return err;
+      CALL(exec_arg, env, end, nresid, array, N_BLOCKS);
     }
     return ERROR_OK;
   }
@@ -853,14 +806,10 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Swait_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, N_CONDITION);
-      if (err)
-	return err;
+      CALL(exec_arg, env, end, nresid, array, N_CONDITION);
       if (env->e_value != 0)
 	break;
-      err = EX_DELAY(0.02);
-      if (err)
-	return err;
+      CALL(EX_DELAY, 0.02);
     }
     return ERROR_OK;
   }
@@ -868,36 +817,31 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sforever: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      err = exec_arg(env, end, nresid, N_BLOCKS);
-      if (err)
-	return err;
+      CALL(exec_arg, env, end, nresid, array, N_BLOCKS);
     }
     return ERROR_OK;
   }
 
   case Sif_then: {
-    err = exec_arg(env, end, nresid, N_CONDITION);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_CONDITION);
     if (env->e_value != 0)
-      return exec_arg(env, end, nresid, N_BLOCKS);
+      CALL(exec_arg, env, end, nresid, array, N_BLOCKS);
     return ERROR_OK;
   }
 
   case Sif_then_else: {
-    err = exec_arg(env, end, nresid, N_CONDITION);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_CONDITION);
     if (env->e_value != 0)
-      return exec_arg(env, end, nresid, N_THEN_BLOCKS);
-    return exec_arg(env, end, nresid, N_ELSE_BLOCKS);
+      CALL(exec_arg, env, end, nresid, array, N_THEN_BLOCKS);
+    else
+      CALL(exec_arg, env, end, nresid, array, N_ELSE_BLOCKS);
+    return ERROR_OK;
   }
 
   case Swait: {
-    err = exec_arg(env, end, nresid, N_SECS);
-    if (err)
-      return err;
-    return EX_DELAY(env->e_value);
+    CALL(exec_arg, env, end, nresid, array, N_SECS);
+    CALL(EX_DELAY, env->e_value);
+    return ERROR_OK;
   }
 
     EXEC_BINARY(plus);
@@ -917,12 +861,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   case Smath: {
     ntype op;
-    err = arg_string(end, nresid, N_OP, &op);
-    if (err)
-      return err;
-    err = exec_arg(env, end, nresid, N_X);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_OP, &op);
+    CALL(exec_arg, env, end, nresid, array, N_X);
     switch (op) {
     case Sabs:
 #if 1
@@ -988,28 +929,19 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sturn_led: {
     ntype port = 0;
     ntype mode = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = arg_string(end, nresid, N_MODE, &mode);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_string, end, nresid, array, N_MODE, &mode);
     EX_TURN_LED(port_value(port), mode_value(mode));
     return ERROR_OK;
   }
 
   case Smulti_led: {
-    err = exec_arg(env, end, nresid, N_R);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_R);
     vtype r = env->e_value;
-    err = exec_arg(env, end, nresid, N_G);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_G);
     vtype g = env->e_value;
-    err = exec_arg(env, end, nresid, N_B);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_B);
     vtype b = env->e_value;
     EX_MULTILED(r, g, b);
     return ERROR_OK;
@@ -1018,12 +950,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sturn_dcmotor_on: {
     ntype port = 0;
     ntype direction = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = arg_string(end, nresid, N_DIRECTION, &direction);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_string, end, nresid, array, N_DIRECTION, &direction);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(direction));
     return ERROR_OK;
   }
@@ -1031,24 +960,18 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sturn_dcmotor_off: {
     ntype port = 0;
     ntype mode = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = arg_string(end, nresid, N_MODE, &mode);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_string, end, nresid, array, N_MODE, &mode);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(mode));
     return ERROR_OK;
   }
 
   case Sset_dcmotor_power: {
     ntype port = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = exec_arg(env, end, nresid, N_POWER);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(exec_arg, env, end, nresid, array, N_POWER);
     EX_SET_DCMOTOR_POWER(port_value(port), env->e_value);
     return ERROR_OK;
   }
@@ -1056,12 +979,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sbuzzer_on: {
     ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = exec_arg(env, end, nresid, N_FREQUENCY);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(exec_arg, env, end, nresid, array, N_FREQUENCY);
     EX_BUZZER_CONTROL(port_value(port), 1, env->e_value);
     return ERROR_OK;
   }
@@ -1069,9 +989,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sbuzzer_off: {
     ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
     EX_BUZZER_CONTROL(port_value(port), 0, 0);
     return ERROR_OK;
   }
@@ -1079,26 +998,19 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sset_servomotor_degree: {
     ntype port = 0;
     uint32_t u32;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = exec_arg(env, end, nresid, N_DEGREE);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(exec_arg, env, end, nresid, array, N_DEGREE);
     EX_SERVO_MOTOR(port_value(port), env->e_value);
     return ERROR_OK;
   }
 
   case Sservomotor_synchronized_motion: {
-    err = exec_arg(env, end, nresid, N_SPEED);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_SPEED);
     const int time = env->e_value;
     struct servo_sync ss[MAX_SERVOS];
     size_t count = sizeof(ss) / sizeof(ss[0]);
-    err = init_servo_sync(env, end, nresid, ss, &count);
-    if (err)
-      return err;
+    CALL(init_servo_sync, env, end, nresid, array, ss, &count);
     EX_SERVOMOTOR_SYNCHRONIZED_MOTION(ss, count, time);
     return ERROR_OK;
   }
@@ -1106,9 +1018,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sir_photo_reflector_value:
   case Slight_sensor_value: {
     ntype port = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
     env->e_value = EX_ANALOG_SENSOR(port_value(port));
     return ERROR_OK;
   }
@@ -1117,12 +1028,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype dir = 0;
 
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = arg_string(end, nresid, N_DIRECTION, &dir);
-    if (err)
-      return err;
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_string, end, nresid, array, N_DIRECTION, &dir);
     env->e_value = EX_ACCELEROMETER_VALUE(port_value(port),
 					  acceldir_value(dir));
     return ERROR_OK;
@@ -1132,12 +1039,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Stouch_sensor_value: {
     ntype port = 0;
     ntype mode = 0;
-    err = arg_string(end, nresid, N_PORT, &port);
-    if (err)
-      return err;
-    err = arg_string(end, nresid, N_MODE, &mode);
-    if (err)
-      return err;
+
+    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_string, end, nresid, array, N_MODE, &mode);
     if (name_equal(mode, N_ON))
       env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
     else
@@ -1148,9 +1052,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Svariable_ref: {
     uint32_t u32;
 
-    err = lookup_variable(env, end, nresid, &u32);
-    if (err)
-      return err;
+    CALL(lookup_variable, env, end, nresid, &u32);
     env->e_value = env->e_vars[u32];
     return ERROR_OK;
   }
@@ -1160,12 +1062,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     const int assign = name == Sset_variable_to;
     uint32_t u32;
 
-    err = lookup_variable(env, end, nresid, &u32);
-    if (err)
-      return err;
-    err = exec_arg(env, end, nresid, N_VALUE);
-    if (err)
-      return err;
+    CALL(lookup_variable, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, N_VALUE);
     if (assign)
       env->e_vars[u32] = env->e_value;
     else
@@ -1176,20 +1074,14 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Scall_function: {
     int32_t i32;
 
-    err = arg_int(end, nresid, N_FUNCTION, &i32);
-    if (err)
-      return err;
+    CALL(arg_int, end, nresid, array, N_FUNCTION, &i32);
     return exec_function(env, i32);
   }
 
   case Spick_random: {
-    err = exec_arg(env, end, nresid, N_FROM);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_FROM);
     const vtype from = env->e_value;
-    err = exec_arg(env, end, nresid, N_TO);
-    if (err)
-      return err;
+    CALL(exec_arg, env, end, nresid, array, N_TO);
     const vtype to = env->e_value;
     env->e_value = EX_RANDOM(from, to + 1);
     return ERROR_OK;
@@ -1233,7 +1125,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
  * Evaluate single element.
  */
 static int
-exec(env *env, const uint8_t *end, ssize_t *resid)
+exec(env *env, const uint8_t *end, ssize_t *resid, int array)
 {
   const uint8_t *p = end - *resid;
   uint32_t u32;
@@ -1259,41 +1151,41 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
 
   switch (*p) {
   case BT_DOCUMENT:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     return exec_block(env, end, resid);
   case BT_ARRAY:
-    *resid -= skip_name(end, *resid);
-    return exec_elist(env, end, resid);
+    *resid -= skip_name(end, *resid, array);
+    return exec_array(env, end, resid);
   case BT_NUMBER:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     for (int i = 0; i < 4; i++)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.f;		/* convert from float to vtype */
     *resid -= 4;
     return ERROR_OK;
   case BT_INT8:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     for (int i = 0; i < 1; i++)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.i8;	/* convert from 16 bit integer to vtype */
     *resid -= 1;
     return ERROR_OK;
   case BT_INT16:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     for (int i = 0; i < 2; i++)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.i16;	/* convert from 16 bit integer to vtype */
     *resid -= 2;
     return ERROR_OK;
   case BT_INT32:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     for (int i = 0; i < 4; i++)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.i32;	/* convert from 32 bit integer to vtype */
     *resid -= 4;
     return ERROR_OK;
   case BT_INT64:
-    *resid -= skip_name(end, *resid);
+    *resid -= skip_name(end, *resid, array);
     for (int i = 0; i < 8; i++)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.i64;	/* convert from 64 bit integer to vtype */
@@ -1306,28 +1198,24 @@ exec(env *env, const uint8_t *end, ssize_t *resid)
 }
 
 static int
-exec_elist(env *env, const uint8_t *end, ssize_t *resid)
+exec_array(env *env, const uint8_t *end, ssize_t *resid)
 {
   ssize_t nresid;
   int err;
 
   if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_elist");
+    EX_TRACE("exec_array");
     EX_TRACE_HEX((int)&err);
     env->e_stack = &err;
   }
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, resid, &nresid);
 
   for (;;) {
     if (nresid <= 0)
       return ERROR_OVERFLOW;
     if (nresid == 1)		/* trailing nul */
       return ERROR_OK;
-    err = exec(env, end, &nresid);
-    if (err)
-      return err;
+    CALL(exec, env, end, &nresid, 1);
   }
 }
 
@@ -1342,12 +1230,10 @@ port_init(const uint8_t *end, ssize_t *resid)
   if (*p != BT_STRING)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
-  *resid -= skip_name(end, *resid);
+  *resid -= skip_name(end, *resid, 0);
 #if !defined(INT_E_NAME)
   uint32_t u32;
-  err = read32(end, *resid, &u32);
-  if (err)
-	return err;
+  CALL(read32, end, *resid, &u32);
   *resid -= 4;
 #endif
   ntype part = name_at(end - *resid);
@@ -1356,7 +1242,7 @@ port_init(const uint8_t *end, ssize_t *resid)
 #else
   *resid -= u32;
 #endif
-  err = EX_PORT_INIT(port_value(port), part);
+  CALL(EX_PORT_INIT, port_value(port), part);
   return ERROR_OK;
 }
 
@@ -1366,23 +1252,19 @@ setup_ports(const uint8_t *end, ssize_t resid)
   ssize_t nresid;
   int err;
 
-  err = elist_lookup(end, &resid, N_PORT_SETTINGS);
+  err = elist_lookup(end, &resid, 0, N_PORT_SETTINGS);
   switch (err) {
   case ERROR_OK:
     if (*(end - resid) != BT_DOCUMENT)
       return ERROR_INVALID_TYPE;
-    resid -= skip_name(end, resid);
-    err = narrow_to_elist(&end, &resid, &nresid);
-    if (err)
-      return err;
+    resid -= skip_name(end, resid, 0);
+    CALL(narrow_to_elist, &end, &resid, &nresid);
     for (;;) {
       if (nresid <= 0)
 	return ERROR_OVERFLOW;
       if (nresid == 1)		/* trailing nul */
 	return ERROR_OK;
-      err = port_init(end, &nresid);
-      if (err)
-	return err;
+      CALL(port_init, end, &nresid);
     }
     break;
   case ERROR_ELEMENT_NOT_FOUND:
@@ -1400,20 +1282,15 @@ typedef struct parse_fvl_args {
 } parse_fvl_args;
 
 static int
-parse_fvl(const uint8_t *end, ssize_t *resid, void *arg)
+parse_fvl(const uint8_t *end, ssize_t *resid, int array, void *arg)
 {
   parse_fvl_args *pfa = (parse_fvl_args *)arg;
   ssize_t nresid;
   ntype name;
   int err;
 
-  err = narrow_to_elist(&end, resid, &nresid);
-  if (err)
-    return err;
-
-  err = arg_string(end, nresid, N_NAME, &name);
-  if (err)
-    return err;
+  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(arg_string, end, nresid, array, N_NAME, &name);
 
   switch (name) {
   case Svariable:
@@ -1435,7 +1312,7 @@ count_environ(const uint8_t *end, ssize_t resid, int *n_vars, int *n_lsts)
   pfa.n_vars = n_vars;
   pfa.n_lsts = n_lsts;
   *pfa.n_vars = *pfa.n_lsts = 0;
-  return foreach_document(end, resid, ERROR_OK, parse_fvl, &pfa);
+  return foreach_document(end, resid, 1, ERROR_OK, parse_fvl, &pfa);
 }
 
 static int
@@ -1445,13 +1322,9 @@ exec_script(const uint8_t *end, ssize_t *resid)
   int err, n_vars, n_lsts;
 
   EX_TRACE_HEX((int)&err);
-  err = setup_ports(end, *resid);
-  if (err)
-    return err;
+  CALL(setup_ports, end, *resid);
 
-  err = elist_lookup(end, resid, N_SCRIPTS);
-  if (err)
-    return err;
+  CALL(elist_lookup, end, resid, 0, N_SCRIPTS);
   if (*(end - *resid) != BT_ARRAY)
     return ERROR_UNSUPPORTED;
 
@@ -1462,15 +1335,13 @@ exec_script(const uint8_t *end, ssize_t *resid)
    *      ||
    *   "\x04" "scripts\x00" int32 e_list "\x00" 
    */
-  *resid -= skip_name(end, *resid);
+  *resid -= skip_name(end, *resid, 0);
 
   /* Now, we're looking at (e_list is an array of blocks):
    *   int32 e_list "\x00" 
    */
 
-  err = count_environ(end, *resid, &n_vars, &n_lsts);
-  if (err)
-    return err;
+  CALL(count_environ, end, *resid, &n_vars, &n_lsts);
   //printf("variable = %d, list = %d\n", n_vars, n_lsts);
 
   env->e_stack = &err;
@@ -1485,7 +1356,7 @@ exec_script(const uint8_t *end, ssize_t *resid)
   for (size_t i = 0; i < n_lsts; i++)
     env->e_lsts[i] = 0;
   //printf("e_vars: %p, e_lsts: %p\n", env->e_vars, env->e_lsts);
-  return exec_elist(env, end, resid);
+  return exec_array(env, end, resid);
 }
 
 int
@@ -1522,11 +1393,7 @@ interp_exec(const uint8_t *p, ssize_t size)
   /*
    * int32 e_list "\x00"
    */
-  err = read32(end, resid, &u32);
-  if (err) {
-    //EX_TRACE("interp: failed to read size");
-    return err;
-  }
+  CALL(read32, end, resid, &u32);
   if (u32 != size) {
     //EX_TRACE("interp: size mismatch");
     //EX_TRACE_INT(u32);
