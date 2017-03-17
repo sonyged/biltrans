@@ -10,7 +10,6 @@
 #include "string_dict.h"
 #endif
 
-#if defined(INT_E_NAME)
 #define N_NAME Sname
 #define N_BLOCKS Sblocks
 #define N_THEN_BLOCKS Sthen_blocks
@@ -72,69 +71,6 @@
 #define N_A1 SA1
 #define N_A2 SA2
 #define N_A3 SA3
-#else
-#define N_NAME "name"
-#define N_BLOCKS "blocks"
-#define N_THEN_BLOCKS "then-blocks"
-#define N_ELSE_BLOCKS "else-blocks"
-#define N_COUNT "count"
-#define N_CONDITION "condition"
-#define N_PORT "port"
-#define N_MODE "mode"
-#define N_SECS "secs"
-#define N_POWER "power"
-#define N_SPEED "speed"
-#define N_DEGREE "degree"
-#define N_VALUE "value"
-#define N_DIRECTION "direction"
-#define N_FREQUENCY "frequency"
-#define N_OP "op"
-#define N_R "r"
-#define N_G "g"
-#define N_B "b"
-#define N_X "x"
-#define N_Y "y"
-#define N_Z "z"
-#define N_FROM "from"
-#define N_TO "to"
-#define N_SET_SERVOMOTOR_DEGREE "set-servomotor-degree"
-#define N_FUNCTION "function"
-#define N_VARIABLE "variable"
-#define N_LIST "list"
-#define N_ON "ON"
-#define N_OFF "OFF"
-#define N_NORMAL "NORMAL"
-#define N_REVERSE "REVERSE"
-#define N_COAST "COAST"
-#define N_BRAKE "BRAKE"
-#define N_PORT_SETTINGS "port-settings"
-#define N_SCRIPTS "scripts"
-
-#define N_V0 "V0"
-#define N_V1 "V1"
-#define N_V2 "V2"
-#define N_V3 "V3"
-#define N_V4 "V4"
-#define N_V5 "V5"
-#define N_V6 "V6"
-#define N_V7 "V7"
-#define N_V8 "V8"
-#define N_V9 "V9"
-
-#define N_K0 "K0"
-#define N_K1 "K1"
-#define N_K2 "K2"
-#define N_K3 "K3"
-#define N_K4 "K4"
-#define N_K5 "K5"
-#define N_K6 "K6"
-#define N_K7 "K7"
-
-#define N_A0 "A0"
-#define N_A1 "A1"
-#define N_A2 "A2"
-#define N_A3 "A3"
-#endif
 
 typedef float vtype;
 
@@ -155,21 +91,15 @@ read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
 static int
 name_equal(ntype x, ntype y)
 {
-#if defined(INT_E_NAME)
+
   return x == y;
-#else
-  return strcmp(x, y) == 0;
-#endif
 }
 
 static ntype
 name_at(const uint8_t *at)
 {
-#if defined(INT_E_NAME)
+
   return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
-#else
-  return (ntype)at;		/* const char * */
-#endif
 }
 
 /*
@@ -178,15 +108,10 @@ name_at(const uint8_t *at)
 static int
 skip_name(const uint8_t *end, ssize_t resid, int array)
 {
-#if defined(INT_E_NAME)
+
   if (array)
     return 1;
   return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
-#else
-  const char *e_name = (const char *)(end - resid) + 1;
-
-  return 1 + strlen(e_name) + 1;
-#endif
 }
 
 #define CALL(F, ...) do {						\
@@ -244,12 +169,7 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
       r -= 4;
       break;
     case BT_STRING:
-#if defined(INT_E_NAME)
       r -= 2;
-#else
-      CALL(read32, end, r, &u32);
-      r -= 4 + u32;
-#endif
       break;
     case BT_DOCUMENT:
     case BT_ARRAY:
@@ -363,9 +283,6 @@ arg_string(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
   if (*(end - resid) != BT_STRING)
     return ERROR_INVALID_TYPE;
   resid -= skip_name(end, resid, array);
-#if !defined(INT_E_NAME)
-  resid -= 4;			/* skip string size */
-#endif
   if (resid <= 0)
     return ERROR_BUFFER_TOO_SHORT;
   *v = name_at(end - resid);
@@ -1231,17 +1148,8 @@ port_init(const uint8_t *end, ssize_t *resid)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
   *resid -= skip_name(end, *resid, 0);
-#if !defined(INT_E_NAME)
-  uint32_t u32;
-  CALL(read32, end, *resid, &u32);
-  *resid -= 4;
-#endif
   ntype part = name_at(end - *resid);
-#if defined(INT_E_NAME)
   *resid -= 2;
-#else
-  *resid -= u32;
-#endif
   CALL(EX_PORT_INIT, port_value(port), part);
   return ERROR_OK;
 }

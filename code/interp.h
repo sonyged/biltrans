@@ -5,12 +5,7 @@ int interp_exec(const uint8_t *p, ssize_t size);
 /*
  * Type of e_name.
  */
-#define INT_E_NAME
-#if defined(INT_E_NAME)
 typedef uint16_t ntype;
-#else
-typedef const char *ntype;
-#endif
 
 enum {
   BT_NUMBER = 0x01,
