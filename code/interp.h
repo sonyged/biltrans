@@ -9,7 +9,7 @@ typedef uint16_t ntype;
 
 enum {
   BT_NUMBER = 0x01,
-  BT_STRING = 0x02,
+  BT_KEYWORD = 0x02,
   BT_DOCUMENT = 0x03,
   BT_OBJECT = 0x03,
   BT_ARRAY = 0x04,

@@ -74,7 +74,7 @@
 
 typedef float vtype;
 
-static int arg_string(const uint8_t *, ssize_t, int, ntype, ntype *);
+static int arg_keyword(const uint8_t *, ssize_t, int, ntype, ntype *);
 static int arg_int(const uint8_t *, ssize_t, int, ntype, int32_t *);
 
 #undef ELIST_NUL
@@ -187,7 +187,7 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
     case BT_NUMBER:
       r -= 4;
       break;
-    case BT_STRING:
+    case BT_KEYWORD:
       r -= 2;
       break;
     case BT_DOCUMENT:
@@ -236,12 +236,12 @@ elist_lookup(const uint8_t *end, ssize_t *resid, int array, ntype name)
 }
 
 static int
-compare_string(const uint8_t *end, ssize_t resid, int array,
-	       ntype name, ntype value)
+compare_keyword(const uint8_t *end, ssize_t resid, int array,
+		ntype name, ntype value)
 {
   ntype p = 0;
 
-  return arg_string(end, resid, array, name, &p) == ERROR_OK &&
+  return arg_keyword(end, resid, array, name, &p) == ERROR_OK &&
     name_equal(p, value);
 }
 
@@ -263,7 +263,7 @@ compare_names(const uint8_t *end, ssize_t resid, int array,
   if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
     return 0;
   for (size_t i = 0; i < n; i++)
-    if (!compare_string(end, nresid, 0, names[i].n_name, names[i].n_value))
+    if (!compare_keyword(end, nresid, 0, names[i].n_name, names[i].n_value))
       return 0;
   return 1;
 }
@@ -294,18 +294,18 @@ static int exec(env *env, const uint8_t *end, ssize_t *resid, int array);
 static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
 
 static int
-arg_string(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
+arg_keyword(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
 {
   int err;
 
   CALL(elist_lookup, end, &resid, array, name);
-  if (*(end - resid) != BT_STRING)
+  if (*(end - resid) != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   resid -= skip_name(end, resid, array);
   if (resid <= 0)
     return ERROR_BUFFER_TOO_SHORT;
   *v = name_at(end - resid);
-  //printf("arg_string: %s = %s\n", name, *v);
+  //printf("arg_keyword: %s = %s\n", name, *v);
   return ERROR_OK;
 }
 
@@ -533,7 +533,7 @@ lookup_function(const uint8_t *end, ssize_t *resid, int array, void *arg)
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_string, end, nresid, array, N_NAME, &name);
+  CALL(arg_keyword, end, nresid, array, N_NAME, &name);
 
   if (!name_equal(name, N_FUNCTION))
     return ERROR_OK;
@@ -656,12 +656,12 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, int array,
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_string, end, nresid, array, N_NAME, &name);
+  CALL(arg_keyword, end, nresid, array, N_NAME, &name);
 
   if (!name_equal(name, N_SET_SERVOMOTOR_DEGREE))
     return ERROR_INVALID_TYPE;
 
-  CALL(arg_string, end, nresid, array, N_PORT, &port);
+  CALL(arg_keyword, end, nresid, array, N_PORT, &port);
   CALL(exec_arg, env, end, nresid, array, N_DEGREE);
 
   ss->port = port_value(port);
@@ -714,7 +714,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_string, end, nresid, array, N_NAME, &name);
+  CALL(arg_keyword, end, nresid, array, N_NAME, &name);
 
   switch (name) {
   case Swhen_green_flag_clicked: {
@@ -801,7 +801,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Smath: {
     ntype op;
 
-    CALL(arg_string, end, nresid, array, N_OP, &op);
+    CALL(arg_keyword, end, nresid, array, N_OP, &op);
     CALL(exec_arg, env, end, nresid, array, N_X);
     switch (op) {
     case Sabs:
@@ -869,8 +869,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
-    CALL(arg_string, end, nresid, array, N_MODE, &mode);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_MODE, &mode);
     EX_TURN_LED(port_value(port), mode_value(mode));
     return ERROR_OK;
   }
@@ -890,8 +890,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype direction = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
-    CALL(arg_string, end, nresid, array, N_DIRECTION, &direction);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_DIRECTION, &direction);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(direction));
     return ERROR_OK;
   }
@@ -900,8 +900,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
-    CALL(arg_string, end, nresid, array, N_MODE, &mode);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_MODE, &mode);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(mode));
     return ERROR_OK;
   }
@@ -909,7 +909,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Sset_dcmotor_power: {
     ntype port = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
     CALL(exec_arg, env, end, nresid, array, N_POWER);
     EX_SET_DCMOTOR_POWER(port_value(port), env->e_value);
     return ERROR_OK;
@@ -919,7 +919,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
     CALL(exec_arg, env, end, nresid, array, N_FREQUENCY);
     EX_BUZZER_CONTROL(port_value(port), 1, env->e_value);
     return ERROR_OK;
@@ -929,7 +929,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
     EX_BUZZER_CONTROL(port_value(port), 0, 0);
     return ERROR_OK;
   }
@@ -938,7 +938,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
     CALL(exec_arg, env, end, nresid, array, N_DEGREE);
     EX_SERVO_MOTOR(port_value(port), env->e_value);
     return ERROR_OK;
@@ -958,7 +958,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Slight_sensor_value: {
     ntype port = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
     env->e_value = EX_ANALOG_SENSOR(port_value(port));
     return ERROR_OK;
   }
@@ -967,8 +967,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype dir = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
-    CALL(arg_string, end, nresid, array, N_DIRECTION, &dir);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_DIRECTION, &dir);
     env->e_value = EX_ACCELEROMETER_VALUE(port_value(port),
 					  acceldir_value(dir));
     return ERROR_OK;
@@ -979,8 +979,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_string, end, nresid, array, N_PORT, &port);
-    CALL(arg_string, end, nresid, array, N_MODE, &mode);
+    CALL(arg_keyword, end, nresid, array, N_PORT, &port);
+    CALL(arg_keyword, end, nresid, array, N_MODE, &mode);
     if (name_equal(mode, N_ON))
       env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
     else
@@ -1166,7 +1166,7 @@ port_init(const uint8_t *end, ssize_t *resid)
 
   if (resid <= 0)
     return ERROR_OVERFLOW;
-  if (*p != BT_STRING)
+  if (*p != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
   *resid -= skip_name(end, *resid, 0);
@@ -1222,7 +1222,7 @@ parse_fvl(const uint8_t *end, ssize_t *resid, int array, void *arg)
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_string, end, nresid, array, N_NAME, &name);
+  CALL(arg_keyword, end, nresid, array, N_NAME, &name);
 
   switch (name) {
   case Svariable:
