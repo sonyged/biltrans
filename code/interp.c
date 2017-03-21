@@ -82,9 +82,16 @@ read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
 {
   const uint8_t *p = end - resid;
 
+#define SIZE16
+#if !defined(SIZE16)
   if (resid < sizeof(uint32_t))
     return ERROR_BUFFER_TOO_SHORT;
   *v = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+#else
+  if (resid < sizeof(uint16_t))
+    return ERROR_BUFFER_TOO_SHORT;
+  *v = p[0] | (p[1] << 8);
+#endif
   return ERROR_OK;
 }
 
@@ -129,16 +136,21 @@ static int
 narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
 {
   uint32_t u32;
+#if !defined(SIZE16)
+  const size_t size = 4;
+#else
+  const size_t size = 2;
+#endif
   int err;
 
   CALL(read32, *end, *resid, &u32);
   if (u32 > *resid)
     return ERROR_INVALID_SIZE;
-  if (u32 < 5)			/* minimum elist is int32 followed by 0 */
+  if (u32 < size + 1)	    /* minimum elist is int32 followed by 0 */
     return ERROR_BUFFER_TOO_SHORT;
 
   *end = (*end - *resid) + u32;
-  *nresid = u32 - 4;		/* skip leading int32 */
+  *nresid = u32 - size;		/* skip leading int32 */
   *resid -= u32;
   return ERROR_OK;
 }
@@ -490,7 +502,8 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
       return ERROR_OVERFLOW;
     if (nresid == 1)		/* trailing nul */
       return end_of_document;
-    if (*(end - nresid) != BT_DOCUMENT)
+    const int type = *(end - nresid);
+    if (type != BT_DOCUMENT)
       return ERROR_INVALID_TYPE;
     nresid -= skip_name(end, nresid, array);
     CALL((*proc), end, &nresid, 0, arg);
@@ -659,7 +672,8 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
 
   *count = 0;
   CALL(elist_lookup, end, &resid, array, N_BLOCKS);
-  if (*(end - resid) != BT_ARRAY)
+  const int type = *(end - resid);
+  if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   resid -= skip_name(end, resid, array);
   CALL(narrow_to_elist, &end, &resid, &nresid);
@@ -668,7 +682,8 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
       return ERROR_OVERFLOW;
     if (nresid == 1)		/* trailing nul */
       return ERROR_OK;
-    if (*(end - nresid) != BT_DOCUMENT)
+    const int type = *(end - nresid);
+    if (type != BT_DOCUMENT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
       return ERROR_TOOMANY_SERVO;
@@ -1162,8 +1177,9 @@ setup_ports(const uint8_t *end, ssize_t resid)
 
   err = elist_lookup(end, &resid, 0, N_PORT_SETTINGS);
   switch (err) {
-  case ERROR_OK:
-    if (*(end - resid) != BT_DOCUMENT)
+  case ERROR_OK: {
+    const int type = *(end - resid);
+    if (type != BT_DOCUMENT)
       return ERROR_INVALID_TYPE;
     resid -= skip_name(end, resid, 0);
     CALL(narrow_to_elist, &end, &resid, &nresid);
@@ -1174,6 +1190,7 @@ setup_ports(const uint8_t *end, ssize_t resid)
 	return ERROR_OK;
       CALL(port_init, end, &nresid);
     }
+  }
     break;
   case ERROR_ELEMENT_NOT_FOUND:
     err = ERROR_OK;
@@ -1233,7 +1250,8 @@ exec_script(const uint8_t *end, ssize_t *resid)
   CALL(setup_ports, end, *resid);
 
   CALL(elist_lookup, end, resid, 0, N_SCRIPTS);
-  if (*(end - *resid) != BT_ARRAY)
+  const int type = *(end - *resid);
+  if (type != BT_ARRAY)
     return ERROR_UNSUPPORTED;
 
   //EX_TRACE("script found");
@@ -1264,7 +1282,8 @@ exec_script(const uint8_t *end, ssize_t *resid)
   for (size_t i = 0; i < n_lsts; i++)
     env->e_lsts[i] = 0;
   //printf("e_vars: %p, e_lsts: %p\n", env->e_vars, env->e_lsts);
-  return exec_array(env, end, resid);
+  CALL(exec_array, env, end, resid);
+  return ERROR_OK;
 }
 
 int
@@ -1308,12 +1327,17 @@ interp_exec(const uint8_t *p, ssize_t size)
     //EX_TRACE_INT(size);
     return ERROR_BUFFER_TOO_SHORT;
   }
-  if (size < 5) {
+#if !defined(SIZE16)
+  const size_t ssize = 4;
+#else
+  const size_t ssize = 2;
+#endif
+  if (size < ssize + 1) {
     //EX_TRACE("interp: size too small");
     return ERROR_BUFFER_TOO_SHORT;
   }
 
   end -= 1;			/* trailing 0 */
-  resid -= 5;			/* leading int32 + trailing 0 */
+  resid -= ssize + 1;		/* leading int32 + trailing 0 */
   return exec_script(end, &resid);
 }
