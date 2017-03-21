@@ -24,7 +24,7 @@ describe('translate {}', function() {
 
   it('should be {} in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x03, 0x00, 0x00
+      0x02, 0x00
     ]));
   });
 });
@@ -34,7 +34,7 @@ describe('translate []', function() {
 
   it('should be [] in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x03, 0x00, 0x00
+      0x02, 0x00
     ]));
   });
 });
@@ -44,8 +44,8 @@ describe('translate { x: {} }', function() {
 
   it('should be { x: {} } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x09, 0x00, 0x03, 0x56,
-      0x00, 0x03, 0x00, 0x00, 0x00
+      0x07, 0x00, 0x03, 0x56,
+      0x00, 0x02, 0x00
     ]));
   });
 });
@@ -55,8 +55,8 @@ describe('translate { x: [] }', function() {
 
   it('should be { x: [] } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x09, 0x00, 0x04, 0x56,
-      0x00, 0x03, 0x00, 0x00, 0x00
+      0x07, 0x00, 0x04, 0x56,
+      0x00, 0x02, 0x00
     ]));
   });
 });
@@ -66,8 +66,8 @@ describe('translate { x: 2 }', function() {
 
   it('should be { x: 2 } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x07, 0x00, 0x0e, 0x56,
-      0x00, 0x02, 0x00
+      0x06, 0x00, 0x0e, 0x56,
+      0x00, 0x02
     ]));
   });
 });
@@ -77,8 +77,8 @@ describe('translate { x: "x" }', function() {
 
   it('should be { x: "x" } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x08, 0x00, 0x02, 0x56,
-      0x00, 0x56, 0x00, 0x00
+      0x07, 0x00, 0x02, 0x56,
+      0x00, 0x56, 0x00
     ]));
   });
 });
@@ -88,8 +88,8 @@ describe('translate { x: "y" }', function() {
 
   it('should be { x: "y" } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x08, 0x00, 0x02, 0x56,
-      0x00, 0x57, 0x00, 0x00,
+      0x07, 0x00, 0x02, 0x56,
+      0x00, 0x57, 0x00
     ]));
   });
 });
@@ -99,9 +99,9 @@ describe('translate { x: { y: 1 } }', function() {
 
   it('should be { x: { y: 1 } } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x0d, 0x00, 0x03, 0x56,
-      0x00, 0x07, 0x00, 0x0e,
-      0x57, 0x00, 0x01, 0x00, 0x00
+      0x0b, 0x00, 0x03, 0x56,
+      0x00, 0x06, 0x00, 0x0e,
+      0x57, 0x00, 0x01
     ]));
   });
 });
@@ -111,9 +111,9 @@ describe('translate { x: [ 8 ] }', function() {
 
   it('should be { x: [ 8 ] } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x0b, 0x00, 0x04, 0x56,
-      0x00, 0x05, 0x00, 0x0e,
-      0x08, 0x00, 0x00
+      0x09, 0x00, 0x04, 0x56,
+      0x00, 0x04, 0x00, 0x0e,
+      0x08
     ]));
   });
 });
@@ -123,8 +123,8 @@ describe('translate { name: wait }', function() {
 
   it('should be { name: wait } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x08, 0x00, 0x02,
-      0x41, 0x00, 0x06, 0x00, 0x00
+      0x07, 0x00, 0x02,
+      0x41, 0x00, 0x06, 0x00
     ]));
   });
 });
@@ -134,9 +134,9 @@ describe('translate wait', function() {
 
   it('should be wait in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x0f, 0x00, 0x02, 0x41, 0x00,
+      0x0e, 0x00, 0x02, 0x41, 0x00,
       0x06, 0x00, 0x01, 0x45, 0x00,
-      0x9a, 0x99, 0x19, 0x3f, 0x00
+      0x9a, 0x99, 0x19, 0x3f
     ]));
   });
 });

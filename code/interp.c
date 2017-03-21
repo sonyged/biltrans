@@ -77,6 +77,13 @@ typedef float vtype;
 static int arg_string(const uint8_t *, ssize_t, int, ntype, ntype *);
 static int arg_int(const uint8_t *, ssize_t, int, ntype, int32_t *);
 
+#undef ELIST_NUL
+#if defined(ELIST_NUL)
+#define ELIST_SIZE(s)	((s) + 1)
+#else
+#define ELIST_SIZE(s)	((s) + 0)
+#endif
+
 static int
 read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
 {
@@ -146,7 +153,7 @@ narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
   CALL(read32, *end, *resid, &u32);
   if (u32 > *resid)
     return ERROR_INVALID_SIZE;
-  if (u32 < size + 1)	    /* minimum elist is int32 followed by 0 */
+  if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
     return ERROR_BUFFER_TOO_SHORT;
 
   *end = (*end - *resid) + u32;
@@ -165,7 +172,7 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
   ssize_t r = *resid;
 
   /* There should be at least type and trailing null of e_name. */
-  while (r > 1) {
+  while (r > ELIST_SIZE(0)) {
     const uint8_t *p = end - r;
     uint32_t u32;
     int err;
@@ -498,9 +505,9 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
   CALL(narrow_to_elist, &end, &resid, &nresid);
 
   for (;;) {
-    if (nresid <= 0)
+    if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == 1)		/* trailing nul */
+    if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
     const int type = *(end - nresid);
     if (type != BT_DOCUMENT)
@@ -678,9 +685,9 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
   resid -= skip_name(end, resid, array);
   CALL(narrow_to_elist, &end, &resid, &nresid);
   for (;;) {
-    if (nresid <= 0)
+    if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == 1)		/* trailing nul */
+    if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
     const int type = *(end - nresid);
     if (type != BT_DOCUMENT)
@@ -1143,9 +1150,9 @@ exec_array(env *env, const uint8_t *end, ssize_t *resid)
   CALL(narrow_to_elist, &end, resid, &nresid);
 
   for (;;) {
-    if (nresid <= 0)
+    if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == 1)		/* trailing nul */
+    if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
     CALL(exec, env, end, &nresid, 1);
   }
@@ -1184,9 +1191,9 @@ setup_ports(const uint8_t *end, ssize_t resid)
     resid -= skip_name(end, resid, 0);
     CALL(narrow_to_elist, &end, &resid, &nresid);
     for (;;) {
-      if (nresid <= 0)
+      if (nresid < ELIST_SIZE(0))
 	return ERROR_OVERFLOW;
-      if (nresid == 1)		/* trailing nul */
+      if (nresid == ELIST_SIZE(0))		/* trailing nul */
 	return ERROR_OK;
       CALL(port_init, end, &nresid);
     }
@@ -1332,12 +1339,12 @@ interp_exec(const uint8_t *p, ssize_t size)
 #else
   const size_t ssize = 2;
 #endif
-  if (size < ssize + 1) {
+  if (size < ELIST_SIZE(ssize)) {
     //EX_TRACE("interp: size too small");
     return ERROR_BUFFER_TOO_SHORT;
   }
 
-  end -= 1;			/* trailing 0 */
-  resid -= ssize + 1;		/* leading int32 + trailing 0 */
+  end -= ELIST_SIZE(0);		/* drop trailing 0 */
+  resid -= ELIST_SIZE(ssize);	/* leading int32 + trailing 0 */
   return exec_script(end, &resid);
 }
