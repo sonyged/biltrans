@@ -131,25 +131,25 @@ int
 EX_PORT_INIT(int port, ntype part)
 {
 
-  if (part == Smulti_led)
+  if (part == Kmulti_led)
     INIT_MULTILED();
-  if (part == Sled)
+  if (part == Kled)
     pinMode(port, OUTPUT);
-  if (part == Sdc_motor)
+  if (part == Kdc_motor)
     INIT_DC_MOTOR(port);
-  if (part == Sservo_motor)
+  if (part == Kservo_motor)
     INIT_SERVO_MOTOR(port);
-  if (part == Sbuzzer)
+  if (part == Kbuzzer)
     BUZZER_CONTROL(port, OFF, 0);
-  if (part == Slight_sensor)
+  if (part == Klight_sensor)
     INIT_LIGHT_SENSOR(port);
-  if (part == Stouch_sensor)
+  if (part == Ktouch_sensor)
     INIT_TOUCH_SENSOR(port);
-  if (part == Sir_photo_reflector)
+  if (part == Kir_photo_reflector)
     INIT_IR_PHOTO_REFLECTOR(port);
-  if (part == S3_axis_digital_accelerometer)
+  if (part == K3_axis_digital_accelerometer)
     INIT_3_AXIS_DIGITAL_ACCELEROMETER(port ? PORT_K1 : PORT_K0);
-  if (part == Spush_button)
+  if (part == Kpush_button)
     INIT_PUSH_BUTTON(port);
   return ERROR_OK;
 }
