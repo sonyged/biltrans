@@ -26,16 +26,18 @@ static int arg_int(const uint8_t *, ssize_t, int, ntype, int32_t *);
 #endif
 
 static int
-read32(const uint8_t *end, const ssize_t resid, uint32_t *v)
+read_size(const uint8_t *end, const ssize_t resid, uint32_t *v)
 {
   const uint8_t *p = end - resid;
 
 #define SIZE16
 #if !defined(SIZE16)
+#define SIZE_SIZE 4
   if (resid < sizeof(uint32_t))
     return ERROR_BUFFER_TOO_SHORT;
   *v = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
 #else
+#define SIZE_SIZE 2
   if (resid < sizeof(uint16_t))
     return ERROR_BUFFER_TOO_SHORT;
   *v = p[0] | (p[1] << 8);
@@ -90,14 +92,10 @@ static int
 narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
 {
   uint32_t u32;
-#if !defined(SIZE16)
-  const size_t size = 4;
-#else
-  const size_t size = 2;
-#endif
+  const size_t size = SIZE_SIZE;
   int err;
 
-  CALL(read32, *end, *resid, &u32);
+  CALL(read_size, *end, *resid, &u32);
   if (u32 > *resid)
     return ERROR_INVALID_SIZE;
   if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
@@ -139,7 +137,7 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
       break;
     case BT_OBJECT:
     case BT_ARRAY:
-      CALL(read32, end, r, &u32);
+      CALL(read_size, end, r, &u32);
       r -= u32;
       break;
     case BT_INT8:
@@ -1313,54 +1311,36 @@ int
 interp_exec(const uint8_t *p, ssize_t size)
 {
   int err;
-  const uint8_t *end = p + size;
-  ssize_t resid = size;
+  ssize_t resid = SIZE_SIZE;
+  const uint8_t *end = p + resid;
   uint32_t u32;
-  extern uint32_t __koov_data_start__;
-  extern uint32_t __koov_data_end__;
-  extern uint32_t __end__;
-  extern uint32_t __HeapLimit;
-  extern uint32_t __StackTop;
-  extern uint32_t __StackLimit;
-
-#if 0
-  EX_TRACE("interp: start");
-  EX_TRACE_HEX((int)&__koov_data_start__);
-  EX_TRACE_HEX((int)&__koov_data_end__);
-  EX_TRACE_HEX((int)&__end__);
-  EX_TRACE_HEX((int)&__HeapLimit);
-  EX_TRACE_HEX((int)&__StackTop);
-  EX_TRACE_HEX((int)&__StackLimit);
-  EX_TRACE_HEX((int)&err);
-#endif
-  //EX_TRACE_HEX((int)p);
-  //EX_TRACE_HEX(p[0]);
-  //EX_TRACE_HEX(p[1]);
-  const uint32_t *q = (const uint32_t *)0xce00;
-  //EX_TRACE_HEX(q[0]);
-  const char *r = (const char *)alloca(100);
 
   /*
    * int32 e_list "\x00"
    */
-  CALL(read32, end, resid, &u32);
-  if (u32 != size) {
-    //EX_TRACE("interp: size mismatch");
-    //EX_TRACE_INT(u32);
-    //EX_TRACE_INT(size);
-    return ERROR_BUFFER_TOO_SHORT;
-  }
-#if !defined(SIZE16)
-  const size_t ssize = 4;
-#else
-  const size_t ssize = 2;
+  CALL(read_size, end, resid, &u32);
+#if defined(SIZE16)
+  if (u32 > 0xffff)
+    return ERROR_INVALID_SIZE;
 #endif
-  if (size < ELIST_SIZE(ssize)) {
+#if defined(KOOV_MAGIC)
+  const uint8_t *q = p + u32;
+  if (q[0] != (KOOV_MAGIC & 0xff) ||
+      q[1] != ((KOOV_MAGIC >> 8) & 0xff) ||
+      q[2] != ((KOOV_MAGIC >> 16) & 0xff) ||
+      q[3] != ((KOOV_MAGIC >> 24) & 0xff))
+    return ERROR_INVALID_MAGIC;
+#endif
+
+  end = p + u32;
+  resid = u32;
+
+  if (resid < ELIST_SIZE(SIZE_SIZE)) {
     //EX_TRACE("interp: size too small");
     return ERROR_BUFFER_TOO_SHORT;
   }
 
-  end -= ELIST_SIZE(0);		/* drop trailing 0 */
-  resid -= ELIST_SIZE(ssize);	/* leading int32 + trailing 0 */
+  end -= ELIST_SIZE(0);		/* drop trailing 0 if any */
+  resid -= ELIST_SIZE(SIZE_SIZE); /* leading int32 + trailing 0 */
   return exec_script(end, &resid);
 }

@@ -1113,6 +1113,33 @@ bts01_sbo()
 }
 
 /*
+ * Write single byte into flash.
+ */
+#define NVM_MEMORY        ((volatile uint16_t *)FLASH_ADDR)
+static void
+flash_write(byte cc)
+{
+
+  if (flash_state.fs_escape) {
+    cc = cc ? END_SYSEX : 0;
+    flash_state.fs_escape = 0;
+  } else {
+    if (cc == 0) {	/* escape character */
+      flash_state.fs_escape = 1;
+      return;
+    }
+  }
+  flash_state.fs_value |= cc << flash_state.fs_shift;
+  if (flash_state.fs_shift == 0)
+    flash_state.fs_shift = 8;
+  else {
+    NVM_MEMORY[flash_state.fs_offset / 2] = flash_state.fs_value;
+    flash_state.fs_offset += 2;
+    flash_state.fs_value = flash_state.fs_shift = 0;
+  }
+}
+
+/*
  * Handler for 0x0e.  argc doesn't count 0x0e.
  */
 static void
@@ -1355,7 +1382,6 @@ koov_sysex(byte argc, byte *argv)
 	}
 	break;
       case 0x08:		/* flash erase */
-#define NVM_MEMORY        ((volatile uint16_t *)FLASH_ADDR)
 	if (argc > 0) {
 	  /*
 	   * Request:
@@ -1411,6 +1437,13 @@ koov_sysex(byte argc, byte *argv)
 	   *
 	   *    status: AA		// 0 on success
 	   */
+
+#define KOOV_MAGIC 0x564f4f4b
+	  flash_write(KOOV_MAGIC & 0xff);
+	  flash_write((KOOV_MAGIC >> 8) & 0xff);
+	  flash_write((KOOV_MAGIC >> 16) & 0xff);
+	  flash_write((KOOV_MAGIC >> 24) & 0xff);
+
 	  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
 	    NVM_MEMORY[flash_state.fs_offset / 2] = 0xffff;
 	    flash_state.fs_offset += 2;
@@ -1423,6 +1456,8 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(0x09);
 	  Firmata.write(0x00);
 	  Firmata.write(END_SYSEX); /* 0xf7 */
+
+	  enableFirmata = false;
 	}
 	break;
       case 0x0a:		/* write */
@@ -1446,23 +1481,7 @@ koov_sysex(byte argc, byte *argv)
 	  int i = 3;
 	  while (i < 3 + length) {
 	    byte cc = argv[i++];
-	    if (flash_state.fs_escape) {
-	      cc = cc ? END_SYSEX : 0;
-	      flash_state.fs_escape = 0;
-	    } else {
-	      if (cc == 0) {	/* escape character */
-		flash_state.fs_escape = 1;
-		continue;
-	      }
-	    }
-	    flash_state.fs_value |= cc << flash_state.fs_shift;
-	    if (flash_state.fs_shift == 0)
-	      flash_state.fs_shift = 8;
-	    else {
-	      NVM_MEMORY[flash_state.fs_offset / 2] = flash_state.fs_value;
-	      flash_state.fs_offset += 2;
-	      flash_state.fs_value = flash_state.fs_shift = 0;
-	    }
+	    flash_write(cc);
 	  }
 	  Firmata.write(START_SYSEX); /* 0xf0 */
 	  Firmata.write(0x0e);
