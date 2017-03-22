@@ -18,6 +18,7 @@ const merge_opts = (o, opts) => {
 const capture = (cmd, opts) => {
   return cp.execSync(cmd, merge_opts({}, opts)).split(/\n/);
 };
+capture('cd test; make');
 
 describe('translate {}', function() {
   const trans = bilbinary.translator({});
@@ -267,6 +268,438 @@ describe('execute variable', function() {
       "wait 1.000000",
       "wait 2.000000",
       "wait 0.000000",
+      ""
+    ]);
+  });
+});
+
+describe('execute list', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'wait', secs: { name: 'list-length', 'list': 'l0' } },
+        { name: 'list-add', 'list': 'l0', value: 1 },
+        { name: 'wait', secs: { name: 'list-length', 'list': 'l0' } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: {
+            name: 'plus', x: 0, y: 0
+          }
+        } },
+        { name: 'list-add', 'list': 'l1', value: -1 },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: {
+            name: 'plus', x: 0, y: 1
+          }
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 99
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l1', value: -1
+        } },
+        { name: 'list-delete', 'list': 'l0', position: 0 },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 1
+        } },
+        { name: 'wait', secs: { name: 'list-length', 'list': 'l0' } },
+        { name: 'list-add', 'list': 'l0', value: 5 },
+        { name: 'list-add', 'list': 'l0', value: {
+          name: 'plus', x: 2, y: 4
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 5
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 6
+        } },
+        { name: 'list-replace', 'list': 'l0', position: 0, value: {
+          name: 'plus', x: 3, y: 4
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 5
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 6
+        } },
+        { name: 'wait', secs: {
+          name: 'list-contains?', 'list': 'l0', value: 7
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 1
+        } },
+        { name: 'list-insert', 'list': 'l0', position: 0, value: {
+          name: 'plus', x: 4, y: 4
+        } },
+        { name: 'list-insert', 'list': 'l0', position: 2, value: {
+          name: 'plus', x: 4, y: 2.5
+        } },
+        { name: 'list-insert', 'list': 'l0', position: 4, value: {
+          name: 'plus', x: 3, y: 2.5
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 1
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 2
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 3
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 4
+        } },
+        { name: 'list-delete', 'list': 'l1', position: 0 },
+        { name: 'list-insert', 'list': 'l1', position: 0, value: 1 },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 0
+        } },
+        { name: 'list-insert', 'list': 'l1', position: 1, value: 2 },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 1
+        } },
+        { name: 'list-insert', 'list': 'l1', position: 0, value: 3 },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 0
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 1
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 2
+        } },
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] },
+    { name: 'list', list: 'l1', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "wait 0.000000",
+      "wait 1.000000",
+      "wait 1.000000",
+      "wait 1.000000",
+      "wait -1.000000",
+      "wait 1.000000",
+      "wait 0.000000",
+      "wait 1.000000",
+      "wait 0.000000",
+      "wait 0.000000",
+      "wait 1.000000",
+      "wait 1.000000",
+      "wait 0.000000",
+      "wait 1.000000",
+      "wait 1.000000",
+      "wait 7.000000",
+      "wait 6.000000",
+      "wait 8.000000",
+      "wait 7.000000",
+      "wait 6.500000",
+      "wait 6.000000",
+      "wait 5.500000",
+      "wait 1.000000",
+      "wait 1.000000",
+      "wait 2.000000",
+      "wait 3.000000",
+      "wait 1.000000",
+      "wait 2.000000",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-ref error)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [ { name: 'list-ref', 'list': 'l0', position: 0 } ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-ref error 2)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-ref', 'list': 'l0', position: -1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-ref error 3)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-ref', 'list': 'l0', position: 1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-delete error)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-delete', 'list': 'l0', position: 0 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-delete error 2)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-delete', 'list': 'l0', position: -1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-delete error 3)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-delete', 'list': 'l0', position: 1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-replace error)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-replace', 'list': 'l0', position: 0, value: 1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-replace error 2)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-replace', 'list': 'l0', position: -1, value: 0 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-replace error 3)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-replace', 'list': 'l0', position: 1, value: 2 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-insert error)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-insert', 'list': 'l0', position: -1, value: 1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-insert error 2)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-insert', 'list': 'l0', position: 1, value: 1 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-insert error 3)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-insert', 'list': 'l0', position: -1, value: 0 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
+      ""
+    ]);
+  });
+});
+
+describe('execute list (list-insert error 4)', function() {
+  const trans = bilbinary.translator({ scripts: [
+    { name: 'when-green-flag-clicked',
+      blocks: [
+        { name: 'list-add', 'list': 'l0', value: 3 },
+        { name: 'list-insert', 'list': 'l0', position: 2, value: 2 }
+      ]
+    },
+    { name: 'list', list: 'l0', value: [] }
+  ]});
+
+  it('should execute variable related functions', function() {
+    const output = capture('./test/test_binary', {
+      input: trans.translate()
+    });
+    assert.deepEqual(output, [
+      "got error 10",
       ""
     ]);
   });

@@ -9,6 +9,9 @@
 #if !defined(KEYWORD_DICT_H)
 #include "keyword_dict.h"
 #endif
+#if !defined(LISTLIB_H)
+#include "listlib.h"
+#endif
 
 typedef float vtype;
 
@@ -66,12 +69,18 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
   return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
 }
 
-#define CALL(F, ...) do {						\
-  int err = (F)(__VA_ARGS__);						\
-  if (err) {								\
-    /* fprintf(stderr, #F ": %d: err = %d\n", __LINE__, err); */	\
-    return err;								\
-  }									\
+#if 0
+#define LOG(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+#else
+#define LOG(fmt, ...) do {} while (0)
+#endif
+
+#define CALL(F, ...) do {			\
+  int err = (F)(__VA_ARGS__);			\
+  if (err) {					\
+    LOG(#F ": %d: err = %d\n", __LINE__, err);	\
+    return err;					\
+  }						\
 } while (0)
 
 /*
@@ -638,6 +647,17 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
 }
 
 static int
+list_error(int err)
+{
+  switch (err) {
+  case LE_OK: return ERROR_OK;
+  case LE_NO_MEMORY: return ERROR_NO_MEMORY;
+  case LE_RANGE: return ERROR_OUT_OF_RANGE;
+  }
+  return ERROR_UNSUPPORTED;
+}
+
+static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
   const int array = 0;
@@ -953,6 +973,74 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
     CALL(arg_int, end, nresid, array, Kfunction, &i32);
     return exec_function(env, i32);
+  }
+
+  case Klist_length: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    env->e_value = list_length(&env->e_lsts[u32]);
+    return ERROR_OK;
+  }
+
+  case Klist_ref: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kposition);
+    env->e_value = list_ref(&env->e_lsts[u32], env->e_value, &err);
+    return list_error(err);
+  }
+
+  case Klist_contains: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    env->e_value = list_contains(&env->e_lsts[u32], env->e_value);
+    return ERROR_OK;
+  }
+
+  case Klist_add: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    list_add(&env->e_lsts[u32], env->e_value, &err);
+    return list_error(err);
+  }
+
+  case Klist_delete: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kposition);
+    list_delete(&env->e_lsts[u32], env->e_value, &err);
+    return list_error(err);
+  }
+
+  case Klist_replace: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    const vtype value = env->e_value;
+    CALL(exec_arg, env, end, nresid, array, Kposition);
+    const vtype position = env->e_value;
+    list_replace(&env->e_lsts[u32], position, value, &err);
+    return list_error(err);
+  }
+
+  case Klist_insert: {
+    uint32_t u32;
+
+    CALL(lookup_list, env, end, nresid, &u32);
+    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    const vtype value = env->e_value;
+    CALL(exec_arg, env, end, nresid, array, Kposition);
+    const vtype position = env->e_value;
+    list_insert(&env->e_lsts[u32], position, value, &err);
+    return list_error(err);
   }
 
   case Kpick_random: {

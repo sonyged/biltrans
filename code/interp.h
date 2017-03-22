@@ -47,6 +47,7 @@ enum {
   ERROR_INVALID_SIZE,		/* 9 */
   ERROR_OUT_OF_RANGE,		/* 10 */
   ERROR_TOOMANY_SERVO,		/* 11 */
+  ERROR_NO_MEMORY,		/* 12 */
 };
 
 #if !defined(CHECK_INTR)

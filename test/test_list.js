@@ -17,6 +17,7 @@ const merge_opts = (o, opts) => {
 const capture = (cmd, opts) => {
   return cp.execSync(cmd, merge_opts({}, opts)).split(/\n/);
 };
+capture('cd test; make');
 
 describe('execute listtest', function() {
   it('should execute listtest successfully', function() {
