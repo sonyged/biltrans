@@ -1569,6 +1569,8 @@ void setup()
   digitalWrite((pin), LOW);			\
 } while (0)
 
+
+static void showConnectMode();
 static void
 periodc_jobs()
 {
@@ -1586,6 +1588,27 @@ periodc_jobs()
     }
 #undef INTERVAL
   }
+
+  showConnectMode();
+}
+
+static void
+showConnectMode()
+{
+  switch (dualStream.connectMode()) {
+  case DualStream::NOT_CONNECTED:
+    LED_OFF(PIN_USB);
+    LED_OFF(PIN_BLE);
+    break;
+  case DualStream::USB_CONNECTED:
+    LED_ON(PIN_USB);
+    LED_OFF(PIN_BLE);
+    break;
+  case DualStream::BLE_CONNECTED:
+    LED_OFF(PIN_USB);
+    LED_ON(PIN_BLE);
+    break;
+  };
 }
 
 void loop()
@@ -1605,20 +1628,7 @@ void loop()
     }
   }
 
-  switch (dualStream.connectMode()) {
-  case DualStream::NOT_CONNECTED:
-    LED_OFF(PIN_USB);
-    LED_OFF(PIN_BLE);
-    break;
-  case DualStream::USB_CONNECTED:
-    LED_ON(PIN_USB);
-    LED_OFF(PIN_BLE);
-    break;
-  case DualStream::BLE_CONNECTED:
-    LED_OFF(PIN_USB);
-    LED_ON(PIN_BLE);
-    break;
-  };
+  showConnectMode();
 
   if (enableFirmata) {
     LED_OFF(PIN_AUTO);

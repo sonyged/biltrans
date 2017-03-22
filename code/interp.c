@@ -447,6 +447,7 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
   CALL(narrow_to_elist, &end, &resid, &nresid);
 
   for (;;) {
+    CHECK_INTR(ERROR_INTERRUPTED);
     if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
@@ -627,6 +628,7 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
   resid -= skip_name(end, resid, array);
   CALL(narrow_to_elist, &end, &resid, &nresid);
   for (;;) {
+    CHECK_INTR(ERROR_INTERRUPTED);
     if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
@@ -1164,6 +1166,7 @@ exec_array(env *env, const uint8_t *end, ssize_t *resid)
   CALL(narrow_to_elist, &end, resid, &nresid);
 
   for (;;) {
+    CHECK_INTR(ERROR_INTERRUPTED);
     if (nresid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
@@ -1205,6 +1208,7 @@ setup_ports(const uint8_t *end, ssize_t resid)
     resid -= skip_name(end, resid, 0);
     CALL(narrow_to_elist, &end, &resid, &nresid);
     for (;;) {
+      CHECK_INTR(ERROR_INTERRUPTED);
       if (nresid < ELIST_SIZE(0))
 	return ERROR_OVERFLOW;
       if (nresid == ELIST_SIZE(0))		/* trailing nul */

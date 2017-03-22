@@ -5,7 +5,7 @@ static const uint8_t scripts[] __attribute__((section("KOOV_DATA"),
 
 void setup()
 {
-#if 1
+#if 0
 #define BUTTON_A0 24
 #define BUTTON_A1 25
 #define BUTTON_A2 26
@@ -21,13 +21,17 @@ void setup()
 void
 loop()
 {
+#if 0
   SerialUSB.println("exec!");
+#endif
   int err = interp_exec(scripts, 0);
 
+#if 0
   if (err) {
     while (digitalRead(BUTTON_A0) == HIGH) {
       SerialUSB.println(err);
       delay(10);
     }
   }
+#endif
 }
