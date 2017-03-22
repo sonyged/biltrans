@@ -10,28 +10,11 @@ typedef uint16_t ntype;
 enum {
   BT_NUMBER = 0x01,
   BT_KEYWORD = 0x02,
-  BT_DOCUMENT = 0x03,
   BT_OBJECT = 0x03,
   BT_ARRAY = 0x04,
-  BT_BINARY = 0x05,
-  BT_UNDEFINED = 0x06,
-  BT_OBJECTID = 0x07,
-  BT_BOOLEAN = 0x08,
-  BT_UTCDATE = 0x09,
-  BT_NULL = 0x0a,
-  BT_REGEXP = 0x0b,
-  BT_DBPOINTER = 0x0c,
-  BT_JSCODE = 0x0d,
-  BT_SYMBOL = 0x0e,
-  BT_JSCODEWS = 0x0f,
-  BT_INT8 = 0x0e,
-  BT_INT16 = 0x0f,
-  BT_INT32 = 0x10,
-  BT_TIMESTAMP = 0x11,
-  BT_INT64 = 0x12,
-  BT_DECIMAL128 = 0x13,
-  BT_MINKEY = 0xff,
-  BT_MAXKEY = 0x7f,
+  BT_INT8 = 0x05,
+  BT_INT16 = 0x06,
+  BT_INT32 = 0x07,
 };
 
 enum {
@@ -54,11 +37,15 @@ enum {
 #define CHECK_INTR(x)		/* nothing */
 #endif
 
-//extern "C" {
+#if defined(__cplusplus)
+extern "C" {
+#endif
 void EX_TRACE(const char *msg);
 void EX_TRACE_INT(int);
 void EX_TRACE_HEX(int);
-//};
+#if defined(__cplusplus)
+};
+#endif
 
 int EX_DELAY(float seconds);
 long EX_RANDOM(long, long);

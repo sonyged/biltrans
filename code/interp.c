@@ -137,7 +137,7 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
     case BT_KEYWORD:
       r -= 2;
       break;
-    case BT_DOCUMENT:
+    case BT_OBJECT:
     case BT_ARRAY:
       CALL(read32, end, r, &u32);
       r -= u32;
@@ -150,9 +150,6 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
       break;
     case BT_INT32:
       r -= 4;
-      break;
-    case BT_INT64:
-      r -= 8;
       break;
 
     default:
@@ -204,7 +201,7 @@ compare_names(const uint8_t *end, ssize_t resid, int array,
   const uint8_t *p = end - resid;
   ssize_t nresid;
 
-  if (*p != BT_DOCUMENT)
+  if (*p != BT_OBJECT)
     return 0;
   resid -= skip_name(end, resid, array);
   if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
@@ -457,7 +454,7 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
     const int type = *(end - nresid);
-    if (type != BT_DOCUMENT)
+    if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     nresid -= skip_name(end, nresid, array);
     CALL((*proc), end, &nresid, 0, arg);
@@ -637,7 +634,7 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
     const int type = *(end - nresid);
-    if (type != BT_DOCUMENT)
+    if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
       return ERROR_TOOMANY_SERVO;
@@ -1115,7 +1112,7 @@ exec(env *env, const uint8_t *end, ssize_t *resid, int array)
     return ERROR_OVERFLOW;
 
   switch (*p) {
-  case BT_DOCUMENT:
+  case BT_OBJECT:
     *resid -= skip_name(end, *resid, array);
     return exec_block(env, end, resid);
   case BT_ARRAY:
@@ -1148,13 +1145,6 @@ exec(env *env, const uint8_t *end, ssize_t *resid, int array)
       u.b[i] = *(end - *resid + i);
     env->e_value = u.i32;	/* convert from 32 bit integer to vtype */
     *resid -= 4;
-    return ERROR_OK;
-  case BT_INT64:
-    *resid -= skip_name(end, *resid, array);
-    for (int i = 0; i < 8; i++)
-      u.b[i] = *(end - *resid + i);
-    env->e_value = u.i64;	/* convert from 64 bit integer to vtype */
-    *resid -= 8;
     return ERROR_OK;
   default:
     return ERROR_UNSUPPORTED;
@@ -1212,7 +1202,7 @@ setup_ports(const uint8_t *end, ssize_t resid)
   switch (err) {
   case ERROR_OK: {
     const int type = *(end - resid);
-    if (type != BT_DOCUMENT)
+    if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     resid -= skip_name(end, resid, 0);
     CALL(narrow_to_elist, &end, &resid, &nresid);

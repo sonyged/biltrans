@@ -110,6 +110,8 @@ ACCELEROMETER_VALUE(int port, int direction)
 }
 
 enum { PORT_V0 = 0, PORT_V1 };
+#define PORT_V0 PORT_V0
+#define PORT_V1 PORT_V1
 
 enum dcMotroMode {
   DCMOTOR_NORMAL,
