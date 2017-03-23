@@ -4,7 +4,7 @@
  */
 
 'use strict';
-const { compactify, uncompactify } = require('../lib/compactify'),
+const { compactify, uncompactify } = require('../../bilbinary/compactify'),
       assert = require('assert');
 
 describe('compactify empty array', function() {

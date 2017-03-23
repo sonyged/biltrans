@@ -4,7 +4,7 @@
  */
 
 'use strict';
-const bilbinary = require('../lib/bilbinary'),
+const bilbinary = require('../../bilbinary'),
       assert = require('assert');
 
 const cp = require('child_process');

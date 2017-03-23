@@ -1438,6 +1438,7 @@ koov_sysex(byte argc, byte *argv)
 	   *    status: AA		// 0 on success
 	   */
 
+	  /* The magic number should not contain nul byte */
 #define KOOV_MAGIC 0x564f4f4b
 	  flash_write(KOOV_MAGIC & 0xff);
 	  flash_write((KOOV_MAGIC >> 8) & 0xff);
