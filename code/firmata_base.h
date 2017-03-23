@@ -1445,6 +1445,10 @@ koov_sysex(byte argc, byte *argv)
 	  flash_write((KOOV_MAGIC >> 16) & 0xff);
 	  flash_write((KOOV_MAGIC >> 24) & 0xff);
 
+	  /* flush pending byte */
+	  if (flash_state.fs_shift)
+	    flash_write(0xff);
+
 	  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
 	    NVM_MEMORY[flash_state.fs_offset / 2] = 0xffff;
 	    flash_state.fs_offset += 2;
