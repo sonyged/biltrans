@@ -34,6 +34,7 @@ loop()
   SerialUSB.println("exec!");
 #endif
   if (!interp_error) {
+    INIT_OUTPUTS();
     int err = interp_exec(scripts, 0);
 
     if (err && err != ERROR_INTERRUPTED) {

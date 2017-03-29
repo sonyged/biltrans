@@ -481,3 +481,22 @@ TIMER()
 
   return (millis() - timer_start) / 1000;
 }
+
+static void
+INIT_OUTPUTS()
+{
+  /*
+   * Initialize output ports to known state.
+   */
+  INIT_DC_MOTOR(PORT_V0);
+  INIT_DC_MOTOR(PORT_V1);
+  static const byte dports[] = {
+    PORT_V2, PORT_V3, PORT_V4, PORT_V5,
+    PORT_V6, PORT_V7, PORT_V8, PORT_V9,
+  };
+  for (int i = 0; i < sizeof(dports) / sizeof(dports[0]); i++) {
+    pinMode(dports[i], OUTPUT);
+    digitalWrite(dports[i], LOW);
+  }
+  INIT_MULTILED();
+}
