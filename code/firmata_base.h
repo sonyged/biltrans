@@ -1463,6 +1463,7 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(END_SYSEX); /* 0xf7 */
 
 	  enableFirmata = false;
+	  interp_error = 0;
 	}
 	break;
       case 0x0a:		/* write */
@@ -1576,25 +1577,58 @@ void setup()
 
 
 static void showConnectMode();
+static unsigned int blink_timer = 0;
+static unsigned int blink_state = 0;
+static int blink_led(int pin)
+{
+#define INTERVAL 250
+  unsigned int now = millis();
+  if (now - blink_timer > INTERVAL) {
+    blink_timer = now;
+    blink_state = !blink_state;
+    if (pin) {
+      if (blink_state)
+	LED_ON(pin);
+      else
+	LED_OFF(pin);
+    }
+    return 1;
+  }
+  return 0;
+#undef INTERVAL
+}
 static void
 periodc_jobs()
 {
   if (dualStream.connectMode() == DualStream::NOT_CONNECTED &&
       bts01_failure) {
-#define INTERVAL 100
-    static unsigned int blink_timer = 0;
-    unsigned int now = millis();
-    if (now - blink_timer > INTERVAL) {
-      if ((now / INTERVAL) % 2)
-	LED_ON(PIN_BLE);
-      else
+    blink_led(PIN_BLE);
+  } else {
+    if (enableFirmata)
+      showConnectMode();
+    else if (interp_error) {
+      static byte hi, lo, pre;
+      if (hi == 0 && lo == 0) {
+	pre = 8;
+	hi = ((interp_error >> 4) & 0xf) * 2;
+	lo = (interp_error & 0xf) * 2;
+	blink_timer = millis();
+	blink_state = 0;
+      }
+      if (pre > 0) {
+	if (blink_led(0))
+	  pre--;
+      } else if (hi > 0) {
+	LED_OFF(PIN_USB);
+	if (blink_led(PIN_BLE))
+	  hi--;
+      } else if (lo > 0) {
 	LED_OFF(PIN_BLE);
-      blink_timer = now;
+	if (blink_led(PIN_USB))
+	  lo--;
+      }
     }
-#undef INTERVAL
   }
-
-  showConnectMode();
 }
 
 static void
@@ -1633,7 +1667,7 @@ void loop()
     }
   }
 
-  showConnectMode();
+  periodc_jobs();
 
   if (enableFirmata) {
     LED_OFF(PIN_AUTO);

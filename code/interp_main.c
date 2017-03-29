@@ -33,14 +33,17 @@ loop()
 #if 0
   SerialUSB.println("exec!");
 #endif
-  int err = interp_exec(scripts, 0);
+  if (!interp_error) {
+    int err = interp_exec(scripts, 0);
 
+    if (err && err != ERROR_INTERRUPTED) {
+      interp_error = err;
 #if 0
-  if (err && err != ERROR_INTERRUPTED) {
-    while (digitalRead(BUTTON_A0) == HIGH) {
-      SerialUSB.println(err);
-      delay(10);
+      while (digitalRead(BUTTON_A0) == HIGH) {
+	SerialUSB.println(err);
+	delay(10);
+      }
+#endif
     }
   }
-#endif
 }

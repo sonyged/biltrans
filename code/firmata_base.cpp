@@ -193,3 +193,5 @@ static void
 SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time);
 static void
 MULTILED(int r, int g, int b);
+
+static uint8_t interp_error = 0;
