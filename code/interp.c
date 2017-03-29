@@ -1064,20 +1064,6 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     return ERROR_OK;
   }
 
-
-  /*
-    3-axis-digital-accelerometer-value
-    less-than-or-equal?
-    greater-than-or-equal?
-    list-length
-    list-add
-    list-contains?
-    list-ref
-    list-delete
-    list-replace
-    list-insert
-   */
-
   default:
     return ERROR_UNSUPPORTED;
   }
