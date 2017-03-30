@@ -278,8 +278,11 @@ typedef struct env {
   vtype *e_vars;
   void **e_lsts;
 } env;
-static int exec(env *env, const uint8_t *end, ssize_t *resid, int array);
+
 static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
+static int exec_block(env *env, const uint8_t *end, ssize_t *resid);
+static int exec_number(env *env, const uint8_t *end, ssize_t *resid,
+		       uint8_t type);
 
 static int
 arg_keyword(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
@@ -336,8 +339,21 @@ exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
 
   CHECK_STACK0(env, "exec_arg", &err, name);
   CALL(elist_lookup, end, &resid, name);
-  RETURN(exec, env, end, &resid, 0); /* execute single block */
-  return ERROR_OK;
+
+  const uint8_t type = get_type(end, &resid, 0);
+  switch (type) {
+  case BT_ERROR:
+    return ERROR_BUFFER_TOO_SHORT;
+  case BT_OBJECT:
+    return exec_block(env, end, &resid);
+  case BT_NUMBER:
+  case BT_INT8:
+  case BT_INT16:
+  case BT_INT32:
+    return exec_number(env, end, &resid, type);
+  default:
+    return ERROR_INVALID_TYPE;
+  }
 }
 
 /*
@@ -353,7 +369,7 @@ exec_blocks(env *env, const uint8_t *end, ssize_t resid, ntype name)
   CALL(elist_lookup, end, &resid, name);
   const uint8_t type = get_type(end, &resid, 0);
   if (type != BT_ARRAY)
-    return ERROR_UNSUPPORTED;
+    return ERROR_INVALID_TYPE;
   return exec_array(env, end, &resid);
 }
 
@@ -1103,7 +1119,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 }
 
 static int
-exec_number(env *env, const uint8_t *end, ssize_t *resid, const uint8_t type)
+exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
 {
   union {
     float f;
@@ -1149,35 +1165,6 @@ exec_number(env *env, const uint8_t *end, ssize_t *resid, const uint8_t type)
   return ERROR_OK;
 }
 
-/*
- * Evaluate single element then advance instruction pointer.
- */
-static int
-exec(env *env, const uint8_t *end, ssize_t *resid, int array)
-{
-  const uint8_t *p = end - *resid;
-  int err;
-
-  CHECK_STACK0(env, "exec", &err, *p);
-  const uint8_t type = get_type(end, resid, array);
-  switch (type) {
-  case BT_ERROR:
-    return ERROR_BUFFER_TOO_SHORT;
-  case BT_OBJECT:
-    return exec_block(env, end, resid);
-  case BT_ARRAY:
-    return exec_array(env, end, resid);
-  case BT_NUMBER:
-  case BT_INT8:
-  case BT_INT16:
-  case BT_INT32:
-    return exec_number(env, end, resid, type);
-  default:
-    return ERROR_UNSUPPORTED;
-  }
-  return ERROR_OK;
-}
-
 static int
 exec_array(env *env, const uint8_t *end, ssize_t *resid)
 {
@@ -1193,7 +1180,10 @@ exec_array(env *env, const uint8_t *end, ssize_t *resid)
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    CALL(exec, env, end, &nresid, 1);
+    const uint8_t type = get_type(end, &nresid, 1);
+    if (type != BT_OBJECT)
+      return ERROR_INVALID_TYPE;
+    CALL(exec_block, env, end, &nresid);
   }
 }
 
@@ -1297,7 +1287,7 @@ exec_script(const uint8_t *end, ssize_t *resid)
 
   const uint8_t type = get_type(end, resid, 0);
   if (type != BT_ARRAY)
-    return ERROR_UNSUPPORTED;
+    return ERROR_INVALID_TYPE;
 
   /* Now, we're looking at (e_list is an array of blocks):
    *   int32 e_list "\x00" 
