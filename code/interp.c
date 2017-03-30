@@ -1143,6 +1143,8 @@ exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
     break;
   }
 
+  if (*resid < size)
+    return ERROR_INVALID_SIZE;
   for (int i = 0; i < size; i++)
     u.b[i] = *(end - *resid + i);
   *resid -= size;
