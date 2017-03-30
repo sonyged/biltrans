@@ -61,12 +61,12 @@ DEFINES='-Dprintf=iprintf -mcpu=cortex-m0plus -DF_CPU=48000000L
  -DUSB_MANUFACTURER="\"${USB_MANUFACTURER}\""
  -DUSB_PRODUCT="\"${USB_PRODUCT}\""'
 
-CXXFLAGS="-g -Os -w -ffunction-sections -fdata-sections -nostdlib
- --param max-inline-insns-single=500 -fno-rtti -fno-exceptions
- ${DEFINES}"
+OPTS="-g -Os -w -ffunction-sections -fdata-sections -nostdlib
+ --param max-inline-insns-single=500"
 
-CFLAGS="-g -Os -w -ffunction-sections -fdata-sections -nostdlib
- --param max-inline-insns-single=500 ${DEFINES}"
+CXXFLAGS="${OPTS} -fno-rtti -fno-exceptions ${DEFINES}"
+
+CFLAGS="${OPTS} ${DEFINES}"
 
 LDSCRIPTSDIR=${ARDUINODIR}/samd/variants/arduino_zero/linker_scripts
 
