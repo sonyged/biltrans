@@ -8,6 +8,7 @@ int interp_exec(const uint8_t *p, ssize_t size);
 typedef uint16_t ntype;
 
 enum {
+  BT_ERROR = 0x00,		/* pseudo type */
   BT_NUMBER = 0x01,
   BT_KEYWORD = 0x02,
   BT_OBJECT = 0x03,

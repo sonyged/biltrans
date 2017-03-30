@@ -15,8 +15,8 @@
 
 typedef float vtype;
 
-static int arg_keyword(const uint8_t *, ssize_t, int, ntype, ntype *);
-static int arg_int(const uint8_t *, ssize_t, int, ntype, int32_t *);
+static int arg_keyword(const uint8_t *, ssize_t, ntype, ntype *);
+static int arg_int(const uint8_t *, ssize_t, ntype, int32_t *);
 
 #undef ELIST_NUL
 #if defined(ELIST_NUL)
@@ -71,6 +71,20 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
   return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
 }
 
+static int
+get_type(const uint8_t *end, ssize_t *resid, int array)
+{
+
+  if (*resid <= 0)
+    return BT_ERROR;
+
+  const uint8_t type = *(end - *resid);
+  *resid -= skip_name(end, *resid, array);
+  if (*resid <= 0)
+    return BT_ERROR;
+  return type;
+}
+
 #if 0
 #define LOG(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 #else
@@ -84,6 +98,38 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
     return err;					\
   }						\
 } while (0)
+
+#if 0
+#define RETURN(F, ...) do {			\
+  int err = (F)(__VA_ARGS__);			\
+  if (err) {					\
+    LOG(#F ": %d: err = %d\n", __LINE__, err);	\
+    return err;					\
+  }						\
+} while (0)
+#else
+#define RETURN(F, ...) do {			\
+  return (F)(__VA_ARGS__);			\
+} while (0)
+#endif
+
+#define CHECK_STACK0(env, where, p, q) do {	\
+  if ((void *)(p) < env->e_stack) {		\
+    EX_TRACE(where);				\
+    EX_TRACE_HEX((int)(p));			\
+    EX_TRACE_HEX((int)(q));			\
+    env->e_stack = (p);				\
+  }						\
+} while (0)
+
+#define CHECK_STACK(env, where, p) do {		\
+  if ((void *)(p) < env->e_stack) {		\
+    EX_TRACE(where);				\
+    EX_TRACE_HEX((int)(p));			\
+    env->e_stack = (p);				\
+  }						\
+} while (0)
+
 
 /*
  * Narrow the region down to current elist.
@@ -118,7 +164,6 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
 
   /* There should be at least type and trailing null of e_name. */
   while (r > ELIST_SIZE(0)) {
-    const uint8_t *p = end - r;
     uint32_t u32;
     int err;
 
@@ -127,8 +172,10 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
       return ERROR_OK;
     }
 
-    r -= skip_name(end, r, array);
-    switch (*p) {
+    const uint8_t type = get_type(end, &r, array);
+    switch (type) {
+    case BT_ERROR:
+      return ERROR_BUFFER_TOO_SHORT;
     case BT_NUMBER:
       r -= 4;
       break;
@@ -171,10 +218,10 @@ compare_name(const uint8_t *end, ssize_t resid, void *arg)
  * Looking for given name in the elist.
  */
 static int
-elist_lookup(const uint8_t *end, ssize_t *resid, int array, ntype name)
+elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
 {
 
-  return elist_find(end, resid, array, compare_name, (void *)&name);
+  return elist_find(end, resid, 0, compare_name, (void *)&name);
 }
 
 static int
@@ -183,7 +230,7 @@ compare_keyword(const uint8_t *end, ssize_t resid, int array,
 {
   ntype p = 0;
 
-  return arg_keyword(end, resid, array, name, &p) == ERROR_OK &&
+  return arg_keyword(end, resid, name, &p) == ERROR_OK &&
     name_equal(p, value);
 }
 
@@ -196,12 +243,11 @@ static int
 compare_names(const uint8_t *end, ssize_t resid, int array,
 	      size_t n, const names *names)
 {
-  const uint8_t *p = end - resid;
   ssize_t nresid;
+  const uint8_t type = get_type(end, &resid, array);
 
-  if (*p != BT_OBJECT)
+  if (type != BT_OBJECT)
     return 0;
-  resid -= skip_name(end, resid, array);
   if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
     return 0;
   for (size_t i = 0; i < n; i++)
@@ -236,14 +282,14 @@ static int exec(env *env, const uint8_t *end, ssize_t *resid, int array);
 static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
 
 static int
-arg_keyword(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
+arg_keyword(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
 {
   int err;
 
-  CALL(elist_lookup, end, &resid, array, name);
-  if (*(end - resid) != BT_KEYWORD)
+  CALL(elist_lookup, end, &resid, name);
+  const uint8_t type = get_type(end, &resid, 0);
+  if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
-  resid -= skip_name(end, resid, array);
   if (resid <= 0)
     return ERROR_BUFFER_TOO_SHORT;
   *v = name_at(end - resid);
@@ -252,15 +298,16 @@ arg_keyword(const uint8_t *end, ssize_t resid, int array, ntype name, ntype *v)
 }
 
 static int
-arg_int(const uint8_t *end, ssize_t resid, int array, ntype name, int32_t *i32)
+arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
 {
   int err;
 
-  CALL(elist_lookup, end, &resid, array, name);
-  const uint8_t *p = end - resid;
-  resid -= skip_name(end, resid, array);
+  CALL(elist_lookup, end, &resid, name);
+  const uint8_t type = get_type(end, &resid, 0);
   const uint8_t *q = end - resid;
-  switch (*p) {
+  switch (type) {
+  case BT_ERROR:
+    return ERROR_BUFFER_TOO_SHORT;
   case BT_INT8:
     if (resid < 1)
       return ERROR_BUFFER_TOO_SHORT;
@@ -283,62 +330,64 @@ arg_int(const uint8_t *end, ssize_t resid, int array, ntype name, int32_t *i32)
 }
 
 static int
-exec_arg(env *env, const uint8_t *end, ssize_t resid, int array, ntype name)
+exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
 {
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_arg");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
-  CALL(elist_lookup, end, &resid, array, name);
-  CALL(exec, env, end, &resid, 0); /* execute single block */
+  CHECK_STACK0(env, "exec_arg", &err, name);
+  CALL(elist_lookup, end, &resid, name);
+  RETURN(exec, env, end, &resid, 0); /* execute single block */
   return ERROR_OK;
+}
+
+/*
+ * Similar to exec_arg(), but we know an argument is blocks.  Calling
+ * exec_arg() for this case consumes more stack.
+ */
+static int
+exec_blocks(env *env, const uint8_t *end, ssize_t resid, ntype name)
+{
+  int err;
+
+  CHECK_STACK0(env, "exec_blocks", &err, name);
+  CALL(elist_lookup, end, &resid, name);
+  const uint8_t type = get_type(end, &resid, 0);
+  if (type != BT_ARRAY)
+    return ERROR_UNSUPPORTED;
+  return exec_array(env, end, &resid);
 }
 
 #define EXEC_BINARY(name)					\
   case K ## name: {						\
-    return exec_binary(env, end, nresid, array, f_ ## name);	\
+    return exec_binary(env, end, nresid, f_ ## name);		\
   }
 #define EXEC_UNARY(name)					\
   case K ## name: {						\
-    return exec_unary(env, end, nresid, array, f_ ## name);	\
+    return exec_unary(env, end, nresid, f_ ## name);		\
   }
 
 static int
-exec_unary(env *env, const uint8_t *end, ssize_t resid, int array,
+exec_unary(env *env, const uint8_t *end, ssize_t resid,
 	   vtype (*f)(vtype x))
 {
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_unary");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
-  CALL(exec_arg, env, end, resid, array, Kx);
+  CHECK_STACK(env, "exec_unary", &err);
+  CALL(exec_arg, env, end, resid, Kx);
   env->e_value = (*f)(env->e_value);
   return ERROR_OK;
 }
 
 static int
-exec_binary(env *env, const uint8_t *end, ssize_t resid, int array,
+exec_binary(env *env, const uint8_t *end, ssize_t resid,
 	    vtype (*f)(vtype x, vtype y))
 {
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_binary");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
-  CALL(exec_arg, env, end, resid, array, Kx);
+  CHECK_STACK(env, "exec_binary", &err);
+  CALL(exec_arg, env, end, resid, Kx);
   vtype x = env->e_value;
-  CALL(exec_arg, env, end, resid, array, Ky);
+  CALL(exec_arg, env, end, resid, Ky);
   vtype y = env->e_value;
   env->e_value = (*f)(x, y);
   return ERROR_OK;
@@ -400,7 +449,7 @@ lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
   int err;
   int32_t i32;
 
-  CALL(arg_int, end, resid, 0, name, &i32);
+  CALL(arg_int, end, resid, name, &i32);
   if (i32 < 0 || i32 >= limit)
     return ERROR_OUT_OF_RANGE;
   *u32 = i32;
@@ -442,7 +491,7 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
 		 void *arg)
 {
   ssize_t nresid;
-  int err;
+  int err, type;
 
   CALL(narrow_to_elist, &end, &resid, &nresid);
 
@@ -452,10 +501,9 @@ foreach_document(const uint8_t *end, ssize_t resid, int array,
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
-    const int type = *(end - nresid);
+    const uint8_t type = get_type(end, &nresid, array);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    nresid -= skip_name(end, nresid, array);
     CALL((*proc), end, &nresid, 0, arg);
   }
 }
@@ -476,13 +524,12 @@ lookup_function(const uint8_t *end, ssize_t *resid, int array, void *arg)
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, array, Kname, &name);
 
+  CALL(arg_keyword, end, nresid, Kname, &name);
   if (!name_equal(name, Kfunction))
     return ERROR_OK;
 
-  CALL(arg_int, end, nresid, array, Kfunction, &i32);
-
+  CALL(arg_int, end, nresid, Kfunction, &i32);
   if (i32 != lfa->idx)
     return ERROR_OK;
 
@@ -497,19 +544,14 @@ exec_function(env *env, uint32_t idx)
   lookup_function_args lfa;
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_function");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
+  CHECK_STACK(env, "exec_function", &err);
   lfa.idx = idx;
   err = foreach_document(env->e_end, env->e_resid, 1, ERROR_ELEMENT_NOT_FOUND,
 			 lookup_function, &lfa);
   if (err != ERROR_FOUND)
     return err;
 
-  return exec_arg(env, lfa.end, lfa.resid, 0, Kblocks);
+  return exec_blocks(env, lfa.end, lfa.resid, Kblocks);
 }
 
 static int
@@ -589,8 +631,7 @@ port_value(ntype port)
 }
 
 static int
-setup_ss(env *env, const uint8_t *end, ssize_t *resid, int array,
-	 struct servo_sync *ss)
+setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
 {
   ntype port = 0;
   ntype name;
@@ -599,13 +640,13 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, int array,
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, array, Kname, &name);
 
+  CALL(arg_keyword, end, nresid, Kname, &name);
   if (!name_equal(name, Kset_servomotor_degree))
     return ERROR_INVALID_TYPE;
 
-  CALL(arg_keyword, end, nresid, array, Kport, &port);
-  CALL(exec_arg, env, end, nresid, array, Kdegree);
+  CALL(arg_keyword, end, nresid, Kport, &port);
+  CALL(exec_arg, env, end, nresid, Kdegree);
 
   ss->port = port_value(port);
   ss->degree = env->e_value;
@@ -613,7 +654,7 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, int array,
 }
 
 static int
-init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
+init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
 		struct servo_sync *ss, size_t *count)
 {
   ssize_t nresid;
@@ -621,11 +662,10 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
   int err;
 
   *count = 0;
-  CALL(elist_lookup, end, &resid, array, Kblocks);
-  const int type = *(end - resid);
+  CALL(elist_lookup, end, &resid, Kblocks);
+  uint8_t type = get_type(end, &resid, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  resid -= skip_name(end, resid, array);
   CALL(narrow_to_elist, &end, &resid, &nresid);
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -633,13 +673,12 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid, int array,
       return ERROR_OVERFLOW;
     if (nresid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    const int type = *(end - nresid);
+    type = get_type(end, &nresid, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
       return ERROR_TOOMANY_SERVO;
-    nresid -= skip_name(end, nresid, 1);
-    CALL(setup_ss, env, end, &nresid, 0, &ss[(*count)++]);
+    CALL(setup_ss, env, end, &nresid, &ss[(*count)++]);
   }
 }
 
@@ -657,31 +696,25 @@ list_error(int err)
 static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
-  const int array = 0;
   ssize_t nresid;
   ntype name;
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_block");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
+  CHECK_STACK(env, "exec_block", &err);
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, array, Kname, &name);
+  CALL(arg_keyword, end, nresid, Kname, &name);
 
   switch (name) {
   case Kwhen_green_flag_clicked: {
-    return exec_arg(env, end, nresid, array, Kblocks);
+    return exec_blocks(env, end, nresid, Kblocks);
   }
 
   case Krepeat: {
-    CALL(exec_arg, env, end, nresid, array, Kcount);
+    CALL(exec_arg, env, end, nresid, Kcount);
     ssize_t count = env->e_value;
     while (count-- > 0) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, array, Kblocks);
+      CALL(exec_blocks, env, end, nresid, Kblocks);
     }
     return ERROR_OK;
   }
@@ -689,10 +722,10 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Krepeat_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, array, Kcondition);
+      CALL(exec_arg, env, end, nresid, Kcondition);
       if (env->e_value != 0)
 	break;
-      CALL(exec_arg, env, end, nresid, array, Kblocks);
+      CALL(exec_blocks, env, end, nresid, Kblocks);
     }
     return ERROR_OK;
   }
@@ -700,7 +733,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Kwait_until: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, array, Kcondition);
+      CALL(exec_arg, env, end, nresid, Kcondition);
       if (env->e_value != 0)
 	break;
       CALL(EX_DELAY, 0.02);
@@ -711,29 +744,29 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Kforever: {
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, array, Kblocks);
+      CALL(exec_blocks, env, end, nresid, Kblocks);
     }
     return ERROR_OK;
   }
 
   case Kif_then: {
-    CALL(exec_arg, env, end, nresid, array, Kcondition);
+    CALL(exec_arg, env, end, nresid, Kcondition);
     if (env->e_value != 0)
-      CALL(exec_arg, env, end, nresid, array, Kblocks);
+      RETURN(exec_blocks, env, end, nresid, Kblocks);
     return ERROR_OK;
   }
 
   case Kif_then_else: {
-    CALL(exec_arg, env, end, nresid, array, Kcondition);
+    CALL(exec_arg, env, end, nresid, Kcondition);
     if (env->e_value != 0)
-      CALL(exec_arg, env, end, nresid, array, Kthen_blocks);
+      RETURN(exec_blocks, env, end, nresid, Kthen_blocks);
     else
-      CALL(exec_arg, env, end, nresid, array, Kelse_blocks);
+      RETURN(exec_blocks, env, end, nresid, Kelse_blocks);
     return ERROR_OK;
   }
 
   case Kwait: {
-    CALL(exec_arg, env, end, nresid, array, Ksecs);
+    CALL(exec_arg, env, end, nresid, Ksecs);
     CALL(EX_DELAY, env->e_value);
     return ERROR_OK;
   }
@@ -756,8 +789,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Kmath: {
     ntype op;
 
-    CALL(arg_keyword, end, nresid, array, Kop, &op);
-    CALL(exec_arg, env, end, nresid, array, Kx);
+    CALL(arg_keyword, end, nresid, Kop, &op);
+    CALL(exec_arg, env, end, nresid, Kx);
     switch (op) {
     case Kabs:
 #if 1
@@ -824,18 +857,18 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(arg_keyword, end, nresid, array, Kmode, &mode);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kmode, &mode);
     EX_TURN_LED(port_value(port), mode_value(mode));
     return ERROR_OK;
   }
 
   case Kmulti_led: {
-    CALL(exec_arg, env, end, nresid, array, Kr);
+    CALL(exec_arg, env, end, nresid, Kr);
     vtype r = env->e_value;
-    CALL(exec_arg, env, end, nresid, array, Kg);
+    CALL(exec_arg, env, end, nresid, Kg);
     vtype g = env->e_value;
-    CALL(exec_arg, env, end, nresid, array, Kb);
+    CALL(exec_arg, env, end, nresid, Kb);
     vtype b = env->e_value;
     EX_MULTILED(r, g, b);
     return ERROR_OK;
@@ -845,8 +878,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype direction = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(arg_keyword, end, nresid, array, Kdirection, &direction);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kdirection, &direction);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(direction));
     return ERROR_OK;
   }
@@ -855,8 +888,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(arg_keyword, end, nresid, array, Kmode, &mode);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kmode, &mode);
     EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(mode));
     return ERROR_OK;
   }
@@ -864,8 +897,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Kset_dcmotor_power: {
     ntype port = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(exec_arg, env, end, nresid, array, Kpower);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(exec_arg, env, end, nresid, Kpower);
     EX_SET_DCMOTOR_POWER(port_value(port), env->e_value);
     return ERROR_OK;
   }
@@ -874,8 +907,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(exec_arg, env, end, nresid, array, Kfrequency);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(exec_arg, env, end, nresid, Kfrequency);
     EX_BUZZER_CONTROL(port_value(port), 1, env->e_value);
     return ERROR_OK;
   }
@@ -884,7 +917,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kport, &port);
     EX_BUZZER_CONTROL(port_value(port), 0, 0);
     return ERROR_OK;
   }
@@ -893,18 +926,18 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     uint32_t u32;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(exec_arg, env, end, nresid, array, Kdegree);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(exec_arg, env, end, nresid, Kdegree);
     EX_SERVO_MOTOR(port_value(port), env->e_value);
     return ERROR_OK;
   }
 
   case Kservomotor_synchronized_motion: {
-    CALL(exec_arg, env, end, nresid, array, Kspeed);
+    CALL(exec_arg, env, end, nresid, Kspeed);
     const int time = env->e_value;
     struct servo_sync ss[MAX_SERVOS];
     size_t count = sizeof(ss) / sizeof(ss[0]);
-    CALL(init_servo_sync, env, end, nresid, array, ss, &count);
+    CALL(init_servo_sync, env, end, nresid, ss, &count);
     EX_SERVOMOTOR_SYNCHRONIZED_MOTION(ss, count, time);
     return ERROR_OK;
   }
@@ -913,7 +946,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Klight_sensor_value: {
     ntype port = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kport, &port);
     env->e_value = EX_ANALOG_SENSOR(port_value(port));
     return ERROR_OK;
   }
@@ -922,8 +955,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype dir = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(arg_keyword, end, nresid, array, Kdirection, &dir);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kdirection, &dir);
     env->e_value = EX_ACCELEROMETER_VALUE(port_value(port),
 					  acceldir_value(dir));
     return ERROR_OK;
@@ -934,8 +967,8 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     ntype port = 0;
     ntype mode = 0;
 
-    CALL(arg_keyword, end, nresid, array, Kport, &port);
-    CALL(arg_keyword, end, nresid, array, Kmode, &mode);
+    CALL(arg_keyword, end, nresid, Kport, &port);
+    CALL(arg_keyword, end, nresid, Kmode, &mode);
     if (name_equal(mode, KON))
       env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
     else
@@ -957,7 +990,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_variable, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    CALL(exec_arg, env, end, nresid, Kvalue);
     if (assign)
       env->e_vars[u32] = env->e_value;
     else
@@ -968,7 +1001,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   case Kcall_function: {
     int32_t i32;
 
-    CALL(arg_int, end, nresid, array, Kfunction, &i32);
+    CALL(arg_int, end, nresid, Kfunction, &i32);
     return exec_function(env, i32);
   }
 
@@ -984,7 +1017,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kposition);
+    CALL(exec_arg, env, end, nresid, Kposition);
     env->e_value = list_ref(&env->e_lsts[u32], env->e_value, &err);
     return list_error(err);
   }
@@ -993,7 +1026,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    CALL(exec_arg, env, end, nresid, Kvalue);
     env->e_value = list_contains(&env->e_lsts[u32], env->e_value);
     return ERROR_OK;
   }
@@ -1002,7 +1035,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    CALL(exec_arg, env, end, nresid, Kvalue);
     list_add(&env->e_lsts[u32], env->e_value, &err);
     return list_error(err);
   }
@@ -1011,7 +1044,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kposition);
+    CALL(exec_arg, env, end, nresid, Kposition);
     list_delete(&env->e_lsts[u32], env->e_value, &err);
     return list_error(err);
   }
@@ -1020,9 +1053,9 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    CALL(exec_arg, env, end, nresid, Kvalue);
     const vtype value = env->e_value;
-    CALL(exec_arg, env, end, nresid, array, Kposition);
+    CALL(exec_arg, env, end, nresid, Kposition);
     const vtype position = env->e_value;
     list_replace(&env->e_lsts[u32], position, value, &err);
     return list_error(err);
@@ -1032,18 +1065,18 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
     uint32_t u32;
 
     CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, array, Kvalue);
+    CALL(exec_arg, env, end, nresid, Kvalue);
     const vtype value = env->e_value;
-    CALL(exec_arg, env, end, nresid, array, Kposition);
+    CALL(exec_arg, env, end, nresid, Kposition);
     const vtype position = env->e_value;
     list_insert(&env->e_lsts[u32], position, value, &err);
     return list_error(err);
   }
 
   case Kpick_random: {
-    CALL(exec_arg, env, end, nresid, array, Kfrom);
+    CALL(exec_arg, env, end, nresid, Kfrom);
     const vtype from = env->e_value;
-    CALL(exec_arg, env, end, nresid, array, Kto);
+    CALL(exec_arg, env, end, nresid, Kto);
     const vtype to = env->e_value;
     env->e_value = EX_RANDOM(from, to + 1);
     return ERROR_OK;
@@ -1069,69 +1102,76 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   }
 }
 
+static int
+exec_number(env *env, const uint8_t *end, ssize_t *resid, const uint8_t type)
+{
+  union {
+    float f;
+    int8_t i8;
+    int16_t i16;
+    int32_t i32;
+    uint8_t b[4];
+  } u;
+  size_t size;
+
+  switch (type) {
+  case BT_NUMBER:
+  case BT_INT32:
+    size = 4;
+    break;
+  case BT_INT8:
+    size = 1;
+    break;
+  case BT_INT16:
+    size = 2;
+    break;
+  }
+
+  for (int i = 0; i < size; i++)
+    u.b[i] = *(end - *resid + i);
+  *resid -= size;
+
+  switch (type) {
+  case BT_NUMBER:
+    env->e_value = u.f;		/* convert from float to vtype */
+    break;
+  case BT_INT8:
+    env->e_value = u.i8;	/* convert from 8 bit integer to vtype */
+    break;
+  case BT_INT16:
+    env->e_value = u.i16;	/* convert from 16 bit integer to vtype */
+    break;
+  case BT_INT32:
+    env->e_value = u.i32;	/* convert from 32 bit integer to vtype */
+    break;
+  }
+
+  return ERROR_OK;
+}
+
 /*
- * Evaluate single element.
+ * Evaluate single element then advance instruction pointer.
  */
 static int
 exec(env *env, const uint8_t *end, ssize_t *resid, int array)
 {
   const uint8_t *p = end - *resid;
-  uint32_t u32;
   int err;
-  union {
-    double d;
-    float f;
-    int8_t i8;
-    int16_t i16;
-    int32_t i32;
-    int64_t i64;
-    uint8_t b[8];
-  } u;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
-
-  if (resid <= 0)
-    return ERROR_OVERFLOW;
-
-  switch (*p) {
+  CHECK_STACK0(env, "exec", &err, *p);
+  const uint8_t type = get_type(end, resid, array);
+  switch (type) {
+  case BT_ERROR:
+    return ERROR_BUFFER_TOO_SHORT;
   case BT_OBJECT:
-    *resid -= skip_name(end, *resid, array);
     return exec_block(env, end, resid);
   case BT_ARRAY:
-    *resid -= skip_name(end, *resid, array);
     return exec_array(env, end, resid);
   case BT_NUMBER:
-    *resid -= skip_name(end, *resid, array);
-    for (int i = 0; i < 4; i++)
-      u.b[i] = *(end - *resid + i);
-    env->e_value = u.f;		/* convert from float to vtype */
-    *resid -= 4;
-    return ERROR_OK;
   case BT_INT8:
-    *resid -= skip_name(end, *resid, array);
-    for (int i = 0; i < 1; i++)
-      u.b[i] = *(end - *resid + i);
-    env->e_value = u.i8;	/* convert from 16 bit integer to vtype */
-    *resid -= 1;
-    return ERROR_OK;
   case BT_INT16:
-    *resid -= skip_name(end, *resid, array);
-    for (int i = 0; i < 2; i++)
-      u.b[i] = *(end - *resid + i);
-    env->e_value = u.i16;	/* convert from 16 bit integer to vtype */
-    *resid -= 2;
-    return ERROR_OK;
   case BT_INT32:
-    *resid -= skip_name(end, *resid, array);
-    for (int i = 0; i < 4; i++)
-      u.b[i] = *(end - *resid + i);
-    env->e_value = u.i32;	/* convert from 32 bit integer to vtype */
-    *resid -= 4;
-    return ERROR_OK;
+    return exec_number(env, end, resid, type);
   default:
     return ERROR_UNSUPPORTED;
   }
@@ -1144,11 +1184,7 @@ exec_array(env *env, const uint8_t *end, ssize_t *resid)
   ssize_t nresid;
   int err;
 
-  if ((void *)&err < env->e_stack) {
-    EX_TRACE("exec_array");
-    EX_TRACE_HEX((int)&err);
-    env->e_stack = &err;
-  }
+  CHECK_STACK(env, "exec_array", &err);
   CALL(narrow_to_elist, &end, resid, &nresid);
 
   for (;;) {
@@ -1167,12 +1203,10 @@ port_init(const uint8_t *end, ssize_t *resid)
   const uint8_t *p = end - *resid;
   int err;
 
-  if (resid <= 0)
-    return ERROR_OVERFLOW;
-  if (*p != BT_KEYWORD)
+  const uint8_t type = get_type(end, resid, 0);
+  if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
-  *resid -= skip_name(end, *resid, 0);
   ntype part = name_at(end - *resid);
   *resid -= 2;
   CALL(EX_PORT_INIT, port_value(port), part);
@@ -1185,13 +1219,12 @@ setup_ports(const uint8_t *end, ssize_t resid)
   ssize_t nresid;
   int err;
 
-  err = elist_lookup(end, &resid, 0, Kport_settings);
+  err = elist_lookup(end, &resid, Kport_settings);
   switch (err) {
   case ERROR_OK: {
-    const int type = *(end - resid);
+    const uint8_t type = get_type(end, &resid, 0);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    resid -= skip_name(end, resid, 0);
     CALL(narrow_to_elist, &end, &resid, &nresid);
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
@@ -1226,7 +1259,7 @@ parse_fvl(const uint8_t *end, ssize_t *resid, int array, void *arg)
   int err;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, array, Kname, &name);
+  CALL(arg_keyword, end, nresid, Kname, &name);
 
   switch (name) {
   case Kvariable:
@@ -1260,19 +1293,11 @@ exec_script(const uint8_t *end, ssize_t *resid)
   EX_TRACE_HEX((int)&err);
   CALL(setup_ports, end, *resid);
 
-  CALL(elist_lookup, end, resid, 0, Kscripts);
-  const int type = *(end - *resid);
+  CALL(elist_lookup, end, resid, Kscripts);
+
+  const uint8_t type = get_type(end, resid, 0);
   if (type != BT_ARRAY)
     return ERROR_UNSUPPORTED;
-
-  //EX_TRACE("script found");
-  /*
-   * At this point, we're looking at:
-   *   "\x04" "scripts\x00" document
-   *      ||
-   *   "\x04" "scripts\x00" int32 e_list "\x00" 
-   */
-  *resid -= skip_name(end, *resid, 0);
 
   /* Now, we're looking at (e_list is an array of blocks):
    *   int32 e_list "\x00" 
