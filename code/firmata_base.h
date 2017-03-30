@@ -160,6 +160,13 @@ void detachServo(byte pin)
   servoPinMap[pin] = 255;
 }
 
+void detachServoMaybe(byte pin)
+{
+  if (servoPinMap[pin] < MAX_SERVOS && servos[servoPinMap[pin]].attached()) {
+    detachServo(pin);
+  }
+}
+
 void readAndReportData(byte address, int theRegister, byte numBytes) {
   // allow I2C requests that don't require a register read
   // for example, some devices using an interrupt pin to signify new data available
@@ -623,9 +630,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
         int maxPulse = argv[3] + (argv[4] << 7);
 
         if (IS_PIN_DIGITAL(pin)) {
-          if (servoPinMap[pin] < MAX_SERVOS && servos[servoPinMap[pin]].attached()) {
-            detachServo(pin);
-          }
+	  detachServoMaybe(pin);
           attachServo(pin, minPulse, maxPulse);
           setPinModeCallback(pin, PIN_MODE_SERVO);
         }

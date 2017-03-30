@@ -317,18 +317,29 @@ SET_DCMOTOR_MODE(int port, dcMotroMode mode)
   DCMOTOR_CONTROL(port);
 }
 
+static int
+PORT2PIN(int port)
+{
+
+  return port + 8;              /* koov port -> firmata digital pin */
+}
+
 static void
 SERVO_MOTOR(int port, int value)
 {
-  int pin = port + 8;
+  int pin = PORT2PIN(port);
   int servoNo = firmata_base::servoPinMap[pin];
+
   if (servoNo < MAX_SERVOS)
     firmata_base::servos[servoNo].write(clamp(0, 180, value));
 }
+
 static void
 INIT_SERVO_MOTOR(int port)
 {
-  int pin = port + 8;
+  int pin = PORT2PIN(port);
+
+  firmata_base::detachServoMaybe(pin);
   firmata_base::attachServo(pin, 0, 0);
   pinMode(LED_MULTI_FET, OUTPUT);
   digitalWrite(LED_MULTI_FET, HIGH);
@@ -350,7 +361,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
 
   // Get maximum difference between current angle and target angle.
   for (int i = 0;i < number;i++) {
-    int pin = ss[i].port + 8;   /* koov pin no -> firmata pin no. */
+    int pin = PORT2PIN(ss[i].port);   /* koov pin no -> firmata pin no. */
     int degree = ss[i].degree;
     int servoNo = firmata_base::servoPinMap[pin];
     before[i] = firmata_base::servos[servoNo].read(); // Current angle.
@@ -364,7 +375,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
   if (time == 0) {  // If delay time is 0...
     // Set angles for each servomotor
     for (int i = 0;i < number;i++) {
-      int pin = ss[i].port + 8;
+      int pin = PORT2PIN(ss[i].port);
       int degree = ss[i].degree;
       calibedDegree = min(180, max(0, degree /* + SVOFF[connector[i]] */)); // Calibrating the given angle.
       int servoNo = firmata_base::servoPinMap[pin];
@@ -379,7 +390,7 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
     // Set angles for each servomotor
     for (int t = 1; t <= (int)maxDelta; t++) {
       for (int i = 0; i < number; i++) {
-	int pin = ss[i].port + 8;
+	int pin = PORT2PIN(ss[i].port);
 	int servoNo = firmata_base::servoPinMap[pin];
         firmata_base::servos[servoNo].write(before[i]+delta[i]*t);
       }
@@ -495,6 +506,9 @@ INIT_OUTPUTS()
     PORT_V6, PORT_V7, PORT_V8, PORT_V9,
   };
   for (int i = 0; i < sizeof(dports) / sizeof(dports[0]); i++) {
+    int pin = PORT2PIN(dports[i]);
+
+    firmata_base::detachServoMaybe(pin);
     pinMode(dports[i], OUTPUT);
     digitalWrite(dports[i], LOW);
   }
