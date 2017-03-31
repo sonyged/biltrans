@@ -18,8 +18,31 @@
 
 typedef float vtype;
 
-static int arg_keyword(const uint8_t *, ssize_t, ntype, ntype *);
-static int arg_int(const uint8_t *, ssize_t, ntype, int32_t *);
+typedef struct env {
+  void *e_stack;
+  vtype e_value;
+  const uint8_t *e_end;
+  ssize_t e_resid;
+  ssize_t e_nvars;
+  ssize_t e_nlsts;
+  vtype *e_vars;
+  void **e_lsts;
+} env;
+
+typedef struct region {
+  const uint8_t *r_end;
+  ssize_t r_resid;
+} region;
+
+typedef struct ctx {
+  env *c_env;
+  region c_region;
+#define c_end c_region.r_end
+#define c_resid c_region.r_resid
+} ctx;
+
+static int arg_keyword(const region *, ntype, ntype *);
+static int arg_int(const region *, ntype, int32_t *);
 
 #undef ELIST_NUL
 #if defined(ELIST_NUL)
@@ -226,12 +249,11 @@ elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
 }
 
 static int
-compare_keyword(const uint8_t *end, ssize_t resid, int array,
-		ntype name, ntype value)
+compare_keyword(const region *region, int array, ntype name, ntype value)
 {
   ntype p = 0;
 
-  return arg_keyword(end, resid, name, &p) == ERROR_OK &&
+  return arg_keyword(region, name, &p) == ERROR_OK &&
     name_equal(p, value);
 }
 
@@ -241,9 +263,10 @@ typedef struct names {
 } names;
 
 static int
-compare_names(const uint8_t *end, ssize_t resid, int array,
-	      size_t n, const names *names)
+compare_names(const region *region, int array, size_t n, const names *names)
 {
+  const uint8_t *end = region->r_end;
+  ssize_t resid = region->r_resid;
   ssize_t nresid;
   const uint8_t type = get_type(end, &resid, array);
 
@@ -251,14 +274,18 @@ compare_names(const uint8_t *end, ssize_t resid, int array,
     return 0;
   if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
     return 0;
+
+  struct region nregion;
+  nregion.r_end = end;
+  nregion.r_resid = nresid;
   for (size_t i = 0; i < n; i++)
-    if (!compare_keyword(end, nresid, 0, names[i].n_name, names[i].n_value))
+    if (!compare_keyword(&nregion, 0, names[i].n_name, names[i].n_value))
       return 0;
   return 1;
 }
 
 static int
-compare_function(const uint8_t *end, ssize_t resid, int array, void *arg)
+compare_function(const region *region, int array, void *arg)
 {
   ntype name = *(ntype *)arg;
   names names[] = {
@@ -266,19 +293,8 @@ compare_function(const uint8_t *end, ssize_t resid, int array, void *arg)
     { Kfunction, name },
   };
 
-  return compare_names(end, resid, array, 2, names);
+  return compare_names(region, array, 2, names);
 }
-
-typedef struct env {
-  void *e_stack;
-  vtype e_value;
-  const uint8_t *e_end;
-  ssize_t e_resid;
-  ssize_t e_nvars;
-  ssize_t e_nlsts;
-  vtype *e_vars;
-  void **e_lsts;
-} env;
 
 static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
 static int exec_block(env *env, const uint8_t *end, ssize_t *resid);
@@ -286,9 +302,11 @@ static int exec_number(env *env, const uint8_t *end, ssize_t *resid,
 		       uint8_t type);
 
 static int
-arg_keyword(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
+arg_keyword(const region *region, ntype name, ntype *v)
 {
   int err;
+  const uint8_t *end = region->r_end;
+  ssize_t resid = region->r_resid;
 
   CALL(elist_lookup, end, &resid, name);
   const uint8_t type = get_type(end, &resid, 0);
@@ -302,8 +320,10 @@ arg_keyword(const uint8_t *end, ssize_t resid, ntype name, ntype *v)
 }
 
 static int
-arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
+arg_int(const region *region, ntype name, int32_t *i32)
 {
+  const uint8_t *end = region->r_end;
+  ssize_t resid = region->r_resid;
   int err;
 
   CALL(elist_lookup, end, &resid, name);
@@ -334,9 +354,12 @@ arg_int(const uint8_t *end, ssize_t resid, ntype name, int32_t *i32)
 }
 
 static int
-exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
+exec_arg(const ctx *ctx, ntype name)
 {
   int err;
+  env *env = ctx->c_env;
+  const uint8_t *end = ctx->c_end;
+  ssize_t resid = ctx->c_resid;
 
   CHECK_STACK0(env, "exec_arg", &err, name);
   CALL(elist_lookup, end, &resid, name);
@@ -362,40 +385,42 @@ exec_arg(env *env, const uint8_t *end, ssize_t resid, ntype name)
  * exec_arg() for this case consumes more stack.
  */
 static int
-exec_blocks(env *env, const uint8_t *end, ssize_t resid, ntype name)
+exec_blocks(const ctx *ctx, ntype name)
 {
   int err;
+  const uint8_t *end = ctx->c_end;
+  ssize_t resid = ctx->c_resid;
 
-  CHECK_STACK0(env, "exec_blocks", &err, name);
+  CHECK_STACK0(ctx->c_env, "exec_blocks", &err, name);
   CALL(elist_lookup, end, &resid, name);
   const uint8_t type = get_type(end, &resid, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  return exec_array(env, end, &resid);
+  return exec_array(ctx->c_env, end, &resid);
 }
 
 static int
-exec_unary(env *env, const uint8_t *end, ssize_t resid,
-	   vtype (*f)(vtype x))
+exec_unary(const ctx *ctx, vtype (*f)(vtype x))
 {
+  env *env = ctx->c_env;
   int err;
 
   CHECK_STACK(env, "exec_unary", &err);
-  CALL(exec_arg, env, end, resid, Kx);
+  CALL(exec_arg, ctx, Kx);
   env->e_value = (*f)(env->e_value);
   return ERROR_OK;
 }
 
 static int
-exec_binary(env *env, const uint8_t *end, ssize_t resid,
-	    vtype (*f)(vtype x, vtype y))
+exec_binary(const ctx *ctx, vtype (*f)(vtype x, vtype y))
 {
+  env *env = ctx->c_env;
   int err;
 
   CHECK_STACK(env, "exec_binary", &err);
-  CALL(exec_arg, env, end, resid, Kx);
+  CALL(exec_arg, ctx, Kx);
   vtype x = env->e_value;
-  CALL(exec_arg, env, end, resid, Ky);
+  CALL(exec_arg, ctx, Ky);
   vtype y = env->e_value;
   env->e_value = (*f)(x, y);
   return ERROR_OK;
@@ -453,13 +478,12 @@ f_round(vtype x)
 #define deg2rad(x) ((x) / 180.0 * M_PI)
 
 static int
-lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
-	     ntype name, uint32_t limit)
+lookup_index(const region *region, uint32_t *u32, ntype name, uint32_t limit)
 {
   int err;
   int32_t i32;
 
-  CALL(arg_int, end, resid, name, &i32);
+  CALL(arg_int, region, name, &i32);
   if (i32 < 0 || i32 >= limit)
     return ERROR_OUT_OF_RANGE;
   *u32 = i32;
@@ -467,84 +491,95 @@ lookup_index(const uint8_t *end, ssize_t resid, uint32_t *u32,
 }
 
 static int
-lookup_variable(env *env, const uint8_t *end, ssize_t resid,
-		uint32_t *u32)
+lookup_variable(const ctx *ctx, uint32_t *u32)
 {
+  env *env = ctx->c_env;
 
-  return lookup_index(end, resid, u32, Kvariable, env->e_nvars);
+  return lookup_index(&ctx->c_region, u32, Kvariable, env->e_nvars);
 }
 
 static int
-lookup_list(env *env, const uint8_t *end, ssize_t resid,
-	    uint32_t *u32)
+lookup_list(const ctx *ctx, uint32_t *u32)
 {
+  env *env = ctx->c_env;
 
-  return lookup_index(end, resid, u32, Klist, env->e_nlsts);
+  return lookup_index(&ctx->c_region, u32, Klist, env->e_nlsts);
 }
 
 static int
 with_elist(const uint8_t *end, ssize_t *resid, int array,
-	   int (*proc)(const uint8_t *, ssize_t, int, void *), void *arg)
+	   int (*proc)(const region *region, int, void *), void *arg)
 {
   ssize_t nresid;
   uint32_t u32;
 
   CALL(narrow_to_elist, &end, resid, &nresid);
-  return (*proc)(end, nresid, array, arg);
+
+  region nregion;
+  nregion.r_end = end;
+  nregion.r_resid = nresid;
+  return (*proc)(&nregion, array, arg);
 }
 
 static int
-foreach_document(const uint8_t *end, ssize_t resid, int array,
+foreach_document(const region *region, int array,
 		 int end_of_document,
-		 int (*proc)(const uint8_t *end, ssize_t *resid, int array,
-			     void *),
+		 int (*proc)(struct region *region, int array, void *),
 		 void *arg)
 {
+  const uint8_t *end = region->r_end;
+  ssize_t resid = region->r_resid;
   ssize_t nresid;
   int err, type;
 
   CALL(narrow_to_elist, &end, &resid, &nresid);
 
+  struct region nregion;
+  nregion.r_end = end;
+  nregion.r_resid = nresid;
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
-    if (nresid < ELIST_SIZE(0))
+    if (nregion.r_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == ELIST_SIZE(0)) /* trailing nul */
+    if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
-    const uint8_t type = get_type(end, &nresid, array);
+    const uint8_t type = get_type(end, &nregion.r_resid, array);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    CALL((*proc), end, &nresid, 0, arg);
+    CALL((*proc), &nregion, 0, arg);
   }
 }
 
 typedef struct lookup_function_args {
   uint32_t idx;
-  const uint8_t *end;
-  ssize_t resid;
+  struct ctx ctx;
 } lookup_function_args;
 
 static int
-lookup_function(const uint8_t *end, ssize_t *resid, int array, void *arg)
+lookup_function(region *region, int array, void *arg)
 {
   lookup_function_args *lfa = (lookup_function_args *)arg;
+  const uint8_t *end = region->r_end;
   ntype name;
   int32_t i32;
   ssize_t nresid;
   int err;
 
-  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(narrow_to_elist, &end, &region->r_resid, &nresid);
 
-  CALL(arg_keyword, end, nresid, Kname, &name);
+  struct region nregion;
+  nregion.r_end = end;
+  nregion.r_resid = nresid;
+  CALL(arg_keyword, &nregion, Kname, &name);
   if (!name_equal(name, Ifunction))
     return ERROR_OK;
 
-  CALL(arg_int, end, nresid, Kfunction, &i32);
+  CALL(arg_int, &nregion, Kfunction, &i32);
   if (i32 != lfa->idx)
     return ERROR_OK;
 
-  lfa->end = end;
-  lfa->resid = nresid;
+  lfa->ctx.c_end = end;
+  lfa->ctx.c_resid = nresid;
   return ERROR_FOUND;
 }
 
@@ -556,12 +591,15 @@ exec_function(env *env, uint32_t idx)
 
   CHECK_STACK(env, "exec_function", &err);
   lfa.idx = idx;
-  err = foreach_document(env->e_end, env->e_resid, 1, ERROR_ELEMENT_NOT_FOUND,
+  lfa.ctx.c_env = env;
+  lfa.ctx.c_end = env->e_end;
+  lfa.ctx.c_resid = env->e_resid;
+  err = foreach_document(&lfa.ctx.c_region, 1, ERROR_ELEMENT_NOT_FOUND,
 			 lookup_function, &lfa);
   if (err != ERROR_FOUND)
     return err;
 
-  return exec_blocks(env, lfa.end, lfa.resid, Kblocks);
+  return exec_blocks(&lfa.ctx, Kblocks);
 }
 
 static int
@@ -641,22 +679,28 @@ port_value(ntype port)
 }
 
 static int
-setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
+setup_ss(ctx *ctx, struct servo_sync *ss)
 {
+  env *env = ctx->c_env;
+  const uint8_t *end = ctx->c_end;
   ntype port = 0;
   ntype name;
   uint32_t u32;
   ssize_t nresid;
   int err;
 
-  CALL(narrow_to_elist, &end, resid, &nresid);
+  CALL(narrow_to_elist, &end, &ctx->c_resid, &nresid);
 
-  CALL(arg_keyword, end, nresid, Kname, &name);
+  struct ctx nctx;
+  nctx.c_env = env;
+  nctx.c_end = end;
+  nctx.c_resid = nresid;
+  CALL(arg_keyword, &nctx.c_region, Kname, &name);
   if (!name_equal(name, Iset_servomotor_degree))
     return ERROR_INVALID_TYPE;
 
-  CALL(arg_keyword, end, nresid, Kport, &port);
-  CALL(exec_arg, env, end, nresid, Kdegree);
+  CALL(arg_keyword, &nctx.c_region, Kport, &port);
+  CALL(exec_arg, &nctx, Kdegree);
 
   ss->port = port_value(port);
   ss->degree = env->e_value;
@@ -664,9 +708,12 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
 }
 
 static int
-init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
+init_servo_sync(const ctx *ctx,
 		struct servo_sync *ss, size_t *count)
 {
+  env *env = ctx->c_env;
+  const uint8_t *end = ctx->c_end;
+  ssize_t resid = ctx->c_resid;
   ssize_t nresid;
   const size_t max_count = *count;
   int err;
@@ -677,18 +724,22 @@ init_servo_sync(env *env, const uint8_t *end, ssize_t resid,
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   CALL(narrow_to_elist, &end, &resid, &nresid);
+  struct ctx nctx;
+  nctx.c_env = env;
+  nctx.c_end = end;
+  nctx.c_resid = nresid;
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
-    if (nresid < ELIST_SIZE(0))
+    if (nctx.c_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == ELIST_SIZE(0)) /* trailing nul */
+    if (nctx.c_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    type = get_type(end, &nresid, 1);
+    type = get_type(end, &nctx.c_resid, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
       return ERROR_TOOMANY_SERVO;
-    CALL(setup_ss, env, end, &nresid, &ss[(*count)++]);
+    CALL(setup_ss, &nctx, &ss[(*count)++]);
   }
 }
 
@@ -704,25 +755,27 @@ list_error(int err)
 }
 
 static int
-analog_sensor_value(env *env, const uint8_t *end, ssize_t nresid)
+analog_sensor_value(const ctx *ctx)
 {
+  env *env = ctx->c_env;
   int err;
   ntype port = 0;
 
-  CALL(arg_keyword, end, nresid, Kport, &port);
+  CALL(arg_keyword, &ctx->c_region, Kport, &port);
   env->e_value = EX_ANALOG_SENSOR(port_value(port));
   return ERROR_OK;
 }
 
 static int
-digital_sensor_value(env *env, const uint8_t *end, ssize_t nresid)
+digital_sensor_value(const ctx *ctx)
 {
+  env *env = ctx->c_env;
   int err;
   ntype port = 0;
   ntype mode = 0;
 
-  CALL(arg_keyword, end, nresid, Kport, &port);
-  CALL(arg_keyword, end, nresid, Kmode, &mode);
+  CALL(arg_keyword, &ctx->c_region, Kport, &port);
+  CALL(arg_keyword, &ctx->c_region, Kmode, &mode);
   if (name_equal(mode, KON))
     env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
   else
@@ -735,23 +788,23 @@ digital_sensor_value(env *env, const uint8_t *end, ssize_t nresid)
 #undef EXEC_BINARY
 #define EXEC_BINARY(name)					\
   static int							\
-  F ## name(env *env, const uint8_t *end, ssize_t nresid)	\
+  F ## name(const ctx *ctx)					\
   {								\
     								\
-    return exec_binary(env, end, nresid, f_ ## name);		\
+    return exec_binary(ctx, f_ ## name);			\
   }
 #undef EXEC_UNARY
 #define EXEC_UNARY(name)					\
   static int							\
-  F ## name(env *env, const uint8_t *end, ssize_t nresid)	\
+  F ## name(const ctx *ctx)					\
   {								\
     								\
-    return exec_unary(env, end, nresid, f_ ## name);		\
+    return exec_unary(ctx, f_ ## name);				\
   }
 #undef DEFUN
 #define DEFUN(sym, body)					\
 static int							\
-F ## sym(env *env, const uint8_t *end, ssize_t nresid) body
+F ## sym(const ctx *ctx) body
 #include "interp_insns.h"
 #endif	/* DISPATCH_TABLE */
 
@@ -764,19 +817,24 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   CHECK_STACK(env, "exec_block", &err);
   CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, Kname, &name);
+
+  ctx ctx;
+  ctx.c_env = env;
+  ctx.c_end = end;
+  ctx.c_resid = nresid;
+  CALL(arg_keyword, &ctx.c_region, Kname, &name);
 
 #if !defined(DISPATCH_TABLE)
 
 #undef EXEC_BINARY
 #define EXEC_BINARY(name)					\
   case I ## name: {						\
-    return exec_binary(env, end, nresid, f_ ## name);		\
+    return exec_binary(ctx, f_ ## name);			\
   }
 #undef EXEC_UNARY
 #define EXEC_UNARY(name)					\
   case I ## name: {						\
-    return exec_unary(env, end, nresid, f_ ## name);		\
+    return exec_unary(ctx, f_ ## name);				\
   }
 
   switch (name) {
@@ -789,8 +847,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
 #else  /* DISPATCH_TABLE */
 
-  static int (*const ops[])(struct env *env, const uint8_t *end,
-			    ssize_t nresid) = {
+  static int (*const ops[])(const struct ctx *ctx) = {
     Fbreakpoint,		/* nop */
 #undef DEFUN
 #define DEFUN(sym, body) F ## sym,
@@ -803,7 +860,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 
   if (name >= sizeof(ops) / sizeof(ops[0]))
     return ERROR_UNSUPPORTED;
-  return ops[name](env, end, nresid);
+  return ops[name](&ctx);
 
 #endif	/* DISPATCH_TABLE */
 }
@@ -933,15 +990,20 @@ typedef struct parse_fvl_args {
 } parse_fvl_args;
 
 static int
-parse_fvl(const uint8_t *end, ssize_t *resid, int array, void *arg)
+parse_fvl(region *region, int array, void *arg)
 {
   parse_fvl_args *pfa = (parse_fvl_args *)arg;
+  const uint8_t *end = region->r_end;
   ssize_t nresid;
   ntype name;
   int err;
 
-  CALL(narrow_to_elist, &end, resid, &nresid);
-  CALL(arg_keyword, end, nresid, Kname, &name);
+  CALL(narrow_to_elist, &end, &region->r_resid, &nresid);
+
+  struct region nregion;
+  nregion.r_end = end;
+  nregion.r_resid = nresid;
+  CALL(arg_keyword, &nregion, Kname, &name);
 
   switch (name) {
   case Ivariable:
@@ -963,7 +1025,10 @@ count_environ(const uint8_t *end, ssize_t resid, int *n_vars, int *n_lsts)
   pfa.n_vars = n_vars;
   pfa.n_lsts = n_lsts;
   *pfa.n_vars = *pfa.n_lsts = 0;
-  return foreach_document(end, resid, 1, ERROR_OK, parse_fvl, &pfa);
+  region region;
+  region.r_end = end;
+  region.r_resid = resid;
+  return foreach_document(&region, 1, ERROR_OK, parse_fvl, &pfa);
 }
 
 static int
