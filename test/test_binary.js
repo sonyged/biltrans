@@ -144,30 +144,100 @@ describe('translate wait', function() {
 
 describe('translate function', function() {
   const trans = bilbinary.translator({
+    'port-settings': {},
     scripts: [
       {
-        name: 'function', function: 'f'
+        name: 'function', function: 'f', blocks: [
+          { name: 'wait', secs: 0.5 },
+        ]
+      },
+      {
+        name: 'when-green-flag-clicked', blocks: [
+          { name: 'call-function', function: 'f' },
+          { name: 'wait', secs: {
+            name: 'plus', x: 200, y: -50 }
+          }
+        ]
       }
     ]});
 
   it('should be function in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      24, 0,                    // 24 bytes
-      3,                        // object
-      84, 0,                    // 'port-settings'
-      2, 0,                     // 2 bytes
-      4,                        // array
-      85, 0,                    // 'scripts'
-      0x0e, 0x00,               // 14 bytes
-      3,                        // object
-      11, 0,                    // 11 bytes
-      0x02,                     // keyword
-      0x41, 0x00,               // 'name'
-      42, 0x00,                 // 'function' (insn)
-      5,                        // int8
-      51,
-      0x00,
-      0x00,
+      96, 0,                    // length: 96 bytes
+
+      // 'port-settings': {}
+      3,                        // type: object
+      84, 0,                    // keyword: 'port-settings'
+      2, 0,                     // length: 2 bytes
+
+      // scripts: [ ...
+      4,                        // type: array
+      85, 0,                    // keyword: 'scripts'
+      86, 0,                    // length: 86 bytes
+
+      // { name: 'function', ... }
+      3,                        // type: object
+      31, 0,                    // length: 31 bytes
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      42, 0,                    // insn: 'function'
+      5,                        // type: int8
+      51, 0,                    // keywrod: 'function'
+      0,                        // int8: 0
+      4,                        // type: array
+      78, 0,                    // keyword: 'blocks'
+      17, 0,                    // length: 17 bytes
+      3,                        // type: object
+      14, 0,                    // length: 14
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      6, 0,                     // insn: 'wait'
+      1,                        // type: float
+      69, 0,                    // keyword: 'secs'
+      0, 0, 0, 63,              // float: 0.5
+
+      // { name: 'when-green-flag-clicked', ... }
+      3,                        // type: object
+      51, 0,                    // length: 51 bytes
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      1, 0,                     // insn: 'when-green-flag-clicked'
+
+      // blocks: [ ...
+      4,                        // type: array
+      78, 0,                    // keyword: 'blocks'
+      41, 0,                    // length: 41 bytes
+
+      // { name: 'call-function', ... }
+      3,                        // type: object
+      11, 0,                    // length: 11 bytes
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      43, 0,                    // insn: 'call-function'
+      5,                        // type: int8
+      51, 0,                    // keyword: 'function'
+      0,                        // int8: 0
+
+      // { name: 'wait', ... }
+      3,                        // type: object
+      26, 0,                    // length: 26 bytes
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      6, 0,                     // insn: 'wait'
+
+      // secs: ...
+      3,                        // type: object
+      69, 0,                    // keyword: 'secs'
+      16, 0,                    // length: 16 bytes
+      2,                        // type: keyword
+      65, 0,                    // keyword: 'name'
+      10, 0,                    // insn: 'plus'
+      6,                        // type: int16
+      86, 0,                    // keyword: 'x'
+      200, 0,                   // int16: 200
+      5,                        // type: int8
+      87, 0,                    // keyword: 'y'
+      206,                      // int8: -50
     ]));
   });
 });
