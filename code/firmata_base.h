@@ -1610,9 +1610,7 @@ periodc_jobs()
       bts01_failure) {
     blink_led(PIN_BLE);
   } else {
-    if (enableFirmata)
-      showConnectMode();
-    else if (interp_error) {
+    if (interp_error) {
       static byte hi, lo, pre;
       if (hi == 0 && lo == 0) {
 	pre = 8;
@@ -1633,7 +1631,8 @@ periodc_jobs()
 	if (blink_led(PIN_USB))
 	  lo--;
       }
-    }
+    } else
+      showConnectMode();
   }
 }
 
