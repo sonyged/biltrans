@@ -142,6 +142,36 @@ describe('translate wait', function() {
   });
 });
 
+describe('translate function', function() {
+  const trans = bilbinary.translator({
+    scripts: [
+      {
+        name: 'function', function: 'f'
+      }
+    ]});
+
+  it('should be function in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      24, 0,                    // 24 bytes
+      3,                        // object
+      84, 0,                    // 'port-settings'
+      2, 0,                     // 2 bytes
+      4,                        // array
+      85, 0,                    // 'scripts'
+      0x0e, 0x00,               // 14 bytes
+      3,                        // object
+      11, 0,                    // 11 bytes
+      0x02,                     // keyword
+      0x41, 0x00,               // 'name'
+      42, 0x00,                 // 'function' (insn)
+      5,                        // int8
+      51,
+      0x00,
+      0x00,
+    ]));
+  });
+});
+
 describe('execute wait', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',

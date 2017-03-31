@@ -24,6 +24,7 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  cat ../code/listlib.h;
  if [ -n "${ENABLE_INTERP}" ]; then
      cat ../code/keyword_dict.h;
+     cat ../code/insn_dict.h;
      cat ../code/interp.h;
      cat ../code/interp.c;
      cat ../code/interp_glue.c;

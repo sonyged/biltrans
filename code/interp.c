@@ -9,6 +9,9 @@
 #if !defined(KEYWORD_DICT_H)
 #include "keyword_dict.h"
 #endif
+#if !defined(INSN_DICT_H)
+#include "insn_dict.h"
+#endif
 #if !defined(LISTLIB_H)
 #include "listlib.h"
 #endif
@@ -20,7 +23,7 @@ static int arg_int(const uint8_t *, ssize_t, ntype, int32_t *);
 
 #undef ELIST_NUL
 #if defined(ELIST_NUL)
-#define ELIST_SIZE(s)	((s) + 1)
+#define ELIST_SIZE(s)	((s) + 1) /* elist with trailing NUL */
 #else
 #define ELIST_SIZE(s)	((s) + 0)
 #endif
@@ -85,11 +88,9 @@ get_type(const uint8_t *end, ssize_t *resid, int array)
   return type;
 }
 
-#if 0
-#define LOG(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
-#else
 #define LOG(fmt, ...) do {} while (0)
-#endif
+//#define LOG(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+//#define LOG(fmt, ...) do { EX_TRACE(fmt); } while (0)
 
 #define CALL(F, ...) do {			\
   int err = (F)(__VA_ARGS__);			\
@@ -261,7 +262,7 @@ compare_function(const uint8_t *end, ssize_t resid, int array, void *arg)
 {
   ntype name = *(ntype *)arg;
   names names[] = {
-    { Kname, Kfunction },
+    { Kname, Ifunction },
     { Kfunction, name },
   };
 
@@ -373,15 +374,6 @@ exec_blocks(env *env, const uint8_t *end, ssize_t resid, ntype name)
   return exec_array(env, end, &resid);
 }
 
-#define EXEC_BINARY(name)					\
-  case K ## name: {						\
-    return exec_binary(env, end, nresid, f_ ## name);		\
-  }
-#define EXEC_UNARY(name)					\
-  case K ## name: {						\
-    return exec_unary(env, end, nresid, f_ ## name);		\
-  }
-
 static int
 exec_unary(env *env, const uint8_t *end, ssize_t resid,
 	   vtype (*f)(vtype x))
@@ -418,6 +410,8 @@ DEFBINARY(divide, /);
 DEFBINARY(equal, ==);
 DEFBINARY(less_than, <);
 DEFBINARY(greater_than, >);
+DEFBINARY(less_than_or_equal, <=);
+DEFBINARY(greater_than_or_equal, >=);
 
 static vtype
 f_mod(vtype x, vtype y)
@@ -542,7 +536,7 @@ lookup_function(const uint8_t *end, ssize_t *resid, int array, void *arg)
   CALL(narrow_to_elist, &end, resid, &nresid);
 
   CALL(arg_keyword, end, nresid, Kname, &name);
-  if (!name_equal(name, Kfunction))
+  if (!name_equal(name, Ifunction))
     return ERROR_OK;
 
   CALL(arg_int, end, nresid, Kfunction, &i32);
@@ -658,7 +652,7 @@ setup_ss(env *env, const uint8_t *end, ssize_t *resid, struct servo_sync *ss)
   CALL(narrow_to_elist, &end, resid, &nresid);
 
   CALL(arg_keyword, end, nresid, Kname, &name);
-  if (!name_equal(name, Kset_servomotor_degree))
+  if (!name_equal(name, Iset_servomotor_degree))
     return ERROR_INVALID_TYPE;
 
   CALL(arg_keyword, end, nresid, Kport, &port);
@@ -710,6 +704,58 @@ list_error(int err)
 }
 
 static int
+analog_sensor_value(env *env, const uint8_t *end, ssize_t nresid)
+{
+  int err;
+  ntype port = 0;
+
+  CALL(arg_keyword, end, nresid, Kport, &port);
+  env->e_value = EX_ANALOG_SENSOR(port_value(port));
+  return ERROR_OK;
+}
+
+static int
+digital_sensor_value(env *env, const uint8_t *end, ssize_t nresid)
+{
+  int err;
+  ntype port = 0;
+  ntype mode = 0;
+
+  CALL(arg_keyword, end, nresid, Kport, &port);
+  CALL(arg_keyword, end, nresid, Kmode, &mode);
+  if (name_equal(mode, KON))
+    env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
+  else
+    env->e_value = EX_DIGITAL_SENSOR(port_value(port)) != 0;
+  return ERROR_OK;
+}
+
+#define DISPATCH_TABLE
+#if defined(DISPATCH_TABLE)
+#undef EXEC_BINARY
+#define EXEC_BINARY(name)					\
+  static int							\
+  F ## name(env *env, const uint8_t *end, ssize_t nresid)	\
+  {								\
+    								\
+    return exec_binary(env, end, nresid, f_ ## name);		\
+  }
+#undef EXEC_UNARY
+#define EXEC_UNARY(name)					\
+  static int							\
+  F ## name(env *env, const uint8_t *end, ssize_t nresid)	\
+  {								\
+    								\
+    return exec_unary(env, end, nresid, f_ ## name);		\
+  }
+#undef DEFUN
+#define DEFUN(sym, body)					\
+static int							\
+F ## sym(env *env, const uint8_t *end, ssize_t nresid) body
+#include "interp_insns.h"
+#endif	/* DISPATCH_TABLE */
+
+static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
   ssize_t nresid;
@@ -720,402 +766,46 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
   CALL(narrow_to_elist, &end, resid, &nresid);
   CALL(arg_keyword, end, nresid, Kname, &name);
 
+#if !defined(DISPATCH_TABLE)
+
+#undef EXEC_BINARY
+#define EXEC_BINARY(name)					\
+  case I ## name: {						\
+    return exec_binary(env, end, nresid, f_ ## name);		\
+  }
+#undef EXEC_UNARY
+#define EXEC_UNARY(name)					\
+  case I ## name: {						\
+    return exec_unary(env, end, nresid, f_ ## name);		\
+  }
+
   switch (name) {
-  case Kwhen_green_flag_clicked: {
-    return exec_blocks(env, end, nresid, Kblocks);
-  }
-
-  case Krepeat: {
-    CALL(exec_arg, env, end, nresid, Kcount);
-    ssize_t count = env->e_value;
-    while (count-- > 0) {
-      CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_blocks, env, end, nresid, Kblocks);
-    }
-    return ERROR_OK;
-  }
-
-  case Krepeat_until: {
-    for (;;) {
-      CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, Kcondition);
-      if (env->e_value != 0)
-	break;
-      CALL(exec_blocks, env, end, nresid, Kblocks);
-    }
-    return ERROR_OK;
-  }
-
-  case Kwait_until: {
-    for (;;) {
-      CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_arg, env, end, nresid, Kcondition);
-      if (env->e_value != 0)
-	break;
-      CALL(EX_DELAY, 0.02);
-    }
-    return ERROR_OK;
-  }
-
-  case Kforever: {
-    for (;;) {
-      CHECK_INTR(ERROR_INTERRUPTED);
-      CALL(exec_blocks, env, end, nresid, Kblocks);
-    }
-    return ERROR_OK;
-  }
-
-  case Kif_then: {
-    CALL(exec_arg, env, end, nresid, Kcondition);
-    if (env->e_value != 0)
-      RETURN(exec_blocks, env, end, nresid, Kblocks);
-    return ERROR_OK;
-  }
-
-  case Kif_then_else: {
-    CALL(exec_arg, env, end, nresid, Kcondition);
-    if (env->e_value != 0)
-      RETURN(exec_blocks, env, end, nresid, Kthen_blocks);
-    else
-      RETURN(exec_blocks, env, end, nresid, Kelse_blocks);
-    return ERROR_OK;
-  }
-
-  case Kwait: {
-    CALL(exec_arg, env, end, nresid, Ksecs);
-    CALL(EX_DELAY, env->e_value);
-    return ERROR_OK;
-  }
-
-    EXEC_BINARY(plus);
-    EXEC_BINARY(minus);
-    EXEC_BINARY(multiply);
-    EXEC_BINARY(divide);
-    EXEC_BINARY(mod);
-
-    EXEC_BINARY(and);
-    EXEC_BINARY(or);
-    EXEC_BINARY(equal);
-    EXEC_BINARY(less_than);
-    EXEC_BINARY(greater_than);
-
-    EXEC_UNARY(not);
-    EXEC_UNARY(round);
-
-  case Kmath: {
-    ntype op;
-
-    CALL(arg_keyword, end, nresid, Kop, &op);
-    CALL(exec_arg, env, end, nresid, Kx);
-    switch (op) {
-    case Kabs:
-#if 1
-      env->e_value = fabsf(env->e_value);
-#else
-      if (env->e_value < 0)
-	env->e_value = -env->e_value;
-#endif
-      break;
-    case Ksqrt:
-      env->e_value = sqrtf(env->e_value);
-      break;
-    case Ksin:
-      env->e_value = sinf(deg2rad(env->e_value));
-      break;
-    case Kcos:
-      env->e_value = cosf(deg2rad(env->e_value));
-      break;
-    case Ktan:
-#if 0
-      env->e_value = tanf(deg2rad(env->e_value));
-#else
-      {
-	const vtype cv = cosf(deg2rad(env->e_value));
-	const vtype sv = sinf(deg2rad(env->e_value));
-	if (fabsf(cv) == 0)
-	  env->e_value = copysignf(INFINITY, sv);
-	else
-	  env->e_value = sv / cv;
-      }
-#endif
-      break;
-    case Kln:
-      env->e_value = logf(env->e_value);
-      break;
-    case Klog:
-#if 0
-      env->e_value = log10f(env->e_value);
-#else
-      env->e_value = logf(env->e_value) / M_LN10;
-#endif
-      break;
-    case Kec:			/* e^ */
-#if 0
-      env->e_value = expf(env->e_value);
-#else
-      env->e_value = powf(M_E, env->e_value);
-#endif
-      break;
-    case K10c:			/* 10^ */
-#if 1
-      env->e_value = powf(10, env->e_value);
-#else
-      env->e_value = exp10f(env->e_value);
-#endif
-      break;
-    default:
-      return ERROR_UNSUPPORTED;
-    }
-    return ERROR_OK;
-  }
-
-  case Kturn_led: {
-    ntype port = 0;
-    ntype mode = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(arg_keyword, end, nresid, Kmode, &mode);
-    EX_TURN_LED(port_value(port), mode_value(mode));
-    return ERROR_OK;
-  }
-
-  case Kmulti_led: {
-    CALL(exec_arg, env, end, nresid, Kr);
-    vtype r = env->e_value;
-    CALL(exec_arg, env, end, nresid, Kg);
-    vtype g = env->e_value;
-    CALL(exec_arg, env, end, nresid, Kb);
-    vtype b = env->e_value;
-    EX_MULTILED(r, g, b);
-    return ERROR_OK;
-  }
-
-  case Kturn_dcmotor_on: {
-    ntype port = 0;
-    ntype direction = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(arg_keyword, end, nresid, Kdirection, &direction);
-    EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(direction));
-    return ERROR_OK;
-  }
-
-  case Kturn_dcmotor_off: {
-    ntype port = 0;
-    ntype mode = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(arg_keyword, end, nresid, Kmode, &mode);
-    EX_SET_DCMOTOR_MODE(port_value(port), dcmode_value(mode));
-    return ERROR_OK;
-  }
-
-  case Kset_dcmotor_power: {
-    ntype port = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(exec_arg, env, end, nresid, Kpower);
-    EX_SET_DCMOTOR_POWER(port_value(port), env->e_value);
-    return ERROR_OK;
-  }
-
-  case Kbuzzer_on: {
-    ntype port = 0;
-    uint32_t u32;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(exec_arg, env, end, nresid, Kfrequency);
-    EX_BUZZER_CONTROL(port_value(port), 1, env->e_value);
-    return ERROR_OK;
-  }
-
-  case Kbuzzer_off: {
-    ntype port = 0;
-    uint32_t u32;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    EX_BUZZER_CONTROL(port_value(port), 0, 0);
-    return ERROR_OK;
-  }
-
-  case Kset_servomotor_degree: {
-    ntype port = 0;
-    uint32_t u32;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(exec_arg, env, end, nresid, Kdegree);
-    EX_SERVO_MOTOR(port_value(port), env->e_value);
-    return ERROR_OK;
-  }
-
-  case Kservomotor_synchronized_motion: {
-    CALL(exec_arg, env, end, nresid, Kspeed);
-    const int time = env->e_value;
-    struct servo_sync ss[MAX_SERVOS];
-    size_t count = sizeof(ss) / sizeof(ss[0]);
-    CALL(init_servo_sync, env, end, nresid, ss, &count);
-    EX_SERVOMOTOR_SYNCHRONIZED_MOTION(ss, count, time);
-    return ERROR_OK;
-  }
-
-  case Kir_photo_reflector_value:
-  case Klight_sensor_value: {
-    ntype port = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    env->e_value = EX_ANALOG_SENSOR(port_value(port));
-    return ERROR_OK;
-  }
-
-  case K3_axis_digital_accelerometer_value: {
-    ntype port = 0;
-    ntype dir = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(arg_keyword, end, nresid, Kdirection, &dir);
-    env->e_value = EX_ACCELEROMETER_VALUE(port_value(port),
-					  acceldir_value(dir));
-    return ERROR_OK;
-  } 
-
-  case Kbutton_value:
-  case Ktouch_sensor_value: {
-    ntype port = 0;
-    ntype mode = 0;
-
-    CALL(arg_keyword, end, nresid, Kport, &port);
-    CALL(arg_keyword, end, nresid, Kmode, &mode);
-    if (name_equal(mode, KON))
-      env->e_value = EX_DIGITAL_SENSOR(port_value(port)) == 0;
-    else
-      env->e_value = EX_DIGITAL_SENSOR(port_value(port)) != 0;
-    return ERROR_OK;
-  }
-
-  case Kvariable_ref: {
-    uint32_t u32;
-
-    CALL(lookup_variable, env, end, nresid, &u32);
-    env->e_value = env->e_vars[u32];
-    return ERROR_OK;
-  }
-
-  case Kset_variable_to:
-  case Kchange_variable_by: {
-    const int assign = name == Kset_variable_to;
-    uint32_t u32;
-
-    CALL(lookup_variable, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kvalue);
-    if (assign)
-      env->e_vars[u32] = env->e_value;
-    else
-      env->e_vars[u32] += env->e_value;
-    return ERROR_OK;
-  }
-
-  case Kcall_function: {
-    int32_t i32;
-
-    CALL(arg_int, end, nresid, Kfunction, &i32);
-    return exec_function(env, i32);
-  }
-
-  case Klist_length: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    env->e_value = list_length(&env->e_lsts[u32]);
-    return ERROR_OK;
-  }
-
-  case Klist_ref: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kposition);
-    env->e_value = list_ref(&env->e_lsts[u32], env->e_value, &err);
-    return list_error(err);
-  }
-
-  case Klist_contains: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kvalue);
-    env->e_value = list_contains(&env->e_lsts[u32], env->e_value);
-    return ERROR_OK;
-  }
-
-  case Klist_add: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kvalue);
-    list_add(&env->e_lsts[u32], env->e_value, &err);
-    return list_error(err);
-  }
-
-  case Klist_delete: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kposition);
-    list_delete(&env->e_lsts[u32], env->e_value, &err);
-    return list_error(err);
-  }
-
-  case Klist_replace: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kvalue);
-    const vtype value = env->e_value;
-    CALL(exec_arg, env, end, nresid, Kposition);
-    const vtype position = env->e_value;
-    list_replace(&env->e_lsts[u32], position, value, &err);
-    return list_error(err);
-  }
-
-  case Klist_insert: {
-    uint32_t u32;
-
-    CALL(lookup_list, env, end, nresid, &u32);
-    CALL(exec_arg, env, end, nresid, Kvalue);
-    const vtype value = env->e_value;
-    CALL(exec_arg, env, end, nresid, Kposition);
-    const vtype position = env->e_value;
-    list_insert(&env->e_lsts[u32], position, value, &err);
-    return list_error(err);
-  }
-
-  case Kpick_random: {
-    CALL(exec_arg, env, end, nresid, Kfrom);
-    const vtype from = env->e_value;
-    CALL(exec_arg, env, end, nresid, Kto);
-    const vtype to = env->e_value;
-    env->e_value = EX_RANDOM(from, to + 1);
-    return ERROR_OK;
-  }
-
-  case Kbreakpoint:
-  case Kfunction:
-  case Kvariable:
-  case Klist:
-    return ERROR_OK;		/* NOP */
-
-  case Kreset_timer: {
-    EX_RESET_TIMER();
-    return ERROR_OK;
-  }
-  case Ktimer: {
-    env->e_value = EX_TIMER();
-    return ERROR_OK;
-  }
-
+#undef DEFUN
+#define DEFUN(sym, body) case I ## sym: body
+#include "interp_insns.h"
   default:
     return ERROR_UNSUPPORTED;
   }
+
+#else  /* DISPATCH_TABLE */
+
+  static int (*const ops[])(struct env *env, const uint8_t *end,
+			    ssize_t nresid) = {
+    Fbreakpoint,		/* nop */
+#undef DEFUN
+#define DEFUN(sym, body) F ## sym,
+#undef EXEC_BINARY
+#define EXEC_BINARY(sym) F ## sym,
+#undef EXEC_UNARY
+#define EXEC_UNARY(sym) F ## sym,
+#include "interp_insns.h"
+  };
+
+  if (name >= sizeof(ops) / sizeof(ops[0]))
+    return ERROR_UNSUPPORTED;
+  return ops[name](env, end, nresid);
+
+#endif	/* DISPATCH_TABLE */
 }
 
 static int
@@ -1254,10 +944,10 @@ parse_fvl(const uint8_t *end, ssize_t *resid, int array, void *arg)
   CALL(arg_keyword, end, nresid, Kname, &name);
 
   switch (name) {
-  case Kvariable:
+  case Ivariable:
     (*pfa->n_vars)++;
     return ERROR_OK;
-  case Klist:
+  case Ilist:
     (*pfa->n_lsts)++;
     return ERROR_OK;
   default:

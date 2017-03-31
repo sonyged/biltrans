@@ -9,5 +9,6 @@ SKETCH_CPP=${2:-interp.cpp}
 
 #node ../compile.js ../example/empty.json |
 #node ../embed_json.js ../example/empty.json |
+cp ../code/interp_insns.h ${BUILDDIR}/
 cat ../code/interp_main.c |
     sh ./compile.sh ${BUILDDIR} ${SKETCH_CPP}
