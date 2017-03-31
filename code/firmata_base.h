@@ -1125,11 +1125,12 @@ static void
 flash_write(byte cc)
 {
 
+#define ESCAPE_CHAR 0x7f
   if (flash_state.fs_escape) {
-    cc = cc ? END_SYSEX : 0;
+    cc = cc ? END_SYSEX : ESCAPE_CHAR;
     flash_state.fs_escape = 0;
   } else {
-    if (cc == 0) {	/* escape character */
+    if (cc == ESCAPE_CHAR) {	/* escape character */
       flash_state.fs_escape = 1;
       return;
     }
