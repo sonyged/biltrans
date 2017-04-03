@@ -4,7 +4,6 @@ DEFUN(when_green_flag_clicked, {
 
 DEFUN(repeat, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kcount);
   ssize_t count = env->e_value;
@@ -16,7 +15,6 @@ DEFUN(repeat, {
 })
 
 DEFUN(forever, {
-  int err;
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -27,7 +25,6 @@ DEFUN(forever, {
 
 DEFUN(if_then, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kcondition);
   if (env->e_value != 0)
@@ -37,7 +34,6 @@ DEFUN(if_then, {
 
 DEFUN(if_then_else, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kcondition);
   if (env->e_value != 0)
@@ -49,7 +45,6 @@ DEFUN(if_then_else, {
 
 DEFUN(wait, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Ksecs);
   CALL(EX_DELAY, env->e_value);
@@ -58,7 +53,6 @@ DEFUN(wait, {
 
 DEFUN(wait_until, {
   env *env = ctx->c_env;
-  int err;
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -72,7 +66,6 @@ DEFUN(wait_until, {
 
 DEFUN(repeat_until, {
   env *env = ctx->c_env;
-  int err;
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -109,7 +102,6 @@ EXEC_UNARY(round)
 
 DEFUN(math, {
   env *env = ctx->c_env;
-  int err;
   ntype op;
 
   CALL(arg_keyword, &ctx->c_region, Kop, &op);
@@ -177,7 +169,6 @@ DEFUN(math, {
 })
 
 DEFUN(turn_led, {
-  int err;
   ntype port = 0;
   ntype mode = 0;
 
@@ -188,7 +179,6 @@ DEFUN(turn_led, {
 })
 
 DEFUN(turn_dcmotor_on, {
-  int err;
   ntype port = 0;
   ntype direction = 0;
 
@@ -199,7 +189,6 @@ DEFUN(turn_dcmotor_on, {
 })
 
 DEFUN(turn_dcmotor_off, {
-  int err;
   ntype port = 0;
   ntype mode = 0;
 
@@ -211,9 +200,7 @@ DEFUN(turn_dcmotor_off, {
 
 DEFUN(buzzer_on, {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
-  uint32_t u32;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
   CALL(exec_arg, ctx, Kfrequency);
@@ -222,9 +209,7 @@ DEFUN(buzzer_on, {
 })
 
 DEFUN(buzzer_off, {
-  int err;
   ntype port = 0;
-  uint32_t u32;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
   EX_BUZZER_CONTROL(port_value(port), 0, 0);
@@ -233,9 +218,7 @@ DEFUN(buzzer_off, {
 
 DEFUN(set_servomotor_degree, {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
-  uint32_t u32;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
   CALL(exec_arg, ctx, Kdegree);
@@ -245,7 +228,6 @@ DEFUN(set_servomotor_degree, {
 
 DEFUN(set_dcmotor_power, {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
@@ -256,7 +238,6 @@ DEFUN(set_dcmotor_power, {
 
 DEFUN(multi_led, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kr);
   vtype r = env->e_value;
@@ -270,7 +251,6 @@ DEFUN(multi_led, {
 
 DEFUN(servomotor_synchronized_motion, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kspeed);
   const int time = env->e_value;
@@ -283,7 +263,6 @@ DEFUN(servomotor_synchronized_motion, {
 
 DEFUN(3_axis_digital_accelerometer_value, {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
   ntype dir = 0;
 
@@ -329,7 +308,6 @@ DEFUN(timer, {
 
 DEFUN(pick_random, {
   env *env = ctx->c_env;
-  int err;
 
   CALL(exec_arg, ctx, Kfrom);
   const vtype from = env->e_value;
@@ -346,7 +324,6 @@ DEFUN(function, {
 
 DEFUN(call_function, {
   env *env = ctx->c_env;
-  int err;
   int32_t i32;
 
   CALL(arg_int, &ctx->c_region, Kfunction, &i32);
@@ -360,7 +337,6 @@ DEFUN(variable, {
 
 DEFUN(variable_ref, {
   env *env = ctx->c_env;
-  int err;
   uint32_t u32;
 
   CALL(lookup_variable, ctx, &u32);
@@ -370,7 +346,6 @@ DEFUN(variable_ref, {
 
 DEFUN(set_variable_to, {
   env *env = ctx->c_env;
-  int err;
   uint32_t u32;
 
   CALL(lookup_variable, ctx, &u32);
@@ -381,7 +356,6 @@ DEFUN(set_variable_to, {
 
 DEFUN(change_variable_by, {
   env *env = ctx->c_env;
-  int err;
   uint32_t u32;
 
   CALL(lookup_variable, ctx, &u32);
@@ -397,7 +371,6 @@ DEFUN(list, {
 
 DEFUN(list_length, {
   env *env = ctx->c_env;
-  int err;
   uint32_t u32;
 
   CALL(lookup_list, ctx, &u32);
@@ -418,7 +391,6 @@ DEFUN(list_add, {
 
 DEFUN(list_contains, {
   env *env = ctx->c_env;
-  int err;
   uint32_t u32;
 
   CALL(lookup_list, ctx, &u32);

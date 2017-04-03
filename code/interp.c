@@ -159,21 +159,20 @@ get_type(const uint8_t *end, ssize_t *resid, int array)
  * Narrow the region down to current elist.
  */
 static int
-narrow_to_elist(const uint8_t **end, ssize_t *resid, ssize_t *nresid)
+narrow_to_elist(region *or, region *nr)
 {
   uint32_t u32;
   const size_t size = SIZE_SIZE;
-  int err;
 
-  CALL(read_size, *end, *resid, &u32);
-  if (u32 > *resid)
+  CALL(read_size, or->r_end, or->r_resid, &u32);
+  if (u32 > or->r_resid)
     return ERROR_INVALID_SIZE;
   if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
     return ERROR_BUFFER_TOO_SHORT;
 
-  *end = (*end - *resid) + u32;
-  *nresid = u32 - size;		/* skip leading int32 */
-  *resid -= u32;
+  nr->r_end = (or->r_end - or->r_resid) + u32;
+  nr->r_resid = u32 - size; /* skip leading int32 */
+  or->r_resid -= u32;
   return ERROR_OK;
 }
 
@@ -189,7 +188,6 @@ elist_find(const uint8_t *end, ssize_t *resid, int array,
   /* There should be at least type and trailing null of e_name. */
   while (r > ELIST_SIZE(0)) {
     uint32_t u32;
-    int err;
 
     if ((*compare)(end, r, arg)) {
       *resid = r;
@@ -248,6 +246,7 @@ elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
   return elist_find(end, resid, 0, compare_name, (void *)&name);
 }
 
+#if 0
 static int
 compare_keyword(const region *region, int array, ntype name, ntype value)
 {
@@ -267,17 +266,18 @@ compare_names(const region *region, int array, size_t n, const names *names)
 {
   const uint8_t *end = region->r_end;
   ssize_t resid = region->r_resid;
-  ssize_t nresid;
   const uint8_t type = get_type(end, &resid, array);
 
   if (type != BT_OBJECT)
     return 0;
-  if (narrow_to_elist(&end, &resid, &nresid) != ERROR_OK)
+
+  struct region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = resid;
+  struct region nregion;
+  if (narrow_to_elist(&oregion, &nregion) != ERROR_OK)
     return 0;
 
-  struct region nregion;
-  nregion.r_end = end;
-  nregion.r_resid = nresid;
   for (size_t i = 0; i < n; i++)
     if (!compare_keyword(&nregion, 0, names[i].n_name, names[i].n_value))
       return 0;
@@ -295,6 +295,7 @@ compare_function(const region *region, int array, void *arg)
 
   return compare_names(region, array, 2, names);
 }
+#endif
 
 static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
 static int exec_block(env *env, const uint8_t *end, ssize_t *resid);
@@ -304,7 +305,6 @@ static int exec_number(env *env, const uint8_t *end, ssize_t *resid,
 static int
 arg_keyword(const region *region, ntype name, ntype *v)
 {
-  int err;
   const uint8_t *end = region->r_end;
   ssize_t resid = region->r_resid;
 
@@ -324,7 +324,6 @@ arg_int(const region *region, ntype name, int32_t *i32)
 {
   const uint8_t *end = region->r_end;
   ssize_t resid = region->r_resid;
-  int err;
 
   CALL(elist_lookup, end, &resid, name);
   const uint8_t type = get_type(end, &resid, 0);
@@ -480,7 +479,6 @@ f_round(vtype x)
 static int
 lookup_index(const region *region, uint32_t *u32, ntype name, uint32_t limit)
 {
-  int err;
   int32_t i32;
 
   CALL(arg_int, region, name, &i32);
@@ -506,20 +504,22 @@ lookup_list(const ctx *ctx, uint32_t *u32)
   return lookup_index(&ctx->c_region, u32, Klist, env->e_nlsts);
 }
 
+#if 0
 static int
 with_elist(const uint8_t *end, ssize_t *resid, int array,
 	   int (*proc)(const region *region, int, void *), void *arg)
 {
-  ssize_t nresid;
-  uint32_t u32;
 
-  CALL(narrow_to_elist, &end, resid, &nresid);
-
+  region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = *resid;
   region nregion;
-  nregion.r_end = end;
-  nregion.r_resid = nresid;
+  CALL(narrow_to_elist, &oregion, &nregion);
+  *resid = oregion.r_resid;
+
   return (*proc)(&nregion, array, arg);
 }
+#endif
 
 static int
 foreach_document(const region *region, int array,
@@ -529,21 +529,19 @@ foreach_document(const region *region, int array,
 {
   const uint8_t *end = region->r_end;
   ssize_t resid = region->r_resid;
-  ssize_t nresid;
-  int err, type;
 
-  CALL(narrow_to_elist, &end, &resid, &nresid);
-
+  struct region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = resid;
   struct region nregion;
-  nregion.r_end = end;
-  nregion.r_resid = nresid;
+  CALL(narrow_to_elist, &oregion, &nregion);
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
     if (nregion.r_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
-    const uint8_t type = get_type(end, &nregion.r_resid, array);
+    const uint8_t type = get_type(nregion.r_end, &nregion.r_resid, array);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     CALL((*proc), &nregion, 0, arg);
@@ -559,17 +557,12 @@ static int
 lookup_function(region *region, int array, void *arg)
 {
   lookup_function_args *lfa = (lookup_function_args *)arg;
-  const uint8_t *end = region->r_end;
   ntype name;
   int32_t i32;
-  ssize_t nresid;
-  int err;
-
-  CALL(narrow_to_elist, &end, &region->r_resid, &nresid);
 
   struct region nregion;
-  nregion.r_end = end;
-  nregion.r_resid = nresid;
+  CALL(narrow_to_elist, region, &nregion);
+
   CALL(arg_keyword, &nregion, Kname, &name);
   if (!name_equal(name, Ifunction))
     return ERROR_OK;
@@ -578,8 +571,8 @@ lookup_function(region *region, int array, void *arg)
   if (i32 != lfa->idx)
     return ERROR_OK;
 
-  lfa->ctx.c_end = end;
-  lfa->ctx.c_resid = nresid;
+  lfa->ctx.c_end = nregion.r_end;
+  lfa->ctx.c_resid = nregion.r_resid;
   return ERROR_FOUND;
 }
 
@@ -682,19 +675,13 @@ static int
 setup_ss(ctx *ctx, struct servo_sync *ss)
 {
   env *env = ctx->c_env;
-  const uint8_t *end = ctx->c_end;
   ntype port = 0;
   ntype name;
-  uint32_t u32;
-  ssize_t nresid;
-  int err;
-
-  CALL(narrow_to_elist, &end, &ctx->c_resid, &nresid);
 
   struct ctx nctx;
   nctx.c_env = env;
-  nctx.c_end = end;
-  nctx.c_resid = nresid;
+  CALL(narrow_to_elist, &ctx->c_region, &nctx.c_region);
+
   CALL(arg_keyword, &nctx.c_region, Kname, &name);
   if (!name_equal(name, Iset_servomotor_degree))
     return ERROR_INVALID_TYPE;
@@ -714,27 +701,26 @@ init_servo_sync(const ctx *ctx,
   env *env = ctx->c_env;
   const uint8_t *end = ctx->c_end;
   ssize_t resid = ctx->c_resid;
-  ssize_t nresid;
   const size_t max_count = *count;
-  int err;
 
   *count = 0;
   CALL(elist_lookup, end, &resid, Kblocks);
   uint8_t type = get_type(end, &resid, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  CALL(narrow_to_elist, &end, &resid, &nresid);
+  region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = resid;
   struct ctx nctx;
   nctx.c_env = env;
-  nctx.c_end = end;
-  nctx.c_resid = nresid;
+  CALL(narrow_to_elist, &oregion, &nctx.c_region);
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
     if (nctx.c_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nctx.c_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    type = get_type(end, &nctx.c_resid, 1);
+    type = get_type(nctx.c_end, &nctx.c_resid, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
@@ -758,7 +744,6 @@ static int
 analog_sensor_value(const ctx *ctx)
 {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
@@ -770,7 +755,6 @@ static int
 digital_sensor_value(const ctx *ctx)
 {
   env *env = ctx->c_env;
-  int err;
   ntype port = 0;
   ntype mode = 0;
 
@@ -811,17 +795,19 @@ F ## sym(const ctx *ctx) body
 static int
 exec_block(env *env, const uint8_t *end, ssize_t *resid)
 {
-  ssize_t nresid;
   ntype name;
   int err;
 
   CHECK_STACK(env, "exec_block", &err);
-  CALL(narrow_to_elist, &end, resid, &nresid);
 
+  region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = *resid;
   ctx ctx;
   ctx.c_env = env;
-  ctx.c_end = end;
-  ctx.c_resid = nresid;
+  CALL(narrow_to_elist, &oregion, &ctx.c_region);
+  *resid = oregion.r_resid;
+
   CALL(arg_keyword, &ctx.c_region, Kname, &name);
 
 #if !defined(DISPATCH_TABLE)
@@ -917,22 +903,26 @@ exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
 static int
 exec_array(env *env, const uint8_t *end, ssize_t *resid)
 {
-  ssize_t nresid;
   int err;
 
   CHECK_STACK(env, "exec_array", &err);
-  CALL(narrow_to_elist, &end, resid, &nresid);
+  region oregion;
+  oregion.r_end = end;
+  oregion.r_resid = *resid;
+  region nregion;
+  CALL(narrow_to_elist, &oregion, &nregion);
+  *resid = oregion.r_resid;
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
-    if (nresid < ELIST_SIZE(0))
+    if (nregion.r_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
-    if (nresid == ELIST_SIZE(0)) /* trailing nul */
+    if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    const uint8_t type = get_type(end, &nresid, 1);
+    const uint8_t type = get_type(nregion.r_end, &nregion.r_resid, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    CALL(exec_block, env, end, &nresid);
+    CALL(exec_block, env, nregion.r_end, &nregion.r_resid);
   }
 }
 
@@ -940,7 +930,6 @@ static int
 port_init(const uint8_t *end, ssize_t *resid)
 {
   const uint8_t *p = end - *resid;
-  int err;
 
   const uint8_t type = get_type(end, resid, 0);
   if (type != BT_KEYWORD)
@@ -955,7 +944,6 @@ port_init(const uint8_t *end, ssize_t *resid)
 static int
 setup_ports(const uint8_t *end, ssize_t resid)
 {
-  ssize_t nresid;
   int err;
 
   err = elist_lookup(end, &resid, Kport_settings);
@@ -964,14 +952,17 @@ setup_ports(const uint8_t *end, ssize_t resid)
     const uint8_t type = get_type(end, &resid, 0);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    CALL(narrow_to_elist, &end, &resid, &nresid);
+    region oregion, nregion;
+    oregion.r_end = end;
+    oregion.r_resid = resid;
+    CALL(narrow_to_elist, &oregion, &nregion);
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
-      if (nresid < ELIST_SIZE(0))
+      if (nregion.r_resid < ELIST_SIZE(0))
 	return ERROR_OVERFLOW;
-      if (nresid == ELIST_SIZE(0))		/* trailing nul */
+      if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
 	return ERROR_OK;
-      CALL(port_init, end, &nresid);
+      CALL(port_init, nregion.r_end, &nregion.r_resid);
     }
   }
     break;
@@ -993,16 +984,11 @@ static int
 parse_fvl(region *region, int array, void *arg)
 {
   parse_fvl_args *pfa = (parse_fvl_args *)arg;
-  const uint8_t *end = region->r_end;
-  ssize_t nresid;
   ntype name;
-  int err;
-
-  CALL(narrow_to_elist, &end, &region->r_resid, &nresid);
 
   struct region nregion;
-  nregion.r_end = end;
-  nregion.r_resid = nresid;
+  CALL(narrow_to_elist, region, &nregion);
+
   CALL(arg_keyword, &nregion, Kname, &name);
 
   switch (name) {
@@ -1072,7 +1058,6 @@ exec_script(const uint8_t *end, ssize_t *resid)
 int
 interp_exec(const uint8_t *p, ssize_t size)
 {
-  int err;
   ssize_t resid = SIZE_SIZE;
   const uint8_t *end = p + resid;
   uint32_t u32;
