@@ -172,20 +172,20 @@ get_type(region *region, int array)
  * Narrow the region down to current elist.
  */
 static int
-narrow_to_elist(region *or, region *nr)
+narrow_to_elist(region *oregion, region *nregion)
 {
   uint32_t u32;
   const size_t size = SIZE_SIZE;
 
-  CALL(read_size, or, &u32);
-  if (u32 > or->r_resid)
+  CALL(read_size, oregion, &u32);
+  if (u32 > oregion->r_resid)
     return ERROR_INVALID_SIZE;
   if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
     return ERROR_BUFFER_TOO_SHORT;
 
-  nr->r_end = (or->r_end - or->r_resid) + u32;
-  nr->r_resid = u32 - size; /* skip leading int32 */
-  or->r_resid -= u32;
+  nregion->r_end = (oregion->r_end - oregion->r_resid) + u32;
+  nregion->r_resid = u32 - size; /* skip leading int32 */
+  oregion->r_resid -= u32;
   return ERROR_OK;
 }
 
@@ -193,42 +193,42 @@ narrow_to_elist(region *or, region *nr)
  * Looking for given name in the elist.
  */
 static int
-elist_find(const region *or, region *nr, int array,
+elist_find(const region *oregion, region *nregion, int array,
 	   int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
 {
 
-  *nr = *or;
+  *nregion = *oregion;
   /* There should be at least type and trailing null of e_name. */
-  while (nr->r_resid > ELIST_SIZE(0)) {
+  while (nregion->r_resid > ELIST_SIZE(0)) {
     uint32_t u32;
 
-    if ((*compare)(nr->r_end, nr->r_resid, arg)) {
+    if ((*compare)(nregion->r_end, nregion->r_resid, arg)) {
       return ERROR_OK;
     }
 
-    const uint8_t type = get_type(nr, array);
+    const uint8_t type = get_type(nregion, array);
     switch (type) {
     case BT_ERROR:
       return ERROR_BUFFER_TOO_SHORT;
     case BT_NUMBER:
-      nr->r_resid -= 4;
+      nregion->r_resid -= 4;
       break;
     case BT_KEYWORD:
-      nr->r_resid -= 2;
+      nregion->r_resid -= 2;
       break;
     case BT_OBJECT:
     case BT_ARRAY:
-      CALL(read_size, nr, &u32);
-      nr->r_resid -= u32;
+      CALL(read_size, nregion, &u32);
+      nregion->r_resid -= u32;
       break;
     case BT_INT8:
-      nr->r_resid -= 1;
+      nregion->r_resid -= 1;
       break;
     case BT_INT16:
-      nr->r_resid -= 2;
+      nregion->r_resid -= 2;
       break;
     case BT_INT32:
-      nr->r_resid -= 4;
+      nregion->r_resid -= 4;
       break;
     default:
       return ERROR_UNSUPPORTED;
@@ -251,10 +251,10 @@ compare_name(const uint8_t *end, ssize_t resid, void *arg)
  * Looking for given name in the elist.
  */
 static int
-elist_lookup(const region *or, region *nr, ntype name)
+elist_lookup(const region *oregion, region *nregion, ntype name)
 {
 
-  return elist_find(or, nr, 0, compare_name, (void *)&name);
+  return elist_find(oregion, nregion, 0, compare_name, (void *)&name);
 }
 
 #if 0
