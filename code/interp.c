@@ -18,21 +18,20 @@
 
 typedef float vtype;
 
+typedef struct region {
+  const uint8_t *r_end;
+  ssize_t r_resid;
+} region;
+
 typedef struct env {
   void *e_stack;
   vtype e_value;
-  const uint8_t *e_end;
-  ssize_t e_resid;
+  region e_region;
   ssize_t e_nvars;
   ssize_t e_nlsts;
   vtype *e_vars;
   void **e_lsts;
 } env;
-
-typedef struct region {
-  const uint8_t *r_end;
-  ssize_t r_resid;
-} region;
 
 typedef struct ctx {
   env *c_env;
@@ -85,11 +84,18 @@ name_at(const uint8_t *at)
   return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
 }
 
+static const uint8_t *
+region2p(const region *region)
+{
+
+  return region->r_end - region->r_resid;
+}
+
 static ntype
 name_at2(const region *region)
 {
 
-  return name_at(region->r_end - region->r_resid);
+  return name_at(region2p(region));
 }
 
 /*
@@ -550,7 +556,7 @@ foreach_document(const region *region, int array,
       return ERROR_OVERFLOW;
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
-    const uint8_t type = get_type(nregion.r_end, &nregion.r_resid, array);
+    const uint8_t type = get_type2(&nregion, array);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     CALL((*proc), &nregion, 0, arg);
@@ -594,8 +600,7 @@ exec_function(env *env, uint32_t idx)
   CHECK_STACK(env, "exec_function", &err);
   lfa.idx = idx;
   lfa.ctx.c_env = env;
-  lfa.ctx.c_end = env->e_end;
-  lfa.ctx.c_resid = env->e_resid;
+  lfa.ctx.c_region = env->e_region;
   err = foreach_document(&lfa.ctx.c_region, 1, ERROR_ELEMENT_NOT_FOUND,
 			 lookup_function, &lfa);
   if (err != ERROR_FOUND)
@@ -926,16 +931,15 @@ exec_array(env *env, region *region)
 }
 
 static int
-port_init(const uint8_t *end, ssize_t *resid)
+port_init(region *region)
 {
-  const uint8_t *p = end - *resid;
-
-  const uint8_t type = get_type(end, resid, 0);
+  const uint8_t *p = region2p(region);
+  const uint8_t type = get_type2(region, 0);
   if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
-  ntype part = name_at(end - *resid);
-  *resid -= 2;
+  ntype part = name_at2(region);
+  region->r_resid -= 2;
   CALL(EX_PORT_INIT, port_value(port), part);
   return ERROR_OK;
 }
@@ -960,7 +964,7 @@ setup_ports(const region *region)
 	return ERROR_OVERFLOW;
       if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
 	return ERROR_OK;
-      CALL(port_init, nregion.r_end, &nregion.r_resid);
+      CALL(port_init, &nregion);
     }
   }
     break;
@@ -1002,17 +1006,14 @@ parse_fvl(region *region, int array, void *arg)
 }
 
 static int
-count_environ(const uint8_t *end, ssize_t resid, int *n_vars, int *n_lsts)
+count_environ(const region *region, int *n_vars, int *n_lsts)
 {
   parse_fvl_args pfa;
 
   pfa.n_vars = n_vars;
   pfa.n_lsts = n_lsts;
   *pfa.n_vars = *pfa.n_lsts = 0;
-  region region;
-  region.r_end = end;
-  region.r_resid = resid;
-  return foreach_document(&region, 1, ERROR_OK, parse_fvl, &pfa);
+  return foreach_document(region, 1, ERROR_OK, parse_fvl, &pfa);
 }
 
 static int
@@ -1033,8 +1034,6 @@ exec_script(const uint8_t *end, ssize_t *resid)
   CALL(elist_lookup, &oregion, &nregion, Kscripts);
 
   const uint8_t type = get_type2(&nregion, 0);
-  end = nregion.r_end;
-  *resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
 
@@ -1042,12 +1041,11 @@ exec_script(const uint8_t *end, ssize_t *resid)
    *   int32 e_list "\x00" 
    */
 
-  CALL(count_environ, end, *resid, &n_vars, &n_lsts);
+  CALL(count_environ, &nregion, &n_vars, &n_lsts);
   //printf("variable = %d, list = %d\n", n_vars, n_lsts);
 
   env->e_stack = &err;
-  env->e_end = end;
-  env->e_resid = *resid;
+  env->e_region = nregion;
   env->e_nvars = n_vars;
   env->e_nlsts = n_lsts;
   env->e_vars = (vtype *)alloca(sizeof(vtype) * n_vars);
