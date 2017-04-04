@@ -10,7 +10,11 @@ test -d "${BUILDDIR}" || exit 21
 
 SKETCH_CPP=${2:-sketch_mar07b.cpp}
 
-(cat ../code/firmata_base.cpp;
+(
+ if [ -n "${ENABLE_INTERP}" ]; then
+     echo '#define ENABLE_INTERP 1';
+ fi
+ cat ../code/firmata_base.cpp;
  cat ../code/firmata_base.h;
  echo '#define FIRMATA_BASE';
  cat ../code/trouble_shooting.h;
