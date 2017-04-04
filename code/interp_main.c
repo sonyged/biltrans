@@ -34,6 +34,7 @@ loop()
   SerialUSB.println("exec!");
 #endif
   if (!interp_error) {
+    randomSeed(analogRead(0));
     INIT_OUTPUTS();
     int err = interp_exec(scripts, 0);
 
