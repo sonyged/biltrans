@@ -111,7 +111,7 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
 }
 
 static int
-get_type2(region *region, int array)
+get_type(region *region, int array)
 {
 
   if (region->r_resid <= 0)
@@ -206,7 +206,7 @@ elist_find(const region *or, region *nr, int array,
       return ERROR_OK;
     }
 
-    const uint8_t type = get_type2(nr, array);
+    const uint8_t type = get_type(nr, array);
     switch (type) {
     case BT_ERROR:
       return ERROR_BUFFER_TOO_SHORT;
@@ -276,7 +276,7 @@ static int
 compare_names(const region *region, int array, size_t n, const names *names)
 {
   struct region oregion = *region;
-  const uint8_t type = get_type2(&oregion, array);
+  const uint8_t type = get_type(&oregion, array);
 
   if (type != BT_OBJECT)
     return 0;
@@ -314,7 +314,7 @@ arg_keyword(const region *region, ntype name, ntype *v)
   struct region nregion;
 
   CALL(elist_lookup, region, &nregion, name);
-  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t type = get_type(&nregion, 0);
   if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   if (nregion.r_resid <= 0)
@@ -330,7 +330,7 @@ arg_int(const region *region, ntype name, int32_t *i32)
   struct region nregion;
 
   CALL(elist_lookup, region, &nregion, name);
-  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t type = get_type(&nregion, 0);
   const uint8_t *end = nregion.r_end;
   ssize_t resid = nregion.r_resid;
   const uint8_t *q = end - resid;
@@ -368,7 +368,7 @@ exec_arg(const ctx *ctx, ntype name)
   struct region nregion;
 
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
-  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t type = get_type(&nregion, 0);
   switch (type) {
   case BT_ERROR:
     return ERROR_BUFFER_TOO_SHORT;
@@ -396,7 +396,7 @@ exec_blocks(const ctx *ctx, ntype name)
   CHECK_STACK0(ctx->c_env, "exec_blocks", &err, name);
   struct region nregion;
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
-  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t type = get_type(&nregion, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   return exec_array(ctx->c_env, &nregion);
@@ -541,7 +541,7 @@ foreach_document(const region *region, int array,
       return ERROR_OVERFLOW;
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return end_of_document;
-    const uint8_t type = get_type2(&nregion, array);
+    const uint8_t type = get_type(&nregion, array);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     CALL((*proc), &nregion, 0, arg);
@@ -703,7 +703,7 @@ init_servo_sync(const ctx *ctx,
   *count = 0;
   struct region nregion;
   CALL(elist_lookup, &ctx->c_region, &nregion, Kblocks);
-  uint8_t type = get_type2(&nregion, 0);
+  uint8_t type = get_type(&nregion, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   struct ctx nctx;
@@ -715,7 +715,7 @@ init_servo_sync(const ctx *ctx,
       return ERROR_OVERFLOW;
     if (nctx.c_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    type = get_type2(&nctx.c_region, 1);
+    type = get_type(&nctx.c_region, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
@@ -908,7 +908,7 @@ exec_array(env *env, region *region)
       return ERROR_OVERFLOW;
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    const uint8_t type = get_type2(&nregion, 1);
+    const uint8_t type = get_type(&nregion, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     CALL(exec_block, env, &nregion);
@@ -919,7 +919,7 @@ static int
 port_init(region *region)
 {
   const uint8_t *p = region2p(region);
-  const uint8_t type = get_type2(region, 0);
+  const uint8_t type = get_type(region, 0);
   if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
   ntype port = name_at(p + 1);
@@ -938,7 +938,7 @@ setup_ports(const region *region)
   err = elist_lookup(region, &nregion, Kport_settings);
   switch (err) {
   case ERROR_OK: {
-    const uint8_t type = get_type2(&nregion, 0);
+    const uint8_t type = get_type(&nregion, 0);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     oregion = nregion;
@@ -1013,7 +1013,7 @@ exec_script(region *region)
   struct region nregion;
   CALL(elist_lookup, region, &nregion, Kscripts);
 
-  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t type = get_type(&nregion, 0);
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
 
