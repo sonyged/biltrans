@@ -929,6 +929,9 @@ static bool enableFirmata = false;
 static bool setupFirmata = true;
 static void periodc_jobs();
 
+static void enter_firmata();
+static void leave_firmata();
+
 /*
  * True if need to bail out.
  */
@@ -936,7 +939,7 @@ static bool
 check_intr()
 {
   if (dualStream.available()) {
-    enableFirmata = true;
+    enter_firmata();
     return true;
   }
   periodc_jobs();
@@ -1468,7 +1471,7 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(0x00);
 	  Firmata.write(END_SYSEX); /* 0xf7 */
 
-	  enableFirmata = false;
+	  leave_firmata();
 	  interp_error = 0;
 	}
 	break;
@@ -1511,24 +1514,9 @@ koov_sysex(byte argc, byte *argv)
 
 void setup()
 {
-#define LED_INIT(n) do { pinMode((n), OUTPUT); } while (0)
-#define LED_ON(n) do { digitalWrite((n), LOW); } while (0)
-#define LED_OFF(n) do { digitalWrite((n), HIGH); } while (0)
-#define BLINK(n)				\
-  do {						\
-    LED_INIT((n));				\
-    LED_OFF((n));				\
-    delay(100);					\
-    LED_ON((n));				\
-    delay(100);					\
-    LED_OFF((n));				\
-  } while (0)
-
-  //BLINK(20);
-
-/*
- * Resetting BTS01 is now done in bootloader.
- */
+  /*
+   * Resetting BTS01.
+   */
   bts01_reset();
 
   // to use a port other than Serial, such as Serial1 on an Arduino Leonardo or Mega,
@@ -1558,10 +1546,6 @@ void setup()
   bts01_sbo();
 #endif
 
-#ifdef DEBUG_USB
-  for (int j = 0; j < 5; j++)
-    BLINK(0);
-#endif
   KoovSetup();
 }
 
@@ -1585,11 +1569,20 @@ void setup()
 static void showConnectMode();
 static unsigned int blink_timer = 0;
 static unsigned int blink_state = 0;
-static int blink_led(int pin)
+
+static void
+blink_init()
 {
-#define INTERVAL 250
+
+  blink_timer = millis();
+  blink_state = 0;
+}
+
+static int
+blink_led(int pin, int interval)
+{
   unsigned int now = millis();
-  if (now - blink_timer > INTERVAL) {
+  if (now - blink_timer > interval) {
     blink_timer = now;
     blink_state = !blink_state;
     if (pin) {
@@ -1603,12 +1596,32 @@ static int blink_led(int pin)
   return 0;
 #undef INTERVAL
 }
+
+static void
+enter_firmata()
+{
+
+  enableFirmata = true;
+  LED_OFF(PIN_AUTO);
+  LED_ON(PIN_LIVE);
+}
+
+static void
+leave_firmata()
+{
+
+  enableFirmata = false;
+  LED_ON(PIN_AUTO);
+  LED_OFF(PIN_LIVE);
+  blink_init();
+}
+
 static void
 periodc_jobs()
 {
   if (dualStream.connectMode() == DualStream::NOT_CONNECTED &&
       bts01_failure) {
-    blink_led(PIN_BLE);
+    blink_led(PIN_BLE, 100);
   } else {
     if (interp_error) {
       static byte hi, lo, pre;
@@ -1616,23 +1629,25 @@ periodc_jobs()
 	pre = 8;
 	hi = ((interp_error >> 4) & 0xf) * 2;
 	lo = (interp_error & 0xf) * 2;
-	blink_timer = millis();
-	blink_state = 0;
+	blink_init();
       }
       if (pre > 0) {
-	if (blink_led(0))
+	if (blink_led(0, 250))
 	  pre--;
       } else if (hi > 0) {
 	LED_OFF(PIN_USB);
-	if (blink_led(PIN_BLE))
+	if (blink_led(PIN_BLE, 250))
 	  hi--;
       } else if (lo > 0) {
 	LED_OFF(PIN_BLE);
-	if (blink_led(PIN_USB))
+	if (blink_led(PIN_USB, 250))
 	  lo--;
       }
-    } else
+    } else {
       showConnectMode();
+      if (!enableFirmata)
+	blink_led(PIN_AUTO, blink_state ? 950 : 50);
+    }
   }
 }
 
@@ -1665,7 +1680,7 @@ void loop()
 #endif
 
   if (dualStream.available()) {
-    enableFirmata = true;
+    enter_firmata();
     if (setupFirmata) {
       FirmataSetup();
       setupFirmata = false;
@@ -1675,16 +1690,10 @@ void loop()
   periodc_jobs();
 
   if (enableFirmata) {
-    LED_OFF(PIN_AUTO);
-    LED_ON(PIN_LIVE);
-
     FirmataLoop();
   }
 #if !defined(DEBUG_USB)
   if (!enableFirmata) {
-    LED_ON(PIN_AUTO);
-    LED_OFF(PIN_LIVE);
-
     KoovLoop();
   }
 #endif
