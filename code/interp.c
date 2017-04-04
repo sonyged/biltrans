@@ -313,10 +313,9 @@ compare_function(const region *region, int array, void *arg)
 }
 #endif
 
-static int exec_array(env *env, const uint8_t *end, ssize_t *resid);
-static int exec_block(env *env, const uint8_t *end, ssize_t *resid);
-static int exec_number(env *env, const uint8_t *end, ssize_t *resid,
-		       uint8_t type);
+static int exec_array(env *env, region *region);
+static int exec_block(env *env, region *region);
+static int exec_number(env *env, region *region, uint8_t type);
 
 static int
 arg_keyword(const region *region, ntype name, ntype *v)
@@ -379,18 +378,16 @@ exec_arg(const ctx *ctx, ntype name)
 
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
   const uint8_t type = get_type2(&nregion, 0);
-  const uint8_t *end = nregion.r_end;
-  ssize_t resid = nregion.r_resid;
   switch (type) {
   case BT_ERROR:
     return ERROR_BUFFER_TOO_SHORT;
   case BT_OBJECT:
-    return exec_block(env, end, &resid);
+    return exec_block(env, &nregion);
   case BT_NUMBER:
   case BT_INT8:
   case BT_INT16:
   case BT_INT32:
-    return exec_number(env, end, &resid, type);
+    return exec_number(env, &nregion, type);
   default:
     return ERROR_INVALID_TYPE;
   }
@@ -409,11 +406,9 @@ exec_blocks(const ctx *ctx, ntype name)
   struct region nregion;
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
   const uint8_t type = get_type2(&nregion, 0);
-  const uint8_t *end = nregion.r_end;
-  ssize_t resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  return exec_array(ctx->c_env, end, &resid);
+  return exec_array(ctx->c_env, &nregion);
 }
 
 static int
@@ -812,20 +807,16 @@ F ## sym(const ctx *ctx) body
 #endif	/* DISPATCH_TABLE */
 
 static int
-exec_block(env *env, const uint8_t *end, ssize_t *resid)
+exec_block(env *env, region *region)
 {
   ntype name;
   int err;
 
   CHECK_STACK(env, "exec_block", &err);
 
-  region oregion;
-  oregion.r_end = end;
-  oregion.r_resid = *resid;
   ctx ctx;
   ctx.c_env = env;
-  CALL(narrow_to_elist, &oregion, &ctx.c_region);
-  *resid = oregion.r_resid;
+  CALL(narrow_to_elist, region, &ctx.c_region);
 
   CALL(arg_keyword, &ctx.c_region, Kname, &name);
 
@@ -871,7 +862,7 @@ exec_block(env *env, const uint8_t *end, ssize_t *resid)
 }
 
 static int
-exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
+exec_number(env *env, region *region, uint8_t type)
 {
   union {
     float f;
@@ -881,6 +872,8 @@ exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
     uint8_t b[4];
   } u;
   size_t size;
+  const uint8_t *end = region->r_end;
+  ssize_t *resid = &region->r_resid;
 
   switch (type) {
   case BT_NUMBER:
@@ -920,17 +913,13 @@ exec_number(env *env, const uint8_t *end, ssize_t *resid, uint8_t type)
 }
 
 static int
-exec_array(env *env, const uint8_t *end, ssize_t *resid)
+exec_array(env *env, region *region)
 {
   int err;
 
   CHECK_STACK(env, "exec_array", &err);
-  region oregion;
-  oregion.r_end = end;
-  oregion.r_resid = *resid;
-  region nregion;
-  CALL(narrow_to_elist, &oregion, &nregion);
-  *resid = oregion.r_resid;
+  struct region nregion;
+  CALL(narrow_to_elist, region, &nregion);
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -941,7 +930,7 @@ exec_array(env *env, const uint8_t *end, ssize_t *resid)
     const uint8_t type = get_type(nregion.r_end, &nregion.r_resid, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    CALL(exec_block, env, nregion.r_end, &nregion.r_resid);
+    CALL(exec_block, env, &nregion);
   }
 }
 
@@ -1079,7 +1068,8 @@ exec_script(const uint8_t *end, ssize_t *resid)
   for (size_t i = 0; i < n_lsts; i++)
     env->e_lsts[i] = 0;
   //printf("e_vars: %p, e_lsts: %p\n", env->e_vars, env->e_lsts);
-  CALL(exec_array, env, end, resid);
+
+  CALL(exec_array, env, &nregion);
   return ERROR_OK;
 }
 
