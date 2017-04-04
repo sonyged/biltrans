@@ -85,6 +85,13 @@ name_at(const uint8_t *at)
   return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
 }
 
+static ntype
+name_at2(const region *region)
+{
+
+  return name_at(region->r_end - region->r_resid);
+}
+
 /*
  * Skip type and e_name.
  */
@@ -109,6 +116,13 @@ get_type(const uint8_t *end, ssize_t *resid, int array)
   if (*resid <= 0)
     return BT_ERROR;
   return type;
+}
+
+static int
+get_type2(region *region, int array)
+{
+
+  return get_type(region->r_end, &region->r_resid, array);
 }
 
 #define LOG(fmt, ...) do {} while (0)
@@ -180,17 +194,19 @@ narrow_to_elist(region *or, region *nr)
  * Looking for given name in the elist.
  */
 static int
-elist_find(const uint8_t *end, ssize_t *resid, int array,
+elist_find(const region *or, region *nr, int array,
 	   int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
 {
-  ssize_t r = *resid;
+  const uint8_t *end = or->r_end;
+  ssize_t r = or->r_resid;
 
   /* There should be at least type and trailing null of e_name. */
   while (r > ELIST_SIZE(0)) {
     uint32_t u32;
 
     if ((*compare)(end, r, arg)) {
-      *resid = r;
+      nr->r_end = end;
+      nr->r_resid = r;
       return ERROR_OK;
     }
 
@@ -240,10 +256,10 @@ compare_name(const uint8_t *end, ssize_t resid, void *arg)
  * Looking for given name in the elist.
  */
 static int
-elist_lookup(const uint8_t *end, ssize_t *resid, ntype name)
+elist_lookup(const region *or, region *nr, ntype name)
 {
 
-  return elist_find(end, resid, 0, compare_name, (void *)&name);
+  return elist_find(or, nr, 0, compare_name, (void *)&name);
 }
 
 #if 0
@@ -305,16 +321,15 @@ static int exec_number(env *env, const uint8_t *end, ssize_t *resid,
 static int
 arg_keyword(const region *region, ntype name, ntype *v)
 {
-  const uint8_t *end = region->r_end;
-  ssize_t resid = region->r_resid;
+  struct region nregion;
 
-  CALL(elist_lookup, end, &resid, name);
-  const uint8_t type = get_type(end, &resid, 0);
+  CALL(elist_lookup, region, &nregion, name);
+  const uint8_t type = get_type2(&nregion, 0);
   if (type != BT_KEYWORD)
     return ERROR_INVALID_TYPE;
-  if (resid <= 0)
+  if (nregion.r_resid <= 0)
     return ERROR_BUFFER_TOO_SHORT;
-  *v = name_at(end - resid);
+  *v = name_at2(&nregion);
   //printf("arg_keyword: %s = %s\n", name, *v);
   return ERROR_OK;
 }
@@ -322,11 +337,12 @@ arg_keyword(const region *region, ntype name, ntype *v)
 static int
 arg_int(const region *region, ntype name, int32_t *i32)
 {
-  const uint8_t *end = region->r_end;
-  ssize_t resid = region->r_resid;
+  struct region nregion;
 
-  CALL(elist_lookup, end, &resid, name);
-  const uint8_t type = get_type(end, &resid, 0);
+  CALL(elist_lookup, region, &nregion, name);
+  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t *end = nregion.r_end;
+  ssize_t resid = nregion.r_resid;
   const uint8_t *q = end - resid;
   switch (type) {
   case BT_ERROR:
@@ -357,13 +373,14 @@ exec_arg(const ctx *ctx, ntype name)
 {
   int err;
   env *env = ctx->c_env;
-  const uint8_t *end = ctx->c_end;
-  ssize_t resid = ctx->c_resid;
 
   CHECK_STACK0(env, "exec_arg", &err, name);
-  CALL(elist_lookup, end, &resid, name);
+  struct region nregion;
 
-  const uint8_t type = get_type(end, &resid, 0);
+  CALL(elist_lookup, &ctx->c_region, &nregion, name);
+  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t *end = nregion.r_end;
+  ssize_t resid = nregion.r_resid;
   switch (type) {
   case BT_ERROR:
     return ERROR_BUFFER_TOO_SHORT;
@@ -387,12 +404,13 @@ static int
 exec_blocks(const ctx *ctx, ntype name)
 {
   int err;
-  const uint8_t *end = ctx->c_end;
-  ssize_t resid = ctx->c_resid;
 
   CHECK_STACK0(ctx->c_env, "exec_blocks", &err, name);
-  CALL(elist_lookup, end, &resid, name);
-  const uint8_t type = get_type(end, &resid, 0);
+  struct region nregion;
+  CALL(elist_lookup, &ctx->c_region, &nregion, name);
+  const uint8_t type = get_type2(&nregion, 0);
+  const uint8_t *end = nregion.r_end;
+  ssize_t resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   return exec_array(ctx->c_env, end, &resid);
@@ -699,13 +717,14 @@ init_servo_sync(const ctx *ctx,
 		struct servo_sync *ss, size_t *count)
 {
   env *env = ctx->c_env;
-  const uint8_t *end = ctx->c_end;
-  ssize_t resid = ctx->c_resid;
   const size_t max_count = *count;
 
   *count = 0;
-  CALL(elist_lookup, end, &resid, Kblocks);
-  uint8_t type = get_type(end, &resid, 0);
+  struct region nregion;
+  CALL(elist_lookup, &ctx->c_region, &nregion, Kblocks);
+  uint8_t type = get_type2(&nregion, 0);
+  const uint8_t *end = nregion.r_end;
+  ssize_t resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
   region oregion;
@@ -946,13 +965,17 @@ setup_ports(const uint8_t *end, ssize_t resid)
 {
   int err;
 
-  err = elist_lookup(end, &resid, Kport_settings);
+  region oregion, nregion;
+  oregion.r_end = end;
+  oregion.r_resid = resid;
+  err = elist_lookup(&oregion, &nregion, Kport_settings);
   switch (err) {
   case ERROR_OK: {
-    const uint8_t type = get_type(end, &resid, 0);
+    const uint8_t type = get_type2(&nregion, 0);
+    end = nregion.r_end;
+    resid = nregion.r_resid;
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    region oregion, nregion;
     oregion.r_end = end;
     oregion.r_resid = resid;
     CALL(narrow_to_elist, &oregion, &nregion);
@@ -1026,9 +1049,14 @@ exec_script(const uint8_t *end, ssize_t *resid)
   EX_TRACE_HEX((int)&err);
   CALL(setup_ports, end, *resid);
 
-  CALL(elist_lookup, end, resid, Kscripts);
+  struct region oregion, nregion;
+  oregion.r_end = end;
+  oregion.r_resid = *resid;
+  CALL(elist_lookup, &oregion, &nregion, Kscripts);
 
-  const uint8_t type = get_type(end, resid, 0);
+  const uint8_t type = get_type2(&nregion, 0);
+  end = nregion.r_end;
+  *resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
 
