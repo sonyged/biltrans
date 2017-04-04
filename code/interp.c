@@ -540,13 +540,9 @@ foreach_document(const region *region, int array,
 		 int (*proc)(struct region *region, int array, void *),
 		 void *arg)
 {
-  const uint8_t *end = region->r_end;
-  ssize_t resid = region->r_resid;
-
-  struct region oregion;
-  oregion.r_end = end;
-  oregion.r_resid = resid;
+  struct region oregion = *region;
   struct region nregion;
+
   CALL(narrow_to_elist, &oregion, &nregion);
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
@@ -718,23 +714,18 @@ init_servo_sync(const ctx *ctx,
   struct region nregion;
   CALL(elist_lookup, &ctx->c_region, &nregion, Kblocks);
   uint8_t type = get_type2(&nregion, 0);
-  const uint8_t *end = nregion.r_end;
-  ssize_t resid = nregion.r_resid;
   if (type != BT_ARRAY)
     return ERROR_INVALID_TYPE;
-  region oregion;
-  oregion.r_end = end;
-  oregion.r_resid = resid;
   struct ctx nctx;
   nctx.c_env = env;
-  CALL(narrow_to_elist, &oregion, &nctx.c_region);
+  CALL(narrow_to_elist, &nregion, &nctx.c_region);
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
     if (nctx.c_resid < ELIST_SIZE(0))
       return ERROR_OVERFLOW;
     if (nctx.c_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    type = get_type(nctx.c_end, &nctx.c_resid, 1);
+    type = get_type2(&nctx.c_region, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     if (*count == max_count)
@@ -927,7 +918,7 @@ exec_array(env *env, region *region)
       return ERROR_OVERFLOW;
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
       return ERROR_OK;
-    const uint8_t type = get_type(nregion.r_end, &nregion.r_resid, 1);
+    const uint8_t type = get_type2(&nregion, 1);
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
     CALL(exec_block, env, &nregion);
@@ -950,23 +941,18 @@ port_init(const uint8_t *end, ssize_t *resid)
 }
 
 static int
-setup_ports(const uint8_t *end, ssize_t resid)
+setup_ports(const region *region)
 {
   int err;
 
-  region oregion, nregion;
-  oregion.r_end = end;
-  oregion.r_resid = resid;
-  err = elist_lookup(&oregion, &nregion, Kport_settings);
+  struct region oregion, nregion;
+  err = elist_lookup(region, &nregion, Kport_settings);
   switch (err) {
   case ERROR_OK: {
     const uint8_t type = get_type2(&nregion, 0);
-    end = nregion.r_end;
-    resid = nregion.r_resid;
     if (type != BT_OBJECT)
       return ERROR_INVALID_TYPE;
-    oregion.r_end = end;
-    oregion.r_resid = resid;
+    oregion = nregion;
     CALL(narrow_to_elist, &oregion, &nregion);
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
@@ -1036,7 +1022,10 @@ exec_script(const uint8_t *end, ssize_t *resid)
   int err, n_vars, n_lsts;
 
   EX_TRACE_HEX((int)&err);
-  CALL(setup_ports, end, *resid);
+  struct region region;
+  region.r_end = end;
+  region.r_resid = *resid;
+  CALL(setup_ports, &region);
 
   struct region oregion, nregion;
   oregion.r_end = end;
