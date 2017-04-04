@@ -111,24 +111,17 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
 }
 
 static int
-get_type(const uint8_t *end, ssize_t *resid, int array)
-{
-
-  if (*resid <= 0)
-    return BT_ERROR;
-
-  const uint8_t type = *(end - *resid);
-  *resid -= skip_name(end, *resid, array);
-  if (*resid <= 0)
-    return BT_ERROR;
-  return type;
-}
-
-static int
 get_type2(region *region, int array)
 {
 
-  return get_type(region->r_end, &region->r_resid, array);
+  if (region->r_resid <= 0)
+    return BT_ERROR;
+
+  const uint8_t type = *region2p(region);
+  region->r_resid -= skip_name(region->r_end, region->r_resid, array);
+  if (region->r_resid <= 0)
+    return BT_ERROR;
+  return type;
 }
 
 #define LOG(fmt, ...) do {} while (0)
