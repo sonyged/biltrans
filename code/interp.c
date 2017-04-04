@@ -50,20 +50,27 @@ static int arg_int(const region *, ntype, int32_t *);
 #define ELIST_SIZE(s)	((s) + 0)
 #endif
 
-static int
-read_size(const uint8_t *end, const ssize_t resid, uint32_t *v)
+static const uint8_t *
+region2p(const region *region)
 {
-  const uint8_t *p = end - resid;
+
+  return region->r_end - region->r_resid;
+}
+
+static int
+read_size(const region *region, uint32_t *v)
+{
+  const uint8_t *p = region2p(region);
 
 #define SIZE16
 #if !defined(SIZE16)
 #define SIZE_SIZE 4
-  if (resid < sizeof(uint32_t))
+  if (region->r_resid < sizeof(uint32_t))
     return ERROR_BUFFER_TOO_SHORT;
   *v = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
 #else
 #define SIZE_SIZE 2
-  if (resid < sizeof(uint16_t))
+  if (region->r_resid < sizeof(uint16_t))
     return ERROR_BUFFER_TOO_SHORT;
   *v = p[0] | (p[1] << 8);
 #endif
@@ -82,13 +89,6 @@ name_at(const uint8_t *at)
 {
 
   return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
-}
-
-static const uint8_t *
-region2p(const region *region)
-{
-
-  return region->r_end - region->r_resid;
 }
 
 static ntype
@@ -184,7 +184,7 @@ narrow_to_elist(region *or, region *nr)
   uint32_t u32;
   const size_t size = SIZE_SIZE;
 
-  CALL(read_size, or->r_end, or->r_resid, &u32);
+  CALL(read_size, or, &u32);
   if (u32 > or->r_resid)
     return ERROR_INVALID_SIZE;
   if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
@@ -203,44 +203,40 @@ static int
 elist_find(const region *or, region *nr, int array,
 	   int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
 {
-  const uint8_t *end = or->r_end;
-  ssize_t r = or->r_resid;
 
+  *nr = *or;
   /* There should be at least type and trailing null of e_name. */
-  while (r > ELIST_SIZE(0)) {
+  while (nr->r_resid > ELIST_SIZE(0)) {
     uint32_t u32;
 
-    if ((*compare)(end, r, arg)) {
-      nr->r_end = end;
-      nr->r_resid = r;
+    if ((*compare)(nr->r_end, nr->r_resid, arg)) {
       return ERROR_OK;
     }
 
-    const uint8_t type = get_type(end, &r, array);
+    const uint8_t type = get_type2(nr, array);
     switch (type) {
     case BT_ERROR:
       return ERROR_BUFFER_TOO_SHORT;
     case BT_NUMBER:
-      r -= 4;
+      nr->r_resid -= 4;
       break;
     case BT_KEYWORD:
-      r -= 2;
+      nr->r_resid -= 2;
       break;
     case BT_OBJECT:
     case BT_ARRAY:
-      CALL(read_size, end, r, &u32);
-      r -= u32;
+      CALL(read_size, nr, &u32);
+      nr->r_resid -= u32;
       break;
     case BT_INT8:
-      r -= 1;
+      nr->r_resid -= 1;
       break;
     case BT_INT16:
-      r -= 2;
+      nr->r_resid -= 2;
       break;
     case BT_INT32:
-      r -= 4;
+      nr->r_resid -= 4;
       break;
-
     default:
       return ERROR_UNSUPPORTED;
     }
@@ -286,16 +282,12 @@ typedef struct names {
 static int
 compare_names(const region *region, int array, size_t n, const names *names)
 {
-  const uint8_t *end = region->r_end;
-  ssize_t resid = region->r_resid;
-  const uint8_t type = get_type(end, &resid, array);
+  struct region oregion = *region;
+  const uint8_t type = get_type2(&oregion, array);
 
   if (type != BT_OBJECT)
     return 0;
 
-  struct region oregion;
-  oregion.r_end = end;
-  oregion.r_resid = resid;
   struct region nregion;
   if (narrow_to_elist(&oregion, &nregion) != ERROR_OK)
     return 0;
@@ -1017,21 +1009,16 @@ count_environ(const region *region, int *n_vars, int *n_lsts)
 }
 
 static int
-exec_script(const uint8_t *end, ssize_t *resid)
+exec_script(region *region)
 {
   env e_store, *env = &e_store;
   int err, n_vars, n_lsts;
 
   EX_TRACE_HEX((int)&err);
-  struct region region;
-  region.r_end = end;
-  region.r_resid = *resid;
-  CALL(setup_ports, &region);
+  CALL(setup_ports, region);
 
-  struct region oregion, nregion;
-  oregion.r_end = end;
-  oregion.r_resid = *resid;
-  CALL(elist_lookup, &oregion, &nregion, Kscripts);
+  struct region nregion;
+  CALL(elist_lookup, region, &nregion, Kscripts);
 
   const uint8_t type = get_type2(&nregion, 0);
   if (type != BT_ARRAY)
@@ -1064,13 +1051,15 @@ int
 interp_exec(const uint8_t *p, ssize_t size)
 {
   ssize_t resid = SIZE_SIZE;
-  const uint8_t *end = p + resid;
   uint32_t u32;
+  region region;
 
   /*
    * int32 e_list "\x00"
    */
-  CALL(read_size, end, resid, &u32);
+  region.r_end = p + resid;
+  region.r_resid = resid;
+  CALL(read_size, &region, &u32);
 #if defined(SIZE16)
   if (u32 > 0xffff)
     return ERROR_INVALID_SIZE;
@@ -1084,15 +1073,15 @@ interp_exec(const uint8_t *p, ssize_t size)
     return ERROR_INVALID_MAGIC;
 #endif
 
-  end = p + u32;
-  resid = u32;
+  region.r_end = p + u32;
+  region.r_resid = u32;
 
-  if (resid < ELIST_SIZE(SIZE_SIZE)) {
+  if (region.r_resid < ELIST_SIZE(SIZE_SIZE)) {
     //EX_TRACE("interp: size too small");
     return ERROR_BUFFER_TOO_SHORT;
   }
 
-  end -= ELIST_SIZE(0);		/* drop trailing 0 if any */
-  resid -= ELIST_SIZE(SIZE_SIZE); /* leading int32 + trailing 0 */
-  return exec_script(end, &resid);
+  region.r_end -= ELIST_SIZE(0); /* drop trailing 0 if any */
+  region.r_resid -= ELIST_SIZE(SIZE_SIZE); /* leading int32 + trailing 0 */
+  return exec_script(&region);
 }
