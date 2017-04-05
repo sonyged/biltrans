@@ -16,6 +16,8 @@
 #include "listlib.h"
 #endif
 
+#undef SUPPORT_INT32
+
 typedef float vtype;
 
 typedef struct region {
@@ -227,9 +229,11 @@ elist_find(const region *oregion, region *nregion, int array,
     case BT_INT16:
       nregion->r_resid -= 2;
       break;
+#if defined(SUPPORT_INT32)
     case BT_INT32:
       nregion->r_resid -= 4;
       break;
+#endif
     default:
       return ERROR_UNSUPPORTED;
     }
@@ -344,11 +348,16 @@ parse_integer(const region *region, const uint8_t type, int32_t *i32)
       return ERROR_BUFFER_TOO_SHORT;
     *i32 = (int16_t)(q[0] | (q[1] << 8));
     break;
+#if defined(SUPPORT_INT32)
   case BT_INT32:
     if (resid < 4)
       return ERROR_BUFFER_TOO_SHORT;
+    fprintf(stderr, "0x%02x, 0x%02x, 0x%02x, 0x%02x\n", 
+	    q[0], q[1], q[2], q[3]);
     *i32 = (int32_t)(q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24));
+    fprintf(stderr, "=> 0x%04x %d\n", *i32, *i32);
     break;
+#endif
   default:
     return ERROR_INVALID_TYPE;
   }
@@ -386,7 +395,9 @@ exec_arg(const ctx *ctx, ntype name)
     return exec_number(env, &nregion);
   case BT_INT8:
   case BT_INT16:
+#if defined(SUPPORT_INT32)
   case BT_INT32:
+#endif
     return exec_integer(env, &nregion, type);
   default:
     return ERROR_INVALID_TYPE;

@@ -144,8 +144,12 @@ describe('translate { x: 32768 }', function() {
 
   it('should be { x: 32768 } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x09, 0x00, 0x07, 0x56,
-      0x00, 0x00, 0x80, 0x00, 0x00
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0x00, 0x80, 0x00, 0x00
+      // float
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0x47
     ]));
   });
 });
@@ -155,8 +159,92 @@ describe('translate { x: -32769 }', function() {
 
   it('should be { x: -32769 } in binary format', function() {
     assert.deepEqual(trans.translate(), new Buffer([
-      0x09, 0x00, 0x07, 0x56,
-      0x00, 0xff, 0x7f, 0xff, 0xff
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0xff, 0x7f, 0xff, 0xff
+      // float
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x01, 0x00, 0xc7
+    ]));
+  });
+});
+
+describe('translate { x: 8388607 }', function() {
+  const trans = bilbinary.translator({ x: 8388607 });
+
+  it('should be { x: 8388607 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0xff, 0xff, 0x7f, 0x00
+      // float
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0xfe, 0xff, 0xff, 0x4a
+    ]));
+  });
+});
+
+describe('translate { x: -8388608 }', function() {
+  const trans = bilbinary.translator({ x: -8388608 });
+
+  it('should be { x: -8388608 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0x00, 0x00, 0x80, 0xff
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0xcb
+    ]));
+  });
+});
+
+describe('translate { x: 2147483647 }', function() {
+  const trans = bilbinary.translator({ x: 2147483647 });
+
+  it('should be { x: 2147483647 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0xff, 0xff, 0xff, 0x7f
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0x4f
+    ]));
+  });
+});
+
+describe('translate { x: -2147483648 }', function() {
+  const trans = bilbinary.translator({ x: -2147483648 });
+
+  it('should be { x: -2147483648 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      // 32bit
+      // 0x09, 0x00, 0x07, 0x56,
+      // 0x00, 0x00, 0x00, 0x00, 0x80
+      // float
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0xcf
+    ]));
+  });
+});
+
+describe('translate { x: 2147483648 }', function() {
+  const trans = bilbinary.translator({ x: 2147483648 });
+
+  it('should be { x: 2147483648 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0x4f
+    ]));
+  });
+});
+
+describe('translate { x: -2147483649 }', function() {
+  const trans = bilbinary.translator({ x: -2147483649 });
+
+  it('should be { x: -2147483649 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x09, 0x00, 0x01, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0xcf
     ]));
   });
 });
@@ -343,8 +431,12 @@ describe('execute wait', function() {
         { name: 'wait', secs: -129 }, // int16
         { name: 'wait', secs: 32767 }, // int16
         { name: 'wait', secs: -32768 }, // int16
-        { name: 'wait', secs: 32768 },
-        { name: 'wait', secs: -32769 },
+        { name: 'wait', secs: 32768 },  // float (exact integer)
+        { name: 'wait', secs: -32769 }, // float (exact integer)
+        { name: 'wait', secs: 8388607 },  // float (exact integer)
+        { name: 'wait', secs: -8388608 }, // float (exact integer)
+        { name: 'wait', secs: 2147483647 },  // float
+        { name: 'wait', secs: -2147483648 }, // float
         { name: 'wait', secs: { name: 'plus', x: 1, y: 0 } },
         { name: 'wait', secs: { name: 'minus', x: 0, y: 0.3 } },
         { name: 'wait', secs: { name: 'multiply', x: 3, y: 0.3 } },
@@ -386,6 +478,10 @@ describe('execute wait', function() {
       "wait -32768.000000",
       "wait 32768.000000",
       "wait -32769.000000",
+      "wait 8388607.000000",
+      "wait -8388608.000000",
+      "wait 2147483648.000000", // not 2147483647 since already inexact.
+      "wait -2147483648.000000",
       "wait 1.000000",
       "wait -0.300000",
       "wait 0.900000",
