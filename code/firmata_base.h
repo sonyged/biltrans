@@ -1645,8 +1645,10 @@ periodc_jobs()
       }
     } else {
       showConnectMode();
-      if (!enableFirmata)
+      if (!enableFirmata) {
+	LED_OFF(PIN_LIVE);
 	blink_led(PIN_AUTO, blink_state ? 950 : 50);
+      }
     }
   }
 }
