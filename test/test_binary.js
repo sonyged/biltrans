@@ -73,6 +73,94 @@ describe('translate { x: 2 }', function() {
   });
 });
 
+describe('translate { x: 127 }', function() {
+  const trans = bilbinary.translator({ x: 127 });
+
+  it('should be { x: 127 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x06, 0x00, 0x05, 0x56,
+      0x00, 0x7f
+    ]));
+  });
+});
+
+describe('translate { x: -128 }', function() {
+  const trans = bilbinary.translator({ x: -128 });
+
+  it('should be { x: -128 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x06, 0x00, 0x05, 0x56,
+      0x00, 0x80
+    ]));
+  });
+});
+
+describe('translate { x: 128 }', function() {
+  const trans = bilbinary.translator({ x: 128 });
+
+  it('should be { x: 128 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x07, 0x00, 0x06, 0x56,
+      0x00, 0x80, 0x00
+    ]));
+  });
+});
+
+describe('translate { x: -129 }', function() {
+  const trans = bilbinary.translator({ x: -129 });
+
+  it('should be { x: -129 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x07, 0x00, 0x06, 0x56,
+      0x00, 0x7f, 0xff
+    ]));
+  });
+});
+
+describe('translate { x: 32767 }', function() {
+  const trans = bilbinary.translator({ x: 32767 });
+
+  it('should be { x: 32767 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x07, 0x00, 0x06, 0x56,
+      0x00, 0xff, 0x7f
+    ]));
+  });
+});
+
+describe('translate { x: -32768 }', function() {
+  const trans = bilbinary.translator({ x: -32768 });
+
+  it('should be { x: -32768 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x07, 0x00, 0x06, 0x56,
+      0x00, 0x00, 0x80
+    ]));
+  });
+});
+
+describe('translate { x: 32768 }', function() {
+  const trans = bilbinary.translator({ x: 32768 });
+
+  it('should be { x: 32768 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x09, 0x00, 0x07, 0x56,
+      0x00, 0x00, 0x80, 0x00, 0x00
+    ]));
+  });
+});
+
+describe('translate { x: -32769 }', function() {
+  const trans = bilbinary.translator({ x: -32769 });
+
+  it('should be { x: -32769 } in binary format', function() {
+    assert.deepEqual(trans.translate(), new Buffer([
+      0x09, 0x00, 0x07, 0x56,
+      0x00, 0xff, 0x7f, 0xff, 0xff
+    ]));
+  });
+});
+
 describe('translate { x: "x" }', function() {
   const trans = bilbinary.translator({ x: "x" });
 
@@ -248,6 +336,15 @@ describe('execute wait', function() {
       blocks: [
         { name: 'wait', secs: 0.6 },
         { name: 'wait', secs: 1 },
+        { name: 'wait', secs: -1 },
+        { name: 'wait', secs: 127 }, // int8
+        { name: 'wait', secs: -128 }, // int8
+        { name: 'wait', secs: 128 },  // int16
+        { name: 'wait', secs: -129 }, // int16
+        { name: 'wait', secs: 32767 }, // int16
+        { name: 'wait', secs: -32768 }, // int16
+        { name: 'wait', secs: 32768 },
+        { name: 'wait', secs: -32769 },
         { name: 'wait', secs: { name: 'plus', x: 1, y: 0 } },
         { name: 'wait', secs: { name: 'minus', x: 0, y: 0.3 } },
         { name: 'wait', secs: { name: 'multiply', x: 3, y: 0.3 } },
@@ -280,6 +377,15 @@ describe('execute wait', function() {
     assert.deepEqual(output, [
       "wait 0.600000",
       "wait 1.000000",
+      "wait -1.000000",
+      "wait 127.000000",
+      "wait -128.000000",
+      "wait 128.000000",
+      "wait -129.000000",
+      "wait 32767.000000",
+      "wait -32768.000000",
+      "wait 32768.000000",
+      "wait -32769.000000",
       "wait 1.000000",
       "wait -0.300000",
       "wait 0.900000",

@@ -347,7 +347,8 @@ parse_integer(const region *region, const uint8_t type, int32_t *i32)
   case BT_INT32:
     if (resid < 4)
       return ERROR_BUFFER_TOO_SHORT;
-    *i32 = (int32_t)(q[0] | (q[1] << 8) | (q[0] << 16) | (q[1] << 24));
+    *i32 = (int32_t)(q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24));
+    break;
   default:
     return ERROR_INVALID_TYPE;
   }
