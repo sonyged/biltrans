@@ -328,11 +328,9 @@ arg_keyword(const region *region, ntype name, ntype *v)
 static int
 parse_integer(const region *region, const uint8_t type, int32_t *i32)
 {
-  struct region nregion = *region;
+  const ssize_t resid = region->r_resid;
+  const uint8_t *q = region2p(region);
 
-  const uint8_t *end = nregion.r_end;
-  ssize_t resid = nregion.r_resid;
-  const uint8_t *q = end - resid;
   switch (type) {
   case BT_ERROR:
     return ERROR_BUFFER_TOO_SHORT;
