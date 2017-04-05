@@ -399,11 +399,15 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
   }
 }
 
-static int
+static float
 sensor_value(int port)
 {
+  float v = analogRead(port);   /* eval once */
 
-  return map(analogRead(port), 0, 1023, 0, 100);
+  /*
+   * We can't use map() since it returns long.
+   */
+  return clamp(0, 1024, v) * 100 / 1024;
 }
 
 static void
