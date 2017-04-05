@@ -306,7 +306,8 @@ compare_function(const region *region, int array, void *arg)
 
 static int exec_array(env *env, region *region);
 static int exec_block(env *env, region *region);
-static int exec_number(env *env, region *region, uint8_t type);
+static int exec_number(env *env, region *region);
+static int exec_integer(env *env, region *region, uint8_t type);
 
 static int
 arg_keyword(const region *region, ntype name, ntype *v)
@@ -325,12 +326,10 @@ arg_keyword(const region *region, ntype name, ntype *v)
 }
 
 static int
-arg_int(const region *region, ntype name, int32_t *i32)
+parse_integer(const region *region, const uint8_t type, int32_t *i32)
 {
-  struct region nregion;
+  struct region nregion = *region;
 
-  CALL(elist_lookup, region, &nregion, name);
-  const uint8_t type = get_type(&nregion, 0);
   const uint8_t *end = nregion.r_end;
   ssize_t resid = nregion.r_resid;
   const uint8_t *q = end - resid;
@@ -354,7 +353,17 @@ arg_int(const region *region, ntype name, int32_t *i32)
   default:
     return ERROR_INVALID_TYPE;
   }
-  //printf("arg_int: %s = 0x%x\n", name, *u32);
+  return ERROR_OK;
+}
+
+static int
+arg_int(const region *region, ntype name, int32_t *i32)
+{
+  struct region nregion;
+
+  CALL(elist_lookup, region, &nregion, name);
+  const uint8_t type = get_type(&nregion, 0);
+  CALL(parse_integer, &nregion, type, i32);
   return ERROR_OK;
 }
 
@@ -375,10 +384,11 @@ exec_arg(const ctx *ctx, ntype name)
   case BT_OBJECT:
     return exec_block(env, &nregion);
   case BT_NUMBER:
+    return exec_number(env, &nregion);
   case BT_INT8:
   case BT_INT16:
   case BT_INT32:
-    return exec_number(env, &nregion, type);
+    return exec_integer(env, &nregion, type);
   default:
     return ERROR_INVALID_TYPE;
   }
@@ -843,53 +853,32 @@ exec_block(env *env, region *region)
 }
 
 static int
-exec_number(env *env, region *region, uint8_t type)
+exec_integer(env *env, region *region, uint8_t type)
+{
+  int32_t i32;
+
+  CALL(parse_integer, region, type, &i32);
+  env->e_value = i32;
+  return ERROR_OK;
+}
+
+static int
+exec_number(env *env, region *region)
 {
   union {
     float f;
-    int8_t i8;
-    int16_t i16;
-    int32_t i32;
     uint8_t b[4];
   } u;
-  size_t size;
+  const size_t size = sizeof(u.b);
   const uint8_t *end = region->r_end;
   ssize_t *resid = &region->r_resid;
-
-  switch (type) {
-  case BT_NUMBER:
-  case BT_INT32:
-    size = 4;
-    break;
-  case BT_INT8:
-    size = 1;
-    break;
-  case BT_INT16:
-    size = 2;
-    break;
-  }
 
   if (*resid < size)
     return ERROR_INVALID_SIZE;
   for (int i = 0; i < size; i++)
     u.b[i] = *(end - *resid + i);
   *resid -= size;
-
-  switch (type) {
-  case BT_NUMBER:
-    env->e_value = u.f;		/* convert from float to vtype */
-    break;
-  case BT_INT8:
-    env->e_value = u.i8;	/* convert from 8 bit integer to vtype */
-    break;
-  case BT_INT16:
-    env->e_value = u.i16;	/* convert from 16 bit integer to vtype */
-    break;
-  case BT_INT32:
-    env->e_value = u.i32;	/* convert from 32 bit integer to vtype */
-    break;
-  }
-
+  env->e_value = u.f;		/* convert from float to vtype */
   return ERROR_OK;
 }
 
