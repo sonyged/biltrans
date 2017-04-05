@@ -14,6 +14,9 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  if [ -n "${ENABLE_INTERP}" ]; then
      echo '#define ENABLE_INTERP 1';
  fi
+ if [ -n "${INCLUDE_TRANSLATED_C}" ]; then
+     echo '#define INCLUDE_TRANSLATED_C 1';
+ fi
  cat ../code/firmata_base.cpp;
  cat ../code/firmata_base.h;
  echo '#define FIRMATA_BASE';
