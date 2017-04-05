@@ -1,3 +1,4 @@
+#undef ENABLE_TRACING
 int
 EX_DELAY(float seconds)
 {
@@ -9,21 +10,27 @@ void
 EX_TRACE(const char *msg)
 {
 
+#if defined(ENABLE_TRACING)
   SerialUSB.println(msg);
+#endif
 }
 
 void
 EX_TRACE_INT(int v)
 {
 
+#if defined(ENABLE_TRACING)
   SerialUSB.println(v);
+#endif
 }
 
 void
 EX_TRACE_HEX(int v)
 {
 
+#if defined(ENABLE_TRACING)
   SerialUSB.println(v, HEX);
+#endif
 }
 
 long
@@ -116,8 +123,15 @@ EX_DIGITAL_SENSOR(int port)
 float
 EX_ANALOG_SENSOR(int port)
 {
+  float v = sensor_value(port);
 
-  return sensor_value(port);
+#if 0
+  SerialUSB.print(port);
+  SerialUSB.print("\t");
+  SerialUSB.print(v, 3);
+  SerialUSB.println("");
+#endif
+  return v;
 }
 
 int
