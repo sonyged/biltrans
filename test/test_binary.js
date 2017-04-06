@@ -583,16 +583,16 @@ describe('execute list', function() {
         { name: 'list-add', 'list': 'l0', value: 1 },
         { name: 'wait', secs: { name: 'list-length', 'list': 'l0' } },
         { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l0', position: 0
+          name: 'list-ref', 'list': 'l0', position: 1
         } },
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l0', position: {
-            name: 'plus', x: 0, y: 0
+            name: 'plus', x: 1, y: 0
           }
         } },
         { name: 'list-add', 'list': 'l1', value: -1 },
         { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l1', position: 0
+          name: 'list-ref', 'list': 'l1', position: 1
         } },
         { name: 'wait', secs: {
           name: 'list-contains?', 'list': 'l0', value: {
@@ -605,7 +605,7 @@ describe('execute list', function() {
         { name: 'wait', secs: {
           name: 'list-contains?', 'list': 'l1', value: -1
         } },
-        { name: 'list-delete', 'list': 'l0', position: 0 },
+        { name: 'list-delete', 'list': 'l0', position: 1 },
         { name: 'wait', secs: {
           name: 'list-contains?', 'list': 'l0', value: 1
         } },
@@ -620,7 +620,7 @@ describe('execute list', function() {
         { name: 'wait', secs: {
           name: 'list-contains?', 'list': 'l0', value: 6
         } },
-        { name: 'list-replace', 'list': 'l0', position: 0, value: {
+        { name: 'list-replace', 'list': 'l0', position: 1, value: {
           name: 'plus', x: 3, y: 4
         } },
         { name: 'wait', secs: {
@@ -633,22 +633,19 @@ describe('execute list', function() {
           name: 'list-contains?', 'list': 'l0', value: 7
         } },
         { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l0', position: 0
-        } },
-        { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l0', position: 1
         } },
-        { name: 'list-insert', 'list': 'l0', position: 0, value: {
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l0', position: 2
+        } },
+        { name: 'list-insert', 'list': 'l0', position: 1, value: {
           name: 'plus', x: 4, y: 4
         } },
-        { name: 'list-insert', 'list': 'l0', position: 2, value: {
+        { name: 'list-insert', 'list': 'l0', position: 3, value: {
           name: 'plus', x: 4, y: 2.5
         } },
-        { name: 'list-insert', 'list': 'l0', position: 4, value: {
+        { name: 'list-insert', 'list': 'l0', position: 5, value: {
           name: 'plus', x: 3, y: 2.5
-        } },
-        { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l0', position: 0
         } },
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l0', position: 1
@@ -662,27 +659,30 @@ describe('execute list', function() {
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l0', position: 4
         } },
-        { name: 'list-delete', 'list': 'l1', position: 0 },
-        { name: 'list-insert', 'list': 'l1', position: 0, value: 1 },
         { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l1', position: 0
+          name: 'list-ref', 'list': 'l0', position: 5
         } },
-        { name: 'list-insert', 'list': 'l1', position: 1, value: 2 },
-        { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l1', position: 0
-        } },
+        { name: 'list-delete', 'list': 'l1', position: 1 },
+        { name: 'list-insert', 'list': 'l1', position: 1, value: 1 },
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l1', position: 1
         } },
-        { name: 'list-insert', 'list': 'l1', position: 0, value: 3 },
-        { name: 'wait', secs: {
-          name: 'list-ref', 'list': 'l1', position: 0
-        } },
+        { name: 'list-insert', 'list': 'l1', position: 2, value: 2 },
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l1', position: 1
         } },
         { name: 'wait', secs: {
           name: 'list-ref', 'list': 'l1', position: 2
+        } },
+        { name: 'list-insert', 'list': 'l1', position: 1, value: 3 },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 1
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 2
+        } },
+        { name: 'wait', secs: {
+          name: 'list-ref', 'list': 'l1', position: 3
         } },
       ]
     },
@@ -731,7 +731,7 @@ describe('execute list', function() {
 describe('execute list (list-ref error)', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',
-      blocks: [ { name: 'list-ref', 'list': 'l0', position: 0 } ]
+      blocks: [ { name: 'list-ref', 'list': 'l0', position: 1 } ]
     },
     { name: 'list', list: 'l0', value: [] }
   ]});
@@ -752,7 +752,7 @@ describe('execute list (list-ref error 2)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-ref', 'list': 'l0', position: -1 }
+        { name: 'list-ref', 'list': 'l0', position: 0 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -774,7 +774,7 @@ describe('execute list (list-ref error 3)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-ref', 'list': 'l0', position: 1 }
+        { name: 'list-ref', 'list': 'l0', position: 2 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -795,7 +795,7 @@ describe('execute list (list-delete error)', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',
       blocks: [
-        { name: 'list-delete', 'list': 'l0', position: 0 }
+        { name: 'list-delete', 'list': 'l0', position: 1 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -817,7 +817,7 @@ describe('execute list (list-delete error 2)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-delete', 'list': 'l0', position: -1 }
+        { name: 'list-delete', 'list': 'l0', position: 0 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -839,7 +839,7 @@ describe('execute list (list-delete error 3)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-delete', 'list': 'l0', position: 1 }
+        { name: 'list-delete', 'list': 'l0', position: 2 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -860,7 +860,7 @@ describe('execute list (list-replace error)', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',
       blocks: [
-        { name: 'list-replace', 'list': 'l0', position: 0, value: 1 }
+        { name: 'list-replace', 'list': 'l0', position: 1, value: 1 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -882,7 +882,7 @@ describe('execute list (list-replace error 2)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-replace', 'list': 'l0', position: -1, value: 0 }
+        { name: 'list-replace', 'list': 'l0', position: 0, value: 0 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -904,7 +904,7 @@ describe('execute list (list-replace error 3)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-replace', 'list': 'l0', position: 1, value: 2 }
+        { name: 'list-replace', 'list': 'l0', position: 2, value: 2 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -925,7 +925,7 @@ describe('execute list (list-insert error)', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',
       blocks: [
-        { name: 'list-insert', 'list': 'l0', position: -1, value: 1 }
+        { name: 'list-insert', 'list': 'l0', position: 0, value: 1 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -946,7 +946,7 @@ describe('execute list (list-insert error 2)', function() {
   const trans = bilbinary.translator({ scripts: [
     { name: 'when-green-flag-clicked',
       blocks: [
-        { name: 'list-insert', 'list': 'l0', position: 1, value: 1 }
+        { name: 'list-insert', 'list': 'l0', position: 2, value: 1 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -968,7 +968,7 @@ describe('execute list (list-insert error 3)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-insert', 'list': 'l0', position: -1, value: 0 }
+        { name: 'list-insert', 'list': 'l0', position: 0, value: 0 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }
@@ -990,7 +990,7 @@ describe('execute list (list-insert error 4)', function() {
     { name: 'when-green-flag-clicked',
       blocks: [
         { name: 'list-add', 'list': 'l0', value: 3 },
-        { name: 'list-insert', 'list': 'l0', position: 2, value: 2 }
+        { name: 'list-insert', 'list': 'l0', position: 3, value: 2 }
       ]
     },
     { name: 'list', list: 'l0', value: [] }

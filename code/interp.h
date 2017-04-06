@@ -40,6 +40,12 @@ enum {
 #define CHECK_INTR(x)		/* nothing */
 #endif
 
+#if 0
+#define LIST_POSITION(pos)	(pos) /* 0-origin */
+#else
+#define LIST_POSITION(pos)	((pos) - 1) /* 1-origin */
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

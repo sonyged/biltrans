@@ -406,7 +406,8 @@ DEFUN(list_ref, {
 
   CALL(lookup_list, ctx, &u32);
   CALL(exec_arg, ctx, Kposition);
-  env->e_value = list_ref(&env->e_lsts[u32], env->e_value, &err);
+  const vtype position = LIST_POSITION(env->e_value);
+  env->e_value = list_ref(&env->e_lsts[u32], position, &err);
   return list_error(err);
 })
 
@@ -417,7 +418,8 @@ DEFUN(list_delete, {
 
   CALL(lookup_list, ctx, &u32);
   CALL(exec_arg, ctx, Kposition);
-  list_delete(&env->e_lsts[u32], env->e_value, &err);
+  const vtype position = LIST_POSITION(env->e_value);
+  list_delete(&env->e_lsts[u32], position, &err);
   return list_error(err);
 })
 
@@ -430,7 +432,7 @@ DEFUN(list_replace, {
   CALL(exec_arg, ctx, Kvalue);
   const vtype value = env->e_value;
   CALL(exec_arg, ctx, Kposition);
-  const vtype position = env->e_value;
+  const vtype position = LIST_POSITION(env->e_value);
   list_replace(&env->e_lsts[u32], position, value, &err);
   return list_error(err);
 })
@@ -444,7 +446,7 @@ DEFUN(list_insert, {
   CALL(exec_arg, ctx, Kvalue);
   const vtype value = env->e_value;
   CALL(exec_arg, ctx, Kposition);
-  const vtype position = env->e_value;
+  const vtype position = LIST_POSITION(env->e_value);
   list_insert(&env->e_lsts[u32], position, value, &err);
   return list_error(err);
 })
