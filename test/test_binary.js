@@ -457,6 +457,48 @@ describe('execute wait', function() {
         { name: 'wait', secs: { name: 'math', op: 'log', x: 90 } },
         { name: 'wait', secs: { name: 'math', op: 'e^', x: 9 } },
         { name: 'wait', secs: { name: 'math', op: '10^', x: 9 } },
+        { name: 'if-then', condition: {
+          name: 'greater-than-or-equal?',
+          x: 5,
+          y: { name: 'plus', x: 2, y: 3 }
+        }, blocks: [ { name: 'wait', secs: 0.123 }, ]
+        },
+        { name: 'if-then', condition: {
+          name: 'greater-than-or-equal?',
+          x: 5.5,
+          y: { name: 'plus', x: 2, y: 3 }
+        }, blocks: [ { name: 'wait', secs: 0.456 }, ]
+        },
+        { name: 'if-then', condition: {
+          name: 'not',
+          x: {
+            name: 'greater-than-or-equal?',
+            x: 4.5,
+            y: { name: 'plus', x: 2, y: 3 }
+          }
+        }, blocks: [ { name: 'wait', secs: 0.789 }, ]
+        },
+        { name: 'if-then', condition: {
+          name: 'less-than-or-equal?',
+          x: 5,
+          y: { name: 'plus', x: 2, y: 3 }
+        }, blocks: [ { name: 'wait', secs: 0.321 }, ]
+        },
+        { name: 'if-then', condition: {
+          name: 'less-than-or-equal?',
+          x: 4.5,
+          y: { name: 'plus', x: 2, y: 3 }
+        }, blocks: [ { name: 'wait', secs: 0.654 }, ]
+        },
+        { name: 'if-then', condition: {
+          name: 'not',
+          x: {
+            name: 'less-than-or-equal?',
+            x: 5.5,
+            y: { name: 'plus', x: 2, y: 3 }
+          }
+        }, blocks: [ { name: 'wait', secs: 0.987 }, ]
+        }
       ]
     }
   ]});
@@ -502,6 +544,12 @@ describe('execute wait', function() {
       "wait 1.954243",
       "wait 8103.081543",
       "wait 1000000000.000000",
+      "wait 0.123000",
+      "wait 0.456000",
+      "wait 0.789000",
+      "wait 0.321000",
+      "wait 0.654000",
+      "wait 0.987000",
       ""
     ]);
   });
