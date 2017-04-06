@@ -32,7 +32,7 @@
 #include "Arduino.h"
 
 #if defined(ENABLE_INTERP)
-#define KOOV_VERSION	"koov-1.0.10"
+#define KOOV_VERSION	"koov-1.0.11"
 #else
 #define KOOV_VERSION	"koov-1.0.9"
 #endif
