@@ -203,7 +203,7 @@ const EXPTRANS = {
   },
 
   'list-ref': blk => {
-    return `LIST_REF(${blklist(blk)}, ${emit_exp(blk.position)})`;
+    return `LIST_REF(${blklist(blk)}, ${emit_exp(blk.position)} - 1)`;
   },
 
   'pick-random': blk => {
@@ -340,19 +340,19 @@ const BLKTRANS = {
 
   'list-delete': blk => {
     const position = emit_exp(blk.position);
-    return `LIST_DELETE(${blklist(blk)}, ${position})`;
+    return `LIST_DELETE(${blklist(blk)}, ${position} - 1)`;
   },
 
   'list-replace': blk => {
     const position = emit_exp(blk.position);
     const value = emit_exp(blk.value);
-    return `LIST_REPLACE(${blklist(blk)}, ${position}, ${value})`;
+    return `LIST_REPLACE(${blklist(blk)}, ${position} - 1, ${value})`;
   },
 
   'list-insert': blk => {
     const position = emit_exp(blk.position);
     const value = emit_exp(blk.value);
-    return `LIST_INSERT(${blklist(blk)}, ${position}, ${value})`;
+    return `LIST_INSERT(${blklist(blk)}, ${position} - 1, ${value})`;
   },
 
   forever: blk => {

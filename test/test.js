@@ -175,7 +175,7 @@ void setup()
     {
       block: { name: 'list-ref', list: 'lst',
                position: { name: 'plus', x: 8, y: 7 } },
-      expect: 'LIST_REF(Lsym7, (8 + 7));'
+      expect: 'LIST_REF(Lsym7, (8 + 7) - 1);'
     },
     {
       block: { name: 'list-add', list: 'lst',
@@ -185,19 +185,19 @@ void setup()
     {
       block: { name: 'list-delete', list: 'lst',
                position: { name: 'plus', x: 8, y: 7 } },
-      expect: 'LIST_DELETE(Lsym7, (8 + 7));'
+      expect: 'LIST_DELETE(Lsym7, (8 + 7) - 1);'
     },
     {
       block: { name: 'list-replace', list: 'lst',
                position: { name: 'plus', x: 8, y: 7 },
                value: { name: 'minus', x: 6, y: 3 }},
-      expect: 'LIST_REPLACE(Lsym7, (8 + 7), (6 - 3));'
+      expect: 'LIST_REPLACE(Lsym7, (8 + 7) - 1, (6 - 3));'
     },
     {
       block: { name: 'list-insert', list: 'lst',
                position: { name: 'multiply', x: 8, y: 7 },
                value: { name: 'divide', x: 6, y: 3 }},
-      expect: 'LIST_INSERT(Lsym7, (8 * 7), (6 / 3));'
+      expect: 'LIST_INSERT(Lsym7, (8 * 7) - 1, (6 / 3));'
     },
     {
       block: { name: 'when-green-flag-clicked',
