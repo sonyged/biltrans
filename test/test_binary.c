@@ -18,8 +18,13 @@ EX_TRACE_HEX(int v)
 {
 }
 
+void
+EX_TRACE_FLOAT(float v)
+{
+}
+
 int
-EX_DELAY(float seconds)
+EX_DELAY(vtype seconds)
 {
 
   printf("wait %f\n", seconds);
@@ -89,8 +94,9 @@ EX_DIGITAL_SENSOR(int port)
   return digital_value++ % 2;
 }
 
-static float analog_value = 0;
-float EX_ANALOG_SENSOR(int port)
+static vtype analog_value = 0;
+vtype
+EX_ANALOG_SENSOR(int port)
 {
 
   printf("analog-sensor %d\n", port);
@@ -130,7 +136,7 @@ EX_RESET_TIMER()
   timer_start = 0;
 }
 
-unsigned int
+vtype
 EX_TIMER()
 {
 

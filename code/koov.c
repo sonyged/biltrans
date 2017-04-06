@@ -490,11 +490,11 @@ RESET_TIMER()
   timer_start = millis();
 }
 
-static unsigned int
+static float
 TIMER()
 {
 
-  return (millis() - timer_start) / 1000;
+  return ((float)(millis() - timer_start)) / 1000;
 }
 
 static void

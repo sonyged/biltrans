@@ -1,6 +1,6 @@
 #undef ENABLE_TRACING
 int
-EX_DELAY(float seconds)
+EX_DELAY(vtype seconds)
 {
 
   return delay_with_check(seconds * 1000UL, ERROR_OK, ERROR_INTERRUPTED);
@@ -20,6 +20,7 @@ EX_TRACE_INT(int v)
 {
 
 #if defined(ENABLE_TRACING)
+  SerialUSB.print(" ");
   SerialUSB.println(v);
 #endif
 }
@@ -29,7 +30,18 @@ EX_TRACE_HEX(int v)
 {
 
 #if defined(ENABLE_TRACING)
+  SerialUSB.print(" ");
   SerialUSB.println(v, HEX);
+#endif
+}
+
+void
+EX_TRACE_FLOAT(float v)
+{
+
+#if defined(ENABLE_TRACING)
+  SerialUSB.print(" ");
+  SerialUSB.print(v, 3);
 #endif
 }
 
@@ -47,7 +59,7 @@ EX_RESET_TIMER()
   RESET_TIMER();
 }
 
-unsigned int
+vtype
 EX_TIMER()
 {
 
@@ -120,10 +132,10 @@ EX_DIGITAL_SENSOR(int port)
   return digitalRead(port);
 }
 
-float
+vtype
 EX_ANALOG_SENSOR(int port)
 {
-  float v = sensor_value(port);
+  vtype v = sensor_value(port);
 
 #if 0
   SerialUSB.print(port);

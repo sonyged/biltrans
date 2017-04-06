@@ -6,6 +6,7 @@ int interp_exec(const uint8_t *p, ssize_t size);
  * Type of e_name.
  */
 typedef uint16_t ntype;
+typedef float vtype;
 
 enum {
   BT_ERROR = 0x00,		/* pseudo type */
@@ -45,14 +46,15 @@ extern "C" {
 void EX_TRACE(const char *msg);
 void EX_TRACE_INT(int);
 void EX_TRACE_HEX(int);
+void EX_TRACE_FLOAT(float);
 #if defined(__cplusplus)
 };
 #endif
 
-int EX_DELAY(float seconds);
+int EX_DELAY(vtype seconds);
 long EX_RANDOM(long, long);
 void EX_RESET_TIMER();
-unsigned int EX_TIMER();
+vtype EX_TIMER();
 void EX_TURN_LED(int, int);
 void EX_MULTILED(int r, int g, int b); /* 0 <= r/g/b <= 100 */
 void EX_BUZZER_CONTROL(int, int, int);
@@ -69,7 +71,7 @@ void EX_SERVO_MOTOR(int port, int value); /* 0 <= value <= 180 */
 void EX_SET_DCMOTOR_MODE(int port, int mode);
 void EX_SET_DCMOTOR_POWER(int port, int power);
 int EX_DIGITAL_SENSOR(int port);       /* 0 if LOW, 1 otherwise */
-float EX_ANALOG_SENSOR(int port);      /* 0 <= value <= 100 */
+vtype EX_ANALOG_SENSOR(int port);      /* 0 <= value <= 100 */
 int EX_ACCELEROMETER_VALUE(int, int);
 int EX_PORT_INIT(int, ntype);
 #endif /* !defined(INTERP_H) */

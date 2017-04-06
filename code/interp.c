@@ -18,8 +18,6 @@
 
 #undef SUPPORT_INT32
 
-typedef float vtype;
-
 typedef struct region {
   const uint8_t *r_end;
   ssize_t r_resid;
@@ -434,6 +432,18 @@ exec_unary(const ctx *ctx, vtype (*f)(vtype x))
   return ERROR_OK;
 }
 
+#define DEFBINARY(name, op) \
+  static vtype f_ ## name(vtype x, vtype y) { return x op y; }
+DEFBINARY(plus, +);
+DEFBINARY(minus, -);
+DEFBINARY(multiply, *);
+DEFBINARY(divide, /);
+DEFBINARY(equal, ==);
+DEFBINARY(less_than, <);
+DEFBINARY(greater_than, >);
+DEFBINARY(less_than_or_equal, <=);
+DEFBINARY(greater_than_or_equal, >=);
+
 static int
 exec_binary(const ctx *ctx, vtype (*f)(vtype x, vtype y))
 {
@@ -448,18 +458,6 @@ exec_binary(const ctx *ctx, vtype (*f)(vtype x, vtype y))
   env->e_value = (*f)(x, y);
   return ERROR_OK;
 }
-
-#define DEFBINARY(name, op) \
-  static vtype f_ ## name(vtype x, vtype y) { return x op y; }
-DEFBINARY(plus, +);
-DEFBINARY(minus, -);
-DEFBINARY(multiply, *);
-DEFBINARY(divide, /);
-DEFBINARY(equal, ==);
-DEFBINARY(less_than, <);
-DEFBINARY(greater_than, >);
-DEFBINARY(less_than_or_equal, <=);
-DEFBINARY(greater_than_or_equal, >=);
 
 static vtype
 f_mod(vtype x, vtype y)
