@@ -157,11 +157,11 @@ INIT_DC_MOTOR(int port)
 #endif
 #define INTERPOLATE(x, minx, maxx, miny, maxy)			\
   ((((maxy) - (miny)) * (clamp((minx), (maxx), (x)) - (minx)) /	\
-    ((double)((maxx) - (minx)))) + (miny))
+    ((float)((maxx) - (minx)))) + (miny))
 
-static struct rpm_table {
+static const struct rpm_table {
   int power;
-  double rpm;
+  float rpm;
 } normal_rpm_table[] = {
   { 0, 0 },
   { 10, 0 },
@@ -194,16 +194,17 @@ static struct rpm_table {
 #define DCMOTOR_POWER_SWITCH 10
 
 #if 0
-static double
-dcmotor_rpm(double power, bool normal)
+static float
+dcmotor_rpm(float power, bool normal)
 {
-  struct rpm_table *table = normal ? normal_rpm_table : reverse_rpm_table;
+  const struct rpm_table *table =
+    normal ? normal_rpm_table : reverse_rpm_table;
   const int count =
     normal ? ARRAYCOUNT(normal_rpm_table) : ARRAYCOUNT (reverse_rpm_table);
 
   for (int i = 1; i < count; i++) {
-    struct rpm_table *cur = &table[i];
-    struct rpm_table *prev = &table[i - 1];
+    const struct rpm_table *cur = &table[i];
+    const struct rpm_table *prev = &table[i - 1];
     if (prev->power <= power && power <= cur->power) {
       return INTERPOLATE(power, prev->power, cur->power, prev->rpm, cur->rpm);
     }
@@ -215,24 +216,25 @@ dcmotor_rpm(double power, bool normal)
 /*
  * Correct dcmotor power for each direction.
  */
-static double
-dcmotor_correct(double power, bool normal)
+static float
+dcmotor_correct(float power, bool normal)
 {
-  struct rpm_table *table = normal ? normal_rpm_table : reverse_rpm_table;
+  const struct rpm_table *table =
+    normal ? normal_rpm_table : reverse_rpm_table;
   const int count =
     normal ? ARRAYCOUNT(normal_rpm_table) : ARRAYCOUNT (reverse_rpm_table);
 
   if (power < DCMOTOR_POWER_SWITCH) {
-    double power_switch = dcmotor_correct(DCMOTOR_POWER_SWITCH, normal);
+    float power_switch = dcmotor_correct(DCMOTOR_POWER_SWITCH, normal);
     return power_switch * power / DCMOTOR_POWER_SWITCH;
   }
 
-  double rpm = INTERPOLATE(power, DCMOTOR_POWER_SWITCH, 100,
+  float rpm = INTERPOLATE(power, DCMOTOR_POWER_SWITCH, 100,
 			   DCMOTOR_RPM_MIN, DCMOTOR_RPM_MAX);
 
   for (int i = 1; i < count; i++) {
-    struct rpm_table *cur = &table[i];
-    struct rpm_table *prev = &table[i - 1];
+    const struct rpm_table *cur = &table[i];
+    const struct rpm_table *prev = &table[i - 1];
 
     if (prev->rpm <= rpm && rpm <= cur->rpm) {
       return INTERPOLATE(rpm, prev->rpm, cur->rpm, prev->power, cur->power);
@@ -253,7 +255,7 @@ DCMOTOR_CONTROL(int port)
   case DCMOTOR_NORMAL:
     digitalWrite(dport, LOW);
     if (power > 0) {
-      double dpower = dcmotor_correct(power, true);
+      float dpower = dcmotor_correct(power, true);
       power = INTERPOLATE(dpower, 0, 100, 0, analogMax);
     }
     analogWrite(aport, power);
@@ -261,7 +263,7 @@ DCMOTOR_CONTROL(int port)
   case DCMOTOR_REVERSE:
     digitalWrite(dport, HIGH);
     if (power > 0) {
-      double dpower = dcmotor_correct(power, false);
+      float dpower = dcmotor_correct(power, false);
       power = INTERPOLATE(dpower, 0, 100, 0, analogMax);
     }
     analogWrite(aport, analogMax - power);
