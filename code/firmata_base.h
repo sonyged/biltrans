@@ -1647,13 +1647,13 @@ periodc_jobs()
     } else {
       showConnectMode();
       if (enableFirmata) {
-	/*
-	 * Since these LEDs are active low, we need to reset the state
-	 * after firmata initialized the ports (and firmata doesn't
-	 * know about state of these LEDs)..
-	 */
-	LED_ON(PIN_LIVE);
-	LED_OFF(PIN_AUTO);
+        /*
+         * Since these LEDs are active low, we need to reset the state
+         * after firmata initialized the ports (and firmata doesn't
+         * know about state of these LEDs)..
+         */
+        LED_ON(PIN_LIVE);
+        LED_OFF(PIN_AUTO);
       } else {
 	LED_OFF(PIN_LIVE);
 	blink_led(PIN_AUTO, blink_state ? 950 : 50);
