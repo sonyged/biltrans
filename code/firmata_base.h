@@ -1546,6 +1546,7 @@ void setup()
   bts01_sbo();
 #endif
 
+  leave_firmata();
   KoovSetup();
 }
 
