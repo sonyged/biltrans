@@ -801,6 +801,7 @@ void systemResetCallback()
     outputPort(i, readPort(i, portConfigInputs[i]), true);
   }
   */
+  INIT_OUTPUTS();
   isResetting = false;
 }
 
