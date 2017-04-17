@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 #undef ENABLE_TRACING
 int
 EX_DELAY(vtype seconds)

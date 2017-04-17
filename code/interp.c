@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

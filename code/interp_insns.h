@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 DEFUN(when_green_flag_clicked, {
   return exec_blocks(ctx, Kblocks);
 })

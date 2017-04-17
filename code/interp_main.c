@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 static const uint8_t scripts[] __attribute__((section("KOOV_DATA"),
 					      aligned(256))) = {
 #if !defined(INCLUDE_TRANSLATED_C)

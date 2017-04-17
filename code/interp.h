@@ -1,3 +1,8 @@
+/* -*- indent-tabs-mode: nil -*-
+ *
+ * Copyright (c) 2017 Sony Global Education, Inc.
+ */
+
 #if !defined(INTERP_H)
 #define INTERP_H
 int interp_exec(const uint8_t *p, ssize_t size);
