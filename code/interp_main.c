@@ -4,7 +4,7 @@
  */
 
 static const uint8_t scripts[] __attribute__((section("KOOV_DATA"),
-					      aligned(256))) = {
+                                              aligned(256))) = {
 #if !defined(INCLUDE_TRANSLATED_C)
   0x26, 0x00, 0x03, 0x54, 0x00, 0x02, 0x00, 0x04,
   0x55, 0x00, 0x1c, 0x00, 0x03, 0x19, 0x00, 0x02,
@@ -51,8 +51,8 @@ loop()
       interp_error = err;
 #if 0
       while (digitalRead(BUTTON_A0) == HIGH) {
-	SerialUSB.println(err);
-	delay(10);
+        SerialUSB.println(err);
+        delay(10);
       }
 #endif
     }

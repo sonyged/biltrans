@@ -50,9 +50,9 @@ static int arg_int(const region *, ntype, int32_t *);
 
 #undef ELIST_NUL
 #if defined(ELIST_NUL)
-#define ELIST_SIZE(s)	((s) + 1) /* elist with trailing NUL */
+#define ELIST_SIZE(s)   ((s) + 1) /* elist with trailing NUL */
 #else
-#define ELIST_SIZE(s)	((s) + 0)
+#define ELIST_SIZE(s)   ((s) + 0)
 #endif
 
 static const uint8_t *
@@ -93,7 +93,7 @@ static ntype
 name_at(const uint8_t *at)
 {
 
-  return at[0] | (at[1] << 8);	/* little endian 16-bit unsigned integer */
+  return at[0] | (at[1] << 8);  /* little endian 16-bit unsigned integer */
 }
 
 static ntype
@@ -112,7 +112,7 @@ skip_name(const uint8_t *end, ssize_t resid, int array)
 
   if (array)
     return 1;
-  return 1 + 2;			/* 8 bit type followed by 16 bit e_name */
+  return 1 + 2;                 /* 8 bit type followed by 16 bit e_name */
 }
 
 static int
@@ -133,43 +133,43 @@ get_type(region *region, int array)
 //#define LOG(fmt, ...) do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 //#define LOG(fmt, ...) do { EX_TRACE(fmt); } while (0)
 
-#define CALL(F, ...) do {			\
-  int err = (F)(__VA_ARGS__);			\
-  if (err) {					\
-    LOG(#F ": %d: err = %d\n", __LINE__, err);	\
-    return err;					\
-  }						\
+#define CALL(F, ...) do {                       \
+  int err = (F)(__VA_ARGS__);                   \
+  if (err) {                                    \
+    LOG(#F ": %d: err = %d\n", __LINE__, err);  \
+    return err;                                 \
+  }                                             \
 } while (0)
 
 #if 0
-#define RETURN(F, ...) do {			\
-  int err = (F)(__VA_ARGS__);			\
-  if (err) {					\
-    LOG(#F ": %d: err = %d\n", __LINE__, err);	\
-    return err;					\
-  }						\
+#define RETURN(F, ...) do {                     \
+  int err = (F)(__VA_ARGS__);                   \
+  if (err) {                                    \
+    LOG(#F ": %d: err = %d\n", __LINE__, err);  \
+    return err;                                 \
+  }                                             \
 } while (0)
 #else
-#define RETURN(F, ...) do {			\
-  return (F)(__VA_ARGS__);			\
+#define RETURN(F, ...) do {                     \
+  return (F)(__VA_ARGS__);                      \
 } while (0)
 #endif
 
-#define CHECK_STACK0(env, where, p, q) do {	\
-  if ((void *)(p) < env->e_stack) {		\
-    EX_TRACE(where);				\
-    EX_TRACE_HEX((int)(p));			\
-    EX_TRACE_HEX((int)(q));			\
-    env->e_stack = (p);				\
-  }						\
+#define CHECK_STACK0(env, where, p, q) do {     \
+  if ((void *)(p) < env->e_stack) {             \
+    EX_TRACE(where);                            \
+    EX_TRACE_HEX((int)(p));                     \
+    EX_TRACE_HEX((int)(q));                     \
+    env->e_stack = (p);                         \
+  }                                             \
 } while (0)
 
-#define CHECK_STACK(env, where, p) do {		\
-  if ((void *)(p) < env->e_stack) {		\
-    EX_TRACE(where);				\
-    EX_TRACE_HEX((int)(p));			\
-    env->e_stack = (p);				\
-  }						\
+#define CHECK_STACK(env, where, p) do {         \
+  if ((void *)(p) < env->e_stack) {             \
+    EX_TRACE(where);                            \
+    EX_TRACE_HEX((int)(p));                     \
+    env->e_stack = (p);                         \
+  }                                             \
 } while (0)
 
 
@@ -185,7 +185,7 @@ narrow_to_elist(region *oregion, region *nregion)
   CALL(read_size, oregion, &u32);
   if (u32 > oregion->r_resid)
     return ERROR_INVALID_SIZE;
-  if (u32 < ELIST_SIZE(size))	    /* minimum elist is int32 followed by 0 */
+  if (u32 < ELIST_SIZE(size))       /* minimum elist is int32 followed by 0 */
     return ERROR_BUFFER_TOO_SHORT;
 
   nregion->r_end = (oregion->r_end - oregion->r_resid) + u32;
@@ -199,7 +199,7 @@ narrow_to_elist(region *oregion, region *nregion)
  */
 static int
 elist_find(const region *oregion, region *nregion, int array,
-	   int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
+           int (*compare)(const uint8_t *, ssize_t, void *), void *arg)
 {
 
   *nregion = *oregion;
@@ -356,7 +356,7 @@ parse_integer(const region *region, const uint8_t type, int32_t *i32)
     if (resid < 4)
       return ERROR_BUFFER_TOO_SHORT;
     fprintf(stderr, "0x%02x, 0x%02x, 0x%02x, 0x%02x\n", 
-	    q[0], q[1], q[2], q[3]);
+            q[0], q[1], q[2], q[3]);
     *i32 = (int32_t)(q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24));
     fprintf(stderr, "=> 0x%04x %d\n", *i32, *i32);
     break;
@@ -534,7 +534,7 @@ lookup_list(const ctx *ctx, uint32_t *u32)
 #if 0
 static int
 with_elist(const uint8_t *end, ssize_t *resid, int array,
-	   int (*proc)(const region *region, int, void *), void *arg)
+           int (*proc)(const region *region, int, void *), void *arg)
 {
 
   region oregion;
@@ -550,9 +550,9 @@ with_elist(const uint8_t *end, ssize_t *resid, int array,
 
 static int
 foreach_document(const region *region, int array,
-		 int end_of_document,
-		 int (*proc)(struct region *region, int array, void *),
-		 void *arg)
+                 int end_of_document,
+                 int (*proc)(struct region *region, int array, void *),
+                 void *arg)
 {
   struct region oregion = *region;
   struct region nregion;
@@ -610,7 +610,7 @@ exec_function(env *env, uint32_t idx)
   lfa.ctx.c_env = env;
   lfa.ctx.c_region = env->e_region;
   err = foreach_document(&lfa.ctx.c_region, 1, ERROR_ELEMENT_NOT_FOUND,
-			 lookup_function, &lfa);
+                         lookup_function, &lfa);
   if (err != ERROR_FOUND)
     return err;
 
@@ -718,7 +718,7 @@ setup_ss(ctx *ctx, struct servo_sync *ss)
 
 static int
 init_servo_sync(const ctx *ctx,
-		struct servo_sync *ss, size_t *count)
+                struct servo_sync *ss, size_t *count)
 {
   env *env = ctx->c_env;
   const size_t max_count = *count;
@@ -788,27 +788,27 @@ digital_sensor_value(const ctx *ctx)
 #define DISPATCH_TABLE
 #if defined(DISPATCH_TABLE)
 #undef EXEC_BINARY
-#define EXEC_BINARY(name)					\
-  static int							\
-  F ## name(const ctx *ctx)					\
-  {								\
-    								\
-    return exec_binary(ctx, f_ ## name);			\
+#define EXEC_BINARY(name)                                       \
+  static int                                                    \
+  F ## name(const ctx *ctx)                                     \
+  {                                                             \
+                                                                \
+    return exec_binary(ctx, f_ ## name);                        \
   }
 #undef EXEC_UNARY
-#define EXEC_UNARY(name)					\
-  static int							\
-  F ## name(const ctx *ctx)					\
-  {								\
-    								\
-    return exec_unary(ctx, f_ ## name);				\
+#define EXEC_UNARY(name)                                        \
+  static int                                                    \
+  F ## name(const ctx *ctx)                                     \
+  {                                                             \
+                                                                \
+    return exec_unary(ctx, f_ ## name);                         \
   }
 #undef DEFUN
-#define DEFUN(sym, body)					\
-static int							\
+#define DEFUN(sym, body)                                        \
+static int                                                      \
 F ## sym(const ctx *ctx) body
 #include "interp_insns.h"
-#endif	/* DISPATCH_TABLE */
+#endif  /* DISPATCH_TABLE */
 
 static int
 exec_block(env *env, region *region)
@@ -827,14 +827,14 @@ exec_block(env *env, region *region)
 #if !defined(DISPATCH_TABLE)
 
 #undef EXEC_BINARY
-#define EXEC_BINARY(name)					\
-  case I ## name: {						\
-    return exec_binary(ctx, f_ ## name);			\
+#define EXEC_BINARY(name)                                       \
+  case I ## name: {                                             \
+    return exec_binary(ctx, f_ ## name);                        \
   }
 #undef EXEC_UNARY
-#define EXEC_UNARY(name)					\
-  case I ## name: {						\
-    return exec_unary(ctx, f_ ## name);				\
+#define EXEC_UNARY(name)                                        \
+  case I ## name: {                                             \
+    return exec_unary(ctx, f_ ## name);                         \
   }
 
   switch (name) {
@@ -848,7 +848,7 @@ exec_block(env *env, region *region)
 #else  /* DISPATCH_TABLE */
 
   static int (*const ops[])(const struct ctx *ctx) = {
-    Fbreakpoint,		/* nop */
+    Fbreakpoint,                /* nop */
 #undef DEFUN
 #define DEFUN(sym, body) F ## sym,
 #undef EXEC_BINARY
@@ -862,7 +862,7 @@ exec_block(env *env, region *region)
     return ERROR_UNSUPPORTED;
   return ops[name](&ctx);
 
-#endif	/* DISPATCH_TABLE */
+#endif  /* DISPATCH_TABLE */
 }
 
 static int
@@ -891,7 +891,7 @@ exec_number(env *env, region *region)
   for (int i = 0; i < size; i++)
     u.b[i] = *(end - *resid + i);
   *resid -= size;
-  env->e_value = u.f;		/* convert from float to vtype */
+  env->e_value = u.f;           /* convert from float to vtype */
   return ERROR_OK;
 }
 
@@ -948,9 +948,9 @@ setup_ports(const region *region)
     for (;;) {
       CHECK_INTR(ERROR_INTERRUPTED);
       if (nregion.r_resid < ELIST_SIZE(0))
-	return ERROR_OVERFLOW;
+        return ERROR_OVERFLOW;
       if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
-	return ERROR_OK;
+        return ERROR_OK;
       CALL(port_init, &nregion);
     }
   }

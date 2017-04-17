@@ -14,7 +14,7 @@ typedef uint16_t ntype;
 typedef float vtype;
 
 enum {
-  BT_ERROR = 0x00,		/* pseudo type */
+  BT_ERROR = 0x00,              /* pseudo type */
   BT_NUMBER = 0x01,
   BT_KEYWORD = 0x02,
   BT_OBJECT = 0x03,
@@ -26,29 +26,29 @@ enum {
 
 enum {
   ERROR_OK = 0,
-  ERROR_FOUND,			/* 1 */
-  ERROR_INTERRUPTED,		/* 2 */
-  ERROR_BUFFER_TOO_SHORT,	/* 3 */
-  ERROR_ELEMENT_NOT_FOUND,	/* 4 */
-  ERROR_UNSUPPORTED,		/* 5 */
-  ERROR_NOT_DOCUMENT,		/* 6 */
-  ERROR_OVERFLOW,		/* 7 */
-  ERROR_INVALID_TYPE,		/* 8 */
-  ERROR_INVALID_SIZE,		/* 9 */
-  ERROR_OUT_OF_RANGE,		/* 10 */
-  ERROR_TOOMANY_SERVO,		/* 11 */
-  ERROR_NO_MEMORY,		/* 12 */
-  ERROR_INVALID_MAGIC,		/* 13 */
+  ERROR_FOUND,                  /* 1 */
+  ERROR_INTERRUPTED,            /* 2 */
+  ERROR_BUFFER_TOO_SHORT,       /* 3 */
+  ERROR_ELEMENT_NOT_FOUND,      /* 4 */
+  ERROR_UNSUPPORTED,            /* 5 */
+  ERROR_NOT_DOCUMENT,           /* 6 */
+  ERROR_OVERFLOW,               /* 7 */
+  ERROR_INVALID_TYPE,           /* 8 */
+  ERROR_INVALID_SIZE,           /* 9 */
+  ERROR_OUT_OF_RANGE,           /* 10 */
+  ERROR_TOOMANY_SERVO,          /* 11 */
+  ERROR_NO_MEMORY,              /* 12 */
+  ERROR_INVALID_MAGIC,          /* 13 */
 };
 
 #if !defined(CHECK_INTR)
-#define CHECK_INTR(x)		/* nothing */
+#define CHECK_INTR(x)           /* nothing */
 #endif
 
 #if 0
-#define LIST_POSITION(pos)	(pos) /* 0-origin */
+#define LIST_POSITION(pos)      (pos) /* 0-origin */
 #else
-#define LIST_POSITION(pos)	((pos) - 1) /* 1-origin */
+#define LIST_POSITION(pos)      ((pos) - 1) /* 1-origin */
 #endif
 
 #if defined(__cplusplus)
