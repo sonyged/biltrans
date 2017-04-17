@@ -23,7 +23,11 @@ const trans = bilbinary.translator(scripts);
 const buffer = trans.translate();
 let i = 0;
 buffer.forEach(x => {
-  process.stdout.write(`0x${x.toString(16)},`);
+  const hex = x.toString(16);
+  const pad = hex.length === 1 ? '0' : '';
+  process.stdout.write(`0x${pad}${hex},`);
   if ((++i) % 8 === 0)
     process.stdout.write('\n');
+  else
+    process.stdout.write(' ');
 });
