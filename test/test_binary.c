@@ -96,7 +96,7 @@ EX_DIGITAL_SENSOR(int port)
 
 static vtype analog_value = 0;
 vtype
-EX_ANALOG_SENSOR(int port)
+EX_ANALOG_SENSOR(int port, int lim)
 {
 
   printf("analog-sensor %d\n", port);

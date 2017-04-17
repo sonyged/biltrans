@@ -82,7 +82,7 @@ void EX_SERVO_MOTOR(int port, int value); /* 0 <= value <= 180 */
 void EX_SET_DCMOTOR_MODE(int port, int mode);
 void EX_SET_DCMOTOR_POWER(int port, int power);
 int EX_DIGITAL_SENSOR(int port);       /* 0 if LOW, 1 otherwise */
-vtype EX_ANALOG_SENSOR(int port);      /* 0 <= value <= 100 */
+vtype EX_ANALOG_SENSOR(int port, int lim); /* 0 <= value <= 100 */
 int EX_ACCELEROMETER_VALUE(int, int);
 int EX_PORT_INIT(int, ntype);
 #endif /* !defined(INTERP_H) */

@@ -759,13 +759,13 @@ list_error(int err)
 }
 
 static int
-analog_sensor_value(const ctx *ctx)
+analog_sensor_value(const ctx *ctx, int lim)
 {
   env *env = ctx->c_env;
   ntype port = 0;
 
   CALL(arg_keyword, &ctx->c_region, Kport, &port);
-  env->e_value = EX_ANALOG_SENSOR(port_value(port));
+  env->e_value = EX_ANALOG_SENSOR(port_value(port), lim);
   return ERROR_OK;
 }
 

@@ -402,14 +402,14 @@ SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *ss, int number, byte time)
 }
 
 static float
-sensor_value(int port)
+sensor_value(int port, int lim)
 {
   float v = analogRead(port);   /* eval once */
 
   /*
    * We can't use map() since it returns long.
    */
-  return clamp(0, 1024, v) * 100 / 1024;
+  return clamp(0, lim, v) * 100 / lim;
 }
 
 static void
@@ -420,9 +420,11 @@ init_sensor(int port)
   analogReference(AR_DEFAULT);
 }
 
-#define LIGHT_SENSOR(port)    (sensor_value(port))
+#define LIGHT_SENSOR(port)    (sensor_value(port, 1023))
 #define INIT_LIGHT_SENSOR(port) (init_sensor(port))
-#define IR_PHOTO_REFLECTOR(port)    (sensor_value(port))
+#define SOUND_SENSOR(port)    (sensor_value(port, 1023 * (3.3 - 1.5) / 3.3))
+#define INIT_SOUND_SENSOR(port) (init_sensor(port))
+#define IR_PHOTO_REFLECTOR(port)    (sensor_value(port, 1023))
 #define INIT_IR_PHOTO_REFLECTOR(port) (init_sensor(port))
 
 #define TOUCH_SENSOR(port)    (digitalRead(port))

@@ -138,9 +138,9 @@ EX_DIGITAL_SENSOR(int port)
 }
 
 vtype
-EX_ANALOG_SENSOR(int port)
+EX_ANALOG_SENSOR(int port, int lim)
 {
-  vtype v = sensor_value(port);
+  vtype v = sensor_value(port, lim);
 
 #if 0
   SerialUSB.print(port);
@@ -174,6 +174,8 @@ EX_PORT_INIT(int port, ntype part)
     BUZZER_CONTROL(port, OFF, 0);
   if (part == Klight_sensor)
     INIT_LIGHT_SENSOR(port);
+  if (part == Ksound_sensor)
+    INIT_SOUND_SENSOR(port);
   if (part == Ktouch_sensor)
     INIT_TOUCH_SENSOR(port);
   if (part == Kir_photo_reflector)
