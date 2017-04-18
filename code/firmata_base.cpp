@@ -31,6 +31,10 @@
 
 #include "Arduino.h"
 
+/*
+ * When KOOV_VERSION is bumped, don't forget to update bilctl.js and
+ * its test.js.
+ */
 #if defined(ENABLE_INTERP)
 #include "koov_version.h"
 #else

@@ -1657,7 +1657,11 @@ periodc_jobs()
         LED_OFF(PIN_AUTO);
       } else {
 	LED_OFF(PIN_LIVE);
+#if 0
 	blink_led(PIN_AUTO, blink_state ? 950 : 50);
+#else
+        LED_ON(PIN_AUTO);
+#endif
       }
     }
   }
