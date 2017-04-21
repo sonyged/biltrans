@@ -34,6 +34,7 @@ void setup()
   pinMode(BUTTON_A3,INPUT_PULLUP);
   SerialUSB.begin(38400);
 #endif
+  firmata_base::systemResetCallback();  // reset to default config
 }
 
 void

@@ -343,6 +343,7 @@ INIT_SERVO_MOTOR(int port)
 
   firmata_base::detachServoMaybe(pin);
   firmata_base::attachServo(pin, 0, 0);
+  firmata_base::setPinModeCallback(pin, PIN_MODE_SERVO);
   pinMode(LED_MULTI_FET, OUTPUT);
   digitalWrite(LED_MULTI_FET, HIGH);
 }
