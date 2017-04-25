@@ -1036,7 +1036,7 @@ bts01_reset()
    */
   pinMode(43, OUTPUT);
   digitalWrite(43, LOW);
-  delay(1);
+  delay(1000);
   digitalWrite(43, HIGH);
   delay(10);
   bts01_failure = false;
