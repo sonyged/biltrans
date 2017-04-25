@@ -1126,15 +1126,6 @@ bts01_sbo()
  */
 #define NVM_MEMORY        ((volatile uint16_t *)FLASH_ADDR)
 static void
-nvm_write(uint16_t v)
-{
-  if (flash_state.fs_offset >= (uint32_t)&__koov_data_start__) {
-    NVM_MEMORY[flash_state.fs_offset / 2] = v;
-    flash_state.fs_offset += 2;
-  }
-}
-
-static void
 flash_write(byte cc)
 {
 
@@ -1152,7 +1143,8 @@ flash_write(byte cc)
   if (flash_state.fs_shift == 0)
     flash_state.fs_shift = 8;
   else {
-    nvm_write(flash_state.fs_value);
+    NVM_MEMORY[flash_state.fs_offset / 2] = flash_state.fs_value;
+    flash_state.fs_offset += 2;
     flash_state.fs_value = flash_state.fs_shift = 0;
   }
 }
@@ -1468,7 +1460,8 @@ koov_sysex(byte argc, byte *argv)
 	    flash_write(0xff);
 
 	  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
-	    nvm_write(0xffff);
+	    NVM_MEMORY[flash_state.fs_offset / 2] = 0xffff;
+	    flash_state.fs_offset += 2;
 	  }
 	  while (!(NVMCTRL->INTFLAG.bit.READY))
 	    ;
