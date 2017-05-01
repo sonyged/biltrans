@@ -37,6 +37,18 @@ void setup()
   firmata_base::systemResetCallback();  // reset to default config
 }
 
+static int
+post_exec()
+{
+  INIT_OUTPUTS();
+  int err = interp_setup(scripts, 0);
+  if (err)
+    return err;
+  for (;;) {
+    CHECK_INTR(ERROR_INTERRUPTED);
+  }
+}
+
 void
 loop()
 {
@@ -47,6 +59,9 @@ loop()
     randomSeed(analogRead(0));
     INIT_OUTPUTS();
     int err = interp_exec(scripts, 0);
+
+    if (!err)
+      err = post_exec();
 
     if (err && err != ERROR_INTERRUPTED) {
       interp_error = err;
