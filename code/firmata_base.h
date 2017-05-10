@@ -1128,10 +1128,10 @@ bts01_sbo()
 static void
 nvm_write(uint16_t v)
 {
-  if (flash_state.fs_offset >= (uint32_t)&__koov_data_start__) {
+  /* Touch NVM only when address is higher than koov_data section */
+  if (flash_state.fs_offset >= (uint32_t)&__koov_data_start__)
     NVM_MEMORY[flash_state.fs_offset / 2] = v;
-    flash_state.fs_offset += 2;
-  }
+  flash_state.fs_offset += 2;
 }
 
 static void

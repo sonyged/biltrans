@@ -6,6 +6,7 @@
 #if !defined(INTERP_H)
 #define INTERP_H
 int interp_exec(const uint8_t *p, ssize_t size);
+int interp_setup(const uint8_t *p, ssize_t size);
 
 /*
  * Type of e_name.
