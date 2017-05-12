@@ -49,7 +49,9 @@ struct flash_state {
   uint32_t fs_offset;
   uint16_t fs_value;
   byte fs_shift;
-  byte fs_escape;
+  byte fs_flags;
+#define FS_ESCAPED 0x01		// previous char was escape char
+#define FS_RAW 0x02		// input is raw (no esacpe char)
 } flash_state;
 static void koov_sysex(byte argc, byte *argv);
 void reportAnalogCallback(byte analogPin, int value);
@@ -1145,12 +1147,12 @@ flash_write(byte cc)
 {
 
 #define ESCAPE_CHAR 0x7f
-  if (flash_state.fs_escape) {
+  if (flash_state.fs_flags & FS_ESCAPED) {
     cc = cc ? END_SYSEX : ESCAPE_CHAR;
-    flash_state.fs_escape = 0;
-  } else {
+    flash_state.fs_flags &= ~FS_ESCAPED;
+  } else if ((flash_state.fs_flags & FS_RAW) == 0) {
     if (cc == ESCAPE_CHAR) {	/* escape character */
-      flash_state.fs_escape = 1;
+      flash_state.fs_flags |= FS_ESCAPED;
       return;
     }
   }
@@ -1164,7 +1166,7 @@ flash_write(byte cc)
 }
 
 static void
-flash_erase(uint32_t start, uint32_t end)
+flash_erase(uint32_t start, uint32_t end, byte flags)
 {
   uint32_t addr = start;
 
@@ -1183,7 +1185,7 @@ flash_erase(uint32_t start, uint32_t end)
   flash_state.fs_end = end;
   flash_state.fs_offset = start;
   flash_state.fs_shift = 0;
-  flash_state.fs_escape = 0;
+  flash_state.fs_flags = flags;
   flash_state.fs_value = 0;
 }
 
@@ -1219,7 +1221,8 @@ static void
 btpin_erase()
 {
 
-  flash_erase((uint32_t)&__btpin_data_start__, (uint32_t)&__btpin_data_end__);
+  flash_erase((uint32_t)&__btpin_data_start__, (uint32_t)&__btpin_data_end__,
+	      FS_RAW);
 }
 
 static void
@@ -1511,7 +1514,7 @@ koov_sysex(byte argc, byte *argv)
 	   *
 	   *    status: AA		// 0 on success
 	   */
-	  flash_erase((uint32_t)&__koov_data_start__, NVMCTRL_FLASH_SIZE);
+	  flash_erase((uint32_t)&__koov_data_start__, NVMCTRL_FLASH_SIZE, 0);
 
 	  Firmata.write(START_SYSEX); /* 0xf0 */
 	  Firmata.write(0x0e);
@@ -1630,7 +1633,7 @@ koov_sysex(byte argc, byte *argv)
 	  switch (argv[2]) {
 	  case 0x00:
 	    if (argc > 3) {
-	      byte btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
+	      uint16_t btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
 
 	      rv = btpin_write(btpin);
 	    } else
@@ -1638,7 +1641,7 @@ koov_sysex(byte argc, byte *argv)
 	    break;
 	  case 0x01:
 	    if (argc > 3) {
-	      byte btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
+	      uint16_t btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
 
 	      rv = btpin_read() == btpin;
 	    } else
