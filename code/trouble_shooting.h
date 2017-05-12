@@ -736,6 +736,7 @@ setup()
 
   button_setup();
   prolog_setup();
+  btpin_reset();
   current_loop = prolog_loop;
 }
 

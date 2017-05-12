@@ -3,6 +3,13 @@
  * Copyright (c) 2017 Sony Global Education, Inc.
  */
 
+#define FF8 0xff,  0xff,  0xff,  0xff,  0xff,  0xff,  0xff,  0xff
+#define FF64 FF8, FF8, FF8, FF8, FF8, FF8, FF8, FF8
+#define FF256 FF64, FF64, FF64, FF64
+static const uint8_t btpin[] __attribute__((section("BTPIN_DATA"),
+                                            aligned(256), used)) = {
+  FF256
+};
 static const uint8_t scripts[] __attribute__((section("KOOV_DATA"),
                                               aligned(256))) = {
 #if !defined(INCLUDE_TRANSLATED_C)

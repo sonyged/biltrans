@@ -25,7 +25,10 @@
 
 extern "C" {
   extern uint32_t __koov_data_start__;
+  extern uint32_t __btpin_data_start__;
+  extern uint32_t __btpin_data_end__;
 };
+
 namespace firmata_base {
 
 #define I2C_WRITE                   B00000000
@@ -41,6 +44,8 @@ namespace firmata_base {
 #define MINIMUM_SAMPLING_INTERVAL   1
 
 struct flash_state {
+  uint32_t fs_start;
+  uint32_t fs_end;
   uint32_t fs_offset;
   uint16_t fs_value;
   byte fs_shift;
@@ -1129,7 +1134,8 @@ static void
 nvm_write(uint16_t v)
 {
   /* Touch NVM only when address is higher than koov_data section */
-  if (flash_state.fs_offset >= (uint32_t)&__koov_data_start__)
+  if (flash_state.fs_start <= flash_state.fs_offset &&
+      flash_state.fs_offset < flash_state.fs_end)
     NVM_MEMORY[flash_state.fs_offset / 2] = v;
   flash_state.fs_offset += 2;
 }
@@ -1155,6 +1161,97 @@ flash_write(byte cc)
     nvm_write(flash_state.fs_value);
     flash_state.fs_value = flash_state.fs_shift = 0;
   }
+}
+
+static void
+flash_erase(uint32_t start, uint32_t end)
+{
+  uint32_t addr = start;
+
+  while (addr < end) {
+    NVMCTRL->STATUS.reg |= NVMCTRL_STATUS_MASK;
+    /* Set address and command */
+    NVMCTRL->ADDR.reg = addr / 2;
+    NVMCTRL->CTRLA.reg =
+      NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
+    while (!(NVMCTRL->INTFLAG.bit.READY))
+      ;
+    addr += NVMCTRL_ROW_SIZE;
+  }
+
+  flash_state.fs_start = start;
+  flash_state.fs_end = end;
+  flash_state.fs_offset = start;
+  flash_state.fs_shift = 0;
+  flash_state.fs_escape = 0;
+  flash_state.fs_value = 0;
+}
+
+static void
+flash_flush()
+{
+  /* flush pending byte */
+  if (flash_state.fs_shift)
+    flash_write(0xff);
+
+  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
+    nvm_write(0xffff);
+  }
+  while (!(NVMCTRL->INTFLAG.bit.READY))
+    ;
+}
+
+/*
+ * BTPIN is 14bit.
+ *
+ * Valid BTPIN is 0x0000 .. 0x270f
+ */
+#define BTPIN_VALID(x)	((x) >= 0 && (x) <= 0x270f) // 0..9999
+#define BTPIN_PROBE 0x3ffd
+#define BTPIN_NULL 0x3ffe
+
+/*
+ * When btpin area is erased, following value will be read.
+ */
+#define BTPIN_ERASED 0xffff
+
+static void
+btpin_erase()
+{
+
+  flash_erase((uint32_t)&__btpin_data_start__, (uint32_t)&__btpin_data_end__);
+}
+
+static void
+btpin_set(uint16_t btpin)
+{
+
+  btpin_erase();
+
+  flash_write(btpin & 0xff);
+  flash_write((btpin >> 8) & 0xff);
+
+  flash_flush();
+}
+
+static uint16_t
+btpin_read()
+{
+  uint8_t *p = (uint8_t *)&__btpin_data_start__;
+
+  return p[0] | (p[1] << 8);
+}
+
+static byte
+btpin_write(uint16_t btpin)
+{
+
+  if (!BTPIN_VALID(btpin))
+    return 0x01;
+  if (btpin_read() != BTPIN_ERASED)
+    return 0x02;
+  btpin_set(btpin);
+  return 0x00;
 }
 
 /*
@@ -1414,23 +1511,7 @@ koov_sysex(byte argc, byte *argv)
 	   *
 	   *    status: AA		// 0 on success
 	   */
-	  uint32_t addr = (uint32_t)&__koov_data_start__;
-
-	  while (addr < NVMCTRL_FLASH_SIZE) {
-	    NVMCTRL->STATUS.reg |= NVMCTRL_STATUS_MASK;
-	    /* Set address and command */
-	    NVMCTRL->ADDR.reg = addr / 2;
-	    NVMCTRL->CTRLA.reg =
-	      NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
-	    while (!(NVMCTRL->INTFLAG.bit.READY))
-	      ;
-	    addr += NVMCTRL_ROW_SIZE;
-	  }
-
-	  flash_state.fs_offset = (uint32_t)&__koov_data_start__;
-	  flash_state.fs_shift = 0;
-	  flash_state.fs_escape = 0;
-	  flash_state.fs_value = 0;
+	  flash_erase((uint32_t)&__koov_data_start__, NVMCTRL_FLASH_SIZE);
 
 	  Firmata.write(START_SYSEX); /* 0xf0 */
 	  Firmata.write(0x0e);
@@ -1463,15 +1544,8 @@ koov_sysex(byte argc, byte *argv)
 	  flash_write((KOOV_MAGIC >> 16) & 0xff);
 	  flash_write((KOOV_MAGIC >> 24) & 0xff);
 
-	  /* flush pending byte */
-	  if (flash_state.fs_shift)
-	    flash_write(0xff);
+	  flash_flush();
 
-	  while ((flash_state.fs_offset % NVMCTRL_ROW_SIZE) != 0) {
-	    nvm_write(0xffff);
-	  }
-	  while (!(NVMCTRL->INTFLAG.bit.READY))
-	    ;
 	  Firmata.write(START_SYSEX); /* 0xf0 */
 	  Firmata.write(0x0e);
 	  Firmata.write(0x02);
@@ -1489,7 +1563,7 @@ koov_sysex(byte argc, byte *argv)
 	   * Request:
 	   * offset 0  1  2
 	   * ------------------------
-	   *    0e 02 0a AA
+	   *    0e 02 0a AA BB ...
 	   *
 	   *    AA: length
 	   *
@@ -1511,6 +1585,76 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(0x02);
 	  Firmata.write(0x0a);
 	  Firmata.write(0x00);
+	  Firmata.write(END_SYSEX); /* 0xf7 */
+	}
+	break;
+      case 0x0b:		/* btpin */
+	if (argc > 1) {
+	  /*
+	   * Request:
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 0b AA
+	   *
+	   *    AA: sub command
+	   *
+	   * AA == 0 (write)
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 0b AA BB CC
+	   *    BB: lower 7-bits of btpin
+	   *    CC: higher 7-bits of btpin
+	   *
+	   * AA == 1 (verify)
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 0b AA BB CC
+	   *    BB: lower 7-bits of btpin
+	   *    CC: higher 7-bits of btpin
+	   *
+	   * AA == 2 (exists?)
+	   * offset 0  1  2
+	   * ------------------------
+	   *    0e 02 0b AA
+	   *
+	   * Response:
+	   * offset 0  1  2  3
+	   * ------------------------
+	   *    0e 02 0b AA BB
+	   *
+	   *    status: AA
+	   *    status: BB		// 0 on success
+	   */
+	  byte rv = 0x7f;
+
+	  switch (argv[2]) {
+	  case 0x00:
+	    if (argc > 3) {
+	      byte btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
+
+	      rv = btpin_write(btpin);
+	    } else
+	      rv = 0x7e;
+	    break;
+	  case 0x01:
+	    if (argc > 3) {
+	      byte btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
+
+	      rv = btpin_read() == btpin;
+	    } else
+	      rv = 0x7e;
+	    break;
+	  case 0x02:
+	    rv = BTPIN_VALID(btpin_read());
+	    break;
+	  }
+
+	  Firmata.write(START_SYSEX); /* 0xf0 */
+	  Firmata.write(0x0e);
+	  Firmata.write(0x02);
+	  Firmata.write(0x0b);
+	  Firmata.write(argv[2]);
+	  Firmata.write(rv);
 	  Firmata.write(END_SYSEX); /* 0xf7 */
 	}
 	break;
@@ -1730,3 +1874,10 @@ void loop()
 }
 
 } // namespace firmata_base
+
+static void
+btpin_reset()
+{
+
+  firmata_base::btpin_set(BTPIN_ERASED);
+}
