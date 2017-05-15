@@ -38,5 +38,6 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
  fi
  cat) > ${BUILDDIR}/${SKETCH_CPP}
 
+cp ../code/koov_version.h "${BUILDDIR}/"
 sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 22
 cat ${BUILDDIR}/${SKETCH_CPP}.hex

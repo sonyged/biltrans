@@ -1,6 +1,6 @@
 {
   "name": "biltrans",
-  "version": "1.0.34",
+  "version": "1.0.44",
   "description": "block intermediate language translator",
   "main": "biltrans.js",
   "scripts": {
@@ -10,11 +10,11 @@
   "author": "Sony Global Education, Inc.",
   "license": "SEE LICENSE in ./LICENSE",
   "dependencies": {
-    "debug": "latest"
+    "debug": "^2.6.6"
   },
   "devDependencies": {
-    "mocha": "latest",
-    "istanbul": "latest",
-    "should": "latest"
+    "mocha": "^3.3.0",
+    "istanbul": "^0.4.5",
+    "should": "^11.2.1"
   }
 }

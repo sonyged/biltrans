@@ -38,13 +38,17 @@ node --version >>"${BUILDDIR}"/node.log
 cp -p "${JSON}" "${BUILDDIR}/koov.json"
 
 TRANSLATED="${BUILDDIR}/translated.c"
-node ./embed.js "${JSON}" 2>>"${BUILDDIR}"/node.log >"${TRANSLATED}"
+# If version does not match, embed.js exits with 15.
+node ./embed.js "${JSON}" 2>>"${BUILDDIR}"/node.log >"${TRANSLATED}" ||
+    exit $?
 test -s "${TRANSLATED}" || exit 14
 
 # Don't include function_test_01
 export ENABLE_FUNCTION_TEST_01=
 # Include interpreter
 export ENABLE_INTERP=yes
+# Include translated program
+export INCLUDE_TRANSLATED_C=yes
 cp ../code/interp_insns.h ${BUILDDIR}/
 cat ../code/interp_main.c |
     sh -x ./compile.sh "${BUILDDIR}"

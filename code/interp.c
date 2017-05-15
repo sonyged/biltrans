@@ -1042,8 +1042,19 @@ exec_script(region *region)
   return ERROR_OK;
 }
 
-int
-interp_exec(const uint8_t *p, ssize_t size)
+static int
+setup_script(region *region)
+{
+  int err;
+
+  EX_TRACE_HEX((int)&err);
+  CALL(setup_ports, region);
+
+  return ERROR_OK;
+}
+
+static int
+interp_start(const uint8_t *p, ssize_t size, int (*exec)(region *))
 {
   ssize_t resid = SIZE_SIZE;
   uint32_t u32;
@@ -1078,5 +1089,19 @@ interp_exec(const uint8_t *p, ssize_t size)
 
   region.r_end -= ELIST_SIZE(0); /* drop trailing 0 if any */
   region.r_resid -= ELIST_SIZE(SIZE_SIZE); /* leading int32 + trailing 0 */
-  return exec_script(&region);
+  return (*exec)(&region);
+}
+
+int
+interp_exec(const uint8_t *p, ssize_t size)
+{
+
+  return interp_start(p, size, exec_script);
+}
+
+int
+interp_setup(const uint8_t *p, ssize_t size)
+{
+
+  return interp_start(p, size, setup_script);
 }
