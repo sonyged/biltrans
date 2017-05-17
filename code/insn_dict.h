@@ -55,4 +55,5 @@
 #define Ilist_delete 53
 #define Ilist_replace 54
 #define Ilist_insert 55
+#define Isound_sensor_value 56
 #endif /* !defined(INSN_DICT_H) */

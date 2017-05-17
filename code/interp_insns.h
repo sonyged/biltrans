@@ -280,12 +280,12 @@ DEFUN(3_axis_digital_accelerometer_value, {
 
 DEFUN(ir_photo_reflector_value, {
 
-  return analog_sensor_value(ctx);
+  return analog_sensor_value(ctx, 1023);
 })
 
 DEFUN(light_sensor_value, {
 
-  return analog_sensor_value(ctx);
+  return analog_sensor_value(ctx, 1023);
 })
 
 DEFUN(button_value, {
@@ -454,4 +454,9 @@ DEFUN(list_insert, {
   const vtype position = LIST_POSITION(env->e_value);
   list_insert(&env->e_lsts[u32], position, value, &err);
   return list_error(err);
+})
+
+DEFUN(sound_sensor_value, {
+
+  return analog_sensor_value(ctx, 1023 * (3.3 - 1.5) / 3.3);
 })

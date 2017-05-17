@@ -78,4 +78,5 @@
 #define Klight_sensor 76
 #define Kir_photo_reflector 77
 #define K3_axis_digital_accelerometer 78
+#define Ksound_sensor 79
 #endif /* !defined(KEYWORD_DICT_H) */
