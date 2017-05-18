@@ -1626,7 +1626,7 @@ koov_sysex(byte argc, byte *argv)
 	   *    0e 02 0b AA BB
 	   *
 	   *    status: AA
-	   *    status: BB		// 0 on success
+	   *    status: BB		// 0 on success (except 0x02)
 	   */
 	  byte rv = 0x7f;
 
@@ -1650,6 +1650,47 @@ koov_sysex(byte argc, byte *argv)
 	  case 0x02:
 	    rv = BTPIN_VALID(btpin_read());
 	    break;
+	  case 0x03:		/* challenge */
+	    {
+	      uint16_t mypin = btpin_read();
+	      
+	      if (!BTPIN_VALID(mypin)) {
+		/* No valid btpin */
+		rv = 0;		/* OK */
+	      } else {
+		if (argc > 3) {
+		  uint16_t btpin = (argv[3] & 0x7f) | ((argv[4] & 0x7f) << 7);
+
+		  if (BTPIN_VALID(btpin)) {
+		    if (btpin == mypin)
+		      rv = 0;	/* OK */
+		    else
+		      rv = 2;	/* Mismatch */
+		  } else {
+		    switch (btpin) {
+		    default:
+		    case BTPIN_PROBE:
+		      rv = 2;	/* Mismatch */
+		      break;
+		    case BTPIN_NULL:
+		      switch (dualStream.connectMode()) {
+		      default:
+		      case DualStream::BLE_CONNECTED:
+			rv = 2;	/* Mismatch */
+			break;
+		      case DualStream::USB_CONNECTED:
+			rv = 0;	/* OK */
+			break;
+		      }
+		      break;
+		    }
+		  }
+		} else {
+		  rv = 2;	/* No pin given. */
+		}
+	      }
+	    }
+	    break;
 	  }
 
 	  Firmata.write(START_SYSEX); /* 0xf0 */
@@ -1658,6 +1699,9 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(0x0b);
 	  Firmata.write(argv[2]);
 	  Firmata.write(rv);
+	  if (argv[2] == 0x03 && rv == 0) { /* challenge */
+	    Firmata.printFirmwareVersionRaw();
+	  }
 	  Firmata.write(END_SYSEX); /* 0xf7 */
 	}
 	break;
