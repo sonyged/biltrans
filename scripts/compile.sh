@@ -40,4 +40,17 @@ SKETCH_CPP=${2:-sketch_mar07b.cpp}
 
 cp ../code/koov_version.h "${BUILDDIR}/"
 sh ../scripts/build_firmata.sh "${BUILDDIR}" "${SKETCH_CPP}" || exit 22
-cat ${BUILDDIR}/${SKETCH_CPP}.hex
+
+SKETCH_BASE="${BUILDDIR}/${SKETCH_CPP}"
+if [ -n "${OUTPUT_JSON}" ]; then
+    cat <<EOF
+{
+  "sketch":
+     "$(cat ${SKETCH_BASE}.hex | sed 's/$/\\n/' | tr -d '\r\n')",
+  "btpin_offset":
+     $(grep ^.btpin.data ${SKETCH_BASE}.map | awk '{print $2 - 16384}')
+}
+EOF
+else
+    cat ${SKETCH_BASE}.hex
+fi
