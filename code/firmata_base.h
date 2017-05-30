@@ -1331,6 +1331,11 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(END_SYSEX);
 
 	  bts01_reset();
+	  /*
+	   * This small delay is neccesary so that following commands
+	   * works
+	   */
+	  delay(500);
 	  String cmd;
 	  for (int i = 4; i < argc; i++) {
 	    char c = argv[i];
