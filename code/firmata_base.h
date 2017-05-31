@@ -1330,12 +1330,25 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(0x01);
 	  Firmata.write(END_SYSEX);
 
+	  if (ble_connected) {
+	    /*
+	     * Wait before resetitng BTS01 so that above data might
+	     * sent to the peer.
+	     */
+	    delay(500);
+	  }
+
 	  bts01_reset();
+
 	  /*
 	   * This small delay is neccesary so that following commands
 	   * works
 	   */
 	  delay(500);
+
+	  /*
+	   * Execute additional commands, if any.
+	   */
 	  String cmd;
 	  for (int i = 4; i < argc; i++) {
 	    char c = argv[i];
