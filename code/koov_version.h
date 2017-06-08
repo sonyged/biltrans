@@ -1,1 +1,1 @@
-#define KOOV_VERSION	"koov-1.0.15"
+#define KOOV_VERSION	"koov-1.0.16"
