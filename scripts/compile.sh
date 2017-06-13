@@ -48,7 +48,7 @@ if [ -n "${OUTPUT_JSON}" ]; then
   "sketch":
      "$(cat ${SKETCH_BASE}.hex | sed 's/$/\\n/' | tr -d '\r\n')",
   "btpin_offset":
-     $(grep ^.btpin.data ${SKETCH_BASE}.map | awk '{print $2}' | xargs bash -c 'echo $(($0))')
+     $(grep ^.btpin.data ${SKETCH_BASE}.map | awk '{print $2}' | xargs sh -c 'echo $(($0))')
 }
 EOF
 else
