@@ -50,6 +50,20 @@ EX_TRACE_FLOAT(float v)
 #endif
 }
 
+void
+EX_TRACE_STK(const char *msg, int p, int q)
+{
+
+#if defined(ENABLE_TRACING)
+  SerialUSB.print(msg);
+  SerialUSB.print(" ");
+  SerialUSB.print(p, HEX);
+  SerialUSB.print(" ");
+  SerialUSB.print(q, HEX);
+  SerialUSB.println("");
+#endif
+}
+
 long
 EX_RANDOM(long from, long to)
 {

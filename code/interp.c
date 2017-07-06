@@ -134,10 +134,10 @@ get_type(region *region, int array)
 //#define LOG(fmt, ...) do { EX_TRACE(fmt); } while (0)
 
 #define CALL(F, ...) do {                       \
-  int err = (F)(__VA_ARGS__);                   \
-  if (err) {                                    \
-    LOG(#F ": %d: err = %d\n", __LINE__, err);  \
-    return err;                                 \
+  int err_ = (F)(__VA_ARGS__);                  \
+  if (err_) {                                   \
+    LOG(#F ": %d: err = %d\n", __LINE__, err_); \
+    return err_;                                \
   }                                             \
 } while (0)
 
@@ -155,22 +155,81 @@ get_type(region *region, int array)
 } while (0)
 #endif
 
-#define CHECK_STACK0(env, where, p, q) do {     \
-  if ((void *)(p) < env->e_stack) {             \
-    EX_TRACE(where);                            \
-    EX_TRACE_HEX((int)(p));                     \
-    EX_TRACE_HEX((int)(q));                     \
-    env->e_stack = (p);                         \
-  }                                             \
+#define RETURN_WITH_POP_STACK(V) do {         \
+  int err_ = (V);                             \
+  POP_STACK();                                \
+  return err_;                                \
 } while (0)
 
-#define CHECK_STACK(env, where, p) do {         \
-  if ((void *)(p) < env->e_stack) {             \
-    EX_TRACE(where);                            \
-    EX_TRACE_HEX((int)(p));                     \
-    env->e_stack = (p);                         \
-  }                                             \
-} while (0)
+/*
+ * DUMP_STACK works only for normal path.
+ */
+#undef DUMP_STACK
+
+#if defined(DUMP_STACK)
+struct stk {
+  const char *s_where;
+  int s_arg0;
+  int s_arg1;
+} stk_store[100], *stk = stk_store;
+#endif
+
+static void
+dump_stktrace()
+{
+#if defined(DUMP_STACK)
+  struct stk *s = stk_store;
+
+  EX_TRACE_STK("trace:", stk - stk_store, 0);
+  for (; s < stk; s++) {
+    EX_TRACE_STK(s->s_where, s->s_arg0, s->s_arg1);
+  }
+#endif
+}
+
+static void
+push_stk(const char *w, int p, int q)
+{
+
+#if defined(DUMP_STACK)
+  stk->s_where = w;
+  stk->s_arg0 = p;
+  stk->s_arg1 = q;
+  stk++;
+#endif
+}
+
+static void
+pop_stk()
+{
+
+#if defined(DUMP_STACK)
+  stk--;
+#endif
+}
+
+#define STACK_GAP	1024
+
+static int
+check_stack(env *env, char *where, int q)
+{
+  void *p = &p;
+  push_stk(where, (int)p, q);
+  if (p < env->e_stack) {
+    dump_stktrace();
+    env->e_stack = p;
+  }
+  if ((int)env->e_stack - STACK_GAP < (int)_sbrk(0)) {
+    dump_stktrace();
+    EX_TRACE("stack overflow");
+    pop_stk();
+    return ERROR_STACK_OVERFLOW;
+  }
+  return ERROR_OK;
+}
+
+#define CHECK_STACK(env, where, q) CALL(check_stack, env, where, q)
+#define POP_STACK() do { pop_stk(); } while (0)
 
 
 /*
@@ -381,29 +440,28 @@ arg_int(const region *region, ntype name, int32_t *i32)
 static int
 exec_arg(const ctx *ctx, ntype name)
 {
-  int err;
   env *env = ctx->c_env;
 
-  CHECK_STACK0(env, "exec_arg", &err, name);
+  CHECK_STACK(env, "exec_arg", name);
   struct region nregion;
 
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
   const uint8_t type = get_type(&nregion, 0);
   switch (type) {
   case BT_ERROR:
-    return ERROR_BUFFER_TOO_SHORT;
+    RETURN_WITH_POP_STACK(ERROR_BUFFER_TOO_SHORT);
   case BT_OBJECT:
-    return exec_block(env, &nregion);
+    RETURN_WITH_POP_STACK(exec_block(env, &nregion));
   case BT_NUMBER:
-    return exec_number(env, &nregion);
+    RETURN_WITH_POP_STACK(exec_number(env, &nregion));
   case BT_INT8:
   case BT_INT16:
 #if defined(SUPPORT_INT32)
   case BT_INT32:
 #endif
-    return exec_integer(env, &nregion, type);
+    RETURN_WITH_POP_STACK(exec_integer(env, &nregion, type));
   default:
-    return ERROR_INVALID_TYPE;
+    RETURN_WITH_POP_STACK(ERROR_INVALID_TYPE);
   }
 }
 
@@ -414,27 +472,25 @@ exec_arg(const ctx *ctx, ntype name)
 static int
 exec_blocks(const ctx *ctx, ntype name)
 {
-  int err;
-
-  CHECK_STACK0(ctx->c_env, "exec_blocks", &err, name);
   struct region nregion;
+
+  CHECK_STACK(ctx->c_env, "exec_blocks", name);
   CALL(elist_lookup, &ctx->c_region, &nregion, name);
   const uint8_t type = get_type(&nregion, 0);
   if (type != BT_ARRAY)
-    return ERROR_INVALID_TYPE;
-  return exec_array(ctx->c_env, &nregion);
+    RETURN_WITH_POP_STACK(ERROR_INVALID_TYPE);
+  RETURN_WITH_POP_STACK(exec_array(ctx->c_env, &nregion));
 }
 
 static int
 exec_unary(const ctx *ctx, vtype (*f)(vtype x))
 {
   env *env = ctx->c_env;
-  int err;
 
-  CHECK_STACK(env, "exec_unary", &err);
+  CHECK_STACK(env, "exec_unary", 0);
   CALL(exec_arg, ctx, Kx);
   env->e_value = (*f)(env->e_value);
-  return ERROR_OK;
+  RETURN_WITH_POP_STACK(ERROR_OK);
 }
 
 #define DEFBINARY(name, op) \
@@ -453,15 +509,14 @@ static int
 exec_binary(const ctx *ctx, vtype (*f)(vtype x, vtype y))
 {
   env *env = ctx->c_env;
-  int err;
 
-  CHECK_STACK(env, "exec_binary", &err);
+  CHECK_STACK(env, "exec_binary", 0);
   CALL(exec_arg, ctx, Kx);
   vtype x = env->e_value;
   CALL(exec_arg, ctx, Ky);
   vtype y = env->e_value;
   env->e_value = (*f)(x, y);
-  return ERROR_OK;
+  RETURN_WITH_POP_STACK(ERROR_OK);
 }
 
 static vtype
@@ -603,18 +658,17 @@ static int
 exec_function(env *env, uint32_t idx)
 {
   lookup_function_args lfa;
-  int err;
 
-  CHECK_STACK(env, "exec_function", &err);
+  CHECK_STACK(env, "exec_function", 0);
   lfa.idx = idx;
   lfa.ctx.c_env = env;
   lfa.ctx.c_region = env->e_region;
-  err = foreach_document(&lfa.ctx.c_region, 1, ERROR_ELEMENT_NOT_FOUND,
-                         lookup_function, &lfa);
+  int err = foreach_document(&lfa.ctx.c_region, 1, ERROR_ELEMENT_NOT_FOUND,
+                             lookup_function, &lfa);
   if (err != ERROR_FOUND)
-    return err;
+    RETURN_WITH_POP_STACK(err);
 
-  return exec_blocks(&lfa.ctx, Kblocks);
+  RETURN_WITH_POP_STACK(exec_blocks(&lfa.ctx, Kblocks));
 }
 
 static int
@@ -814,9 +868,6 @@ static int
 exec_block(env *env, region *region)
 {
   ntype name;
-  int err;
-
-  CHECK_STACK(env, "exec_block", &err);
 
   ctx ctx;
   ctx.c_env = env;
@@ -824,17 +875,19 @@ exec_block(env *env, region *region)
 
   CALL(arg_keyword, &ctx.c_region, Kname, &name);
 
+  CHECK_STACK(env, "exec_block", name);
+
 #if !defined(DISPATCH_TABLE)
 
 #undef EXEC_BINARY
 #define EXEC_BINARY(name)                                       \
   case I ## name: {                                             \
-    return exec_binary(ctx, f_ ## name);                        \
+    RETURN_WITH_POP_STACK(exec_binary(ctx, f_ ## name));        \
   }
 #undef EXEC_UNARY
 #define EXEC_UNARY(name)                                        \
   case I ## name: {                                             \
-    return exec_unary(ctx, f_ ## name);                         \
+    RETURN_WITH_POP_STACK(exec_unary(ctx, f_ ## name));         \
   }
 
   switch (name) {
@@ -842,7 +895,7 @@ exec_block(env *env, region *region)
 #define DEFUN(sym, body) case I ## sym: body
 #include "interp_insns.h"
   default:
-    return ERROR_UNSUPPORTED;
+    RETURN_WITH_POP_STACK(ERROR_UNSUPPORTED);
   }
 
 #else  /* DISPATCH_TABLE */
@@ -859,8 +912,8 @@ exec_block(env *env, region *region)
   };
 
   if (name >= sizeof(ops) / sizeof(ops[0]))
-    return ERROR_UNSUPPORTED;
-  return ops[name](&ctx);
+    RETURN_WITH_POP_STACK(ERROR_UNSUPPORTED);
+  RETURN_WITH_POP_STACK(ops[name](&ctx));
 
 #endif  /* DISPATCH_TABLE */
 }
@@ -898,21 +951,20 @@ exec_number(env *env, region *region)
 static int
 exec_array(env *env, region *region)
 {
-  int err;
-
-  CHECK_STACK(env, "exec_array", &err);
   struct region nregion;
+
+  CHECK_STACK(env, "exec_array", 0);
   CALL(narrow_to_elist, region, &nregion);
 
   for (;;) {
     CHECK_INTR(ERROR_INTERRUPTED);
     if (nregion.r_resid < ELIST_SIZE(0))
-      return ERROR_OVERFLOW;
+      RETURN_WITH_POP_STACK(ERROR_OVERFLOW);
     if (nregion.r_resid == ELIST_SIZE(0)) /* trailing nul */
-      return ERROR_OK;
+      RETURN_WITH_POP_STACK(ERROR_OK);
     const uint8_t type = get_type(&nregion, 1);
     if (type != BT_OBJECT)
-      return ERROR_INVALID_TYPE;
+      RETURN_WITH_POP_STACK(ERROR_INVALID_TYPE);
     CALL(exec_block, env, &nregion);
   }
 }

@@ -40,6 +40,7 @@ enum {
   ERROR_TOOMANY_SERVO,          /* 11 */
   ERROR_NO_MEMORY,              /* 12 */
   ERROR_INVALID_MAGIC,          /* 13 */
+  ERROR_STACK_OVERFLOW,         /* 14 */
 };
 
 #if !defined(CHECK_INTR)
@@ -59,6 +60,7 @@ void EX_TRACE(const char *msg);
 void EX_TRACE_INT(int);
 void EX_TRACE_HEX(int);
 void EX_TRACE_FLOAT(float);
+void EX_TRACE_STK(const char *msg, int, int);
 #if defined(__cplusplus)
 };
 #endif
@@ -77,6 +79,7 @@ struct servo_sync {
   uint8_t degree;
 };
 #define servo_sync servo_sync
+extern void *_sbrk(int incr);
 #endif
 void EX_SERVOMOTOR_SYNCHRONIZED_MOTION(struct servo_sync *, int, int);
 void EX_SERVO_MOTOR(int port, int value); /* 0 <= value <= 180 */

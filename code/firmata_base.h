@@ -1842,17 +1842,13 @@ periodc_jobs()
     blink_led(PIN_BLE, 100);
   } else {
     if (interp_error) {
-      static byte hi, lo, pre;
+      static byte hi, lo;
       if (hi == 0 && lo == 0) {
-	pre = 8;
-	hi = ((interp_error >> 4) & 0xf) * 2;
-	lo = (interp_error & 0xf) * 2;
+	hi = (((interp_error >> 4) & 0xf) + 1) * 2;
+	lo = ((interp_error & 0xf) + 1) * 2;
 	blink_init();
       }
-      if (pre > 0) {
-	if (blink_led(0, 250))
-	  pre--;
-      } else if (hi > 0) {
+      if (hi > 0) {
 	LED_OFF(PIN_USB);
 	if (blink_led(PIN_BLE, 250))
 	  hi--;

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void *_sbrk(int incr) { return 0; }
+
 #include "interp.h"
 
 void
