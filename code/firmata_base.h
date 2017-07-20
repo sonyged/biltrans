@@ -1649,6 +1649,14 @@ koov_sysex(byte argc, byte *argv)
 	   *    status: AA
 	   *    status: BB		// 0 on success (except 0x02)
 	   */
+
+	  /*
+	   * 0x00: success (or false if boolean)
+	   * 0x01: true (if boolean)
+	   * 0x02: BT PIN mismatch
+	   * 0x7e: enough argument is not provided
+	   * 0x7f: sub command not implemented.
+	   */
 	  byte rv = 0x7f;
 
 	  switch (argv[2]) {
