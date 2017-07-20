@@ -200,3 +200,64 @@ EX_PORT_INIT(int port, ntype part)
     INIT_PUSH_BUTTON(port);
   return ERROR_OK;
 }
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+extern int __ram_end__ ;
+extern int __heap_limit__ ;
+#if defined(__cplusplus)
+};
+#endif
+
+static int elt_used;
+static struct elt *elt_freelist;
+static struct elt *elt_pool;
+static void *stack_bottom;
+
+void
+elt_init()
+{
+
+  elt_pool = (struct elt *)&__heap_limit__;
+  elt_used = 0;
+  elt_freelist = 0;
+  stack_bottom = (void *)&__ram_end__;
+}
+
+int
+elt_checkgap(void *stack)
+{
+
+  if (stack) {
+    if (stack < stack_bottom)
+      stack_bottom = stack;
+  }
+#define STACK_GAP	1024
+  if ((int)stack_bottom < (int)&elt_pool[elt_used + 1] + STACK_GAP)
+    return 1;
+  return 0;
+}
+
+void *
+elt_alloc(size_t size)
+{
+  struct elt *e = elt_freelist;
+
+  if (size != sizeof(elt))
+    return 0;
+  if (e)
+    elt_freelist = e->e_next;
+  else if (!elt_checkgap(0))
+    e = &elt_pool[elt_used++];
+  return e;
+}
+
+void
+elt_free(void *p)
+{
+  struct elt *e = (struct elt *)p;
+
+  e->e_next = elt_freelist;
+  elt_freelist = e;
+}

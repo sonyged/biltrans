@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "listlib.h"
+#include "list_glue.h"
 
 static void
 print(const char *tag, void *l)

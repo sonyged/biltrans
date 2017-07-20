@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void *_sbrk(int incr) { return 0; }
-
 #include "interp.h"
+#include "list_glue.h"
 
 void
 EX_TRACE(const char *msg)
@@ -145,7 +144,6 @@ EX_TIMER()
   printf("timer %d\n", timer_start);
   return timer_start++;
 }
-
 
 int
 main()

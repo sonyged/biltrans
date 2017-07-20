@@ -180,7 +180,7 @@ dump_stktrace()
 #if defined(DUMP_STACK)
   struct stk *s = stk_store;
 
-  EX_TRACE_STK("trace:", stk - stk_store, 0);
+  EX_TRACE_STK("trace:", stk - stk_store, (int)_sbrk(0));
   for (; s < stk; s++) {
     EX_TRACE_STK(s->s_where, s->s_arg0, s->s_arg1);
   }
@@ -208,8 +208,6 @@ pop_stk()
 #endif
 }
 
-#define STACK_GAP	1024
-
 static int
 check_stack(env *env, char *where, int q)
 {
@@ -219,7 +217,7 @@ check_stack(env *env, char *where, int q)
     dump_stktrace();
     env->e_stack = p;
   }
-  if ((int)env->e_stack - STACK_GAP < (int)_sbrk(0)) {
+  if (elt_checkgap(env->e_stack)) {
     dump_stktrace();
     EX_TRACE("stack overflow");
     pop_stk();
@@ -1090,6 +1088,7 @@ exec_script(region *region)
     env->e_lsts[i] = 0;
   //printf("e_vars: %p, e_lsts: %p\n", env->e_vars, env->e_lsts);
 
+  list_init();
   CALL(exec_array, env, &nregion);
   return ERROR_OK;
 }

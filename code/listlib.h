@@ -20,6 +20,20 @@
 #define LIST_REPLACE(l, p, v)	(list_replace(&(l), (p), (v), 0))
 #define LIST_INSERT(l, p, v)	(list_insert(&(l), (p), (v), 0))
 
+/*
+ * Allocator for struct elt.
+ */
+#if defined(__cplusplus)
+extern "C" {
+#endif
+extern void *elt_alloc(size_t);
+extern void elt_free(void *);
+extern void elt_init();
+extern int elt_checkgap(void *);
+#if defined(__cplusplus)
+};
+#endif
+
 struct elt {
   struct elt *e_next;
   float e_value;
@@ -35,7 +49,7 @@ elt_equal(float x, float y)
 static struct elt *
 elt_create(float v)
 {
-  struct elt *n = (struct elt *)malloc(sizeof(struct elt));
+  struct elt *n = (struct elt *)elt_alloc(sizeof(struct elt));
 
   if (n == 0)
     return 0;
@@ -59,7 +73,7 @@ elt_unlink(struct elt **p)
   struct elt *n = *p;
 
   *p = n->e_next;
-  free(n);
+  elt_free(n);
 }
 
 static int
@@ -181,6 +195,13 @@ list_insert(void *l, int pos, float v, int *error)
 
   elt_link(p, n);
   SET_ERROR(error, LE_OK);
+}
+
+static void
+list_init()
+{
+
+  elt_init();
 }
 
 #endif /* !defined(LISTLIB_H) */
