@@ -1576,6 +1576,9 @@ koov_sysex(byte argc, byte *argv)
 
 	  leave_firmata();
 	  interp_error = 0;
+
+	  delay(200);
+	  NVIC_SystemReset();
 	}
 	break;
       case 0x0a:		/* write */
