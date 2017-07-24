@@ -1734,6 +1734,36 @@ koov_sysex(byte argc, byte *argv)
 	  Firmata.write(END_SYSEX); /* 0xf7 */
 	}
 	break;
+      case 0x0c:		/* melody (multiple port) */
+	if (argc > 4) {
+	  /*
+	   * Request:
+	   * offset 0  1  2  3  4
+	   * ------------------------
+	   *    0e 02 0c AA BB CC ...
+	   *
+	   *    pin: AA
+	   *    tone: v = ((BB & 0x7e) >> 1)
+	   *        if v == 0, buzzer-off
+	   *        if v != 0, freq = v + 47
+	   *    secs: (((BB & 0x01) << 8) | CC) * 10
+	   *
+	   * Response:
+	   */
+
+	  for (int i = 2; i < argc - 1; i += 3) {
+	    byte pin = argv[i];
+	    byte tone = (argv[i + 1] & 0x7e) >> 1;
+	    byte freq = tone ? tone + 47 : 0;
+	    int ms = ((((argv[i + 1] & 0x01) ? 0x100 : 0) | argv[i + 2]) * 10);
+
+	    if (IS_PIN_DIGITAL(pin)) {
+	      BUZZER_CONTROL(PIN_TO_DIGITAL(pin), tone ? HIGH : LOW, freq);
+	      delay(ms);
+	    }
+	  }
+	}
+	break;
       }
     }
     break;
