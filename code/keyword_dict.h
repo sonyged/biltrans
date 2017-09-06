@@ -79,4 +79,9 @@
 #define Kir_photo_reflector 77
 #define K3_axis_digital_accelerometer 78
 #define Ksound_sensor 79
+#define Kfloor 80
+#define Kceiling 81
+#define Kasin 82
+#define Kacos 83
+#define Katan 84
 #endif /* !defined(KEYWORD_DICT_H) */

@@ -351,7 +351,24 @@ describe('execute wait', function() {
             y: { name: 'plus', x: 2, y: 3 }
           }
         }, blocks: [ { name: 'wait', secs: 0.987 }, ]
-        }
+        },
+        { name: 'wait', secs: { name: 'math', op: 'floor', x: 9.1 } },
+        { name: 'wait', secs: { name: 'math', op: 'floor', x: 9.9 } },
+        { name: 'wait', secs: { name: 'math', op: 'floor', x: -9.1 } },
+        { name: 'wait', secs: { name: 'math', op: 'floor', x: -9.9 } },
+        { name: 'wait', secs: { name: 'math', op: 'ceiling', x: 9.1 } },
+        { name: 'wait', secs: { name: 'math', op: 'ceiling', x: 9.9 } },
+        { name: 'wait', secs: { name: 'math', op: 'ceiling', x: -9.1 } },
+        { name: 'wait', secs: { name: 'math', op: 'ceiling', x: -9.9 } },
+        { name: 'wait', secs: { name: 'math', op: 'asin', x: 0 } },
+        { name: 'wait', secs: { name: 'math', op: 'asin', x: 1 } },
+        { name: 'wait', secs: { name: 'math', op: 'asin', x: -1 } },
+        { name: 'wait', secs: { name: 'math', op: 'acos', x: 0 } },
+        { name: 'wait', secs: { name: 'math', op: 'acos', x: 1 } },
+        { name: 'wait', secs: { name: 'math', op: 'acos', x: -1 } },
+        { name: 'wait', secs: { name: 'math', op: 'atan', x: 0 } },
+        { name: 'wait', secs: { name: 'math', op: 'atan', x: 1 } },
+        { name: 'wait', secs: { name: 'math', op: 'atan', x: -1 } },
       ]
     }
   ]});
@@ -403,6 +420,23 @@ describe('execute wait', function() {
       "wait 0.321000",
       "wait 0.654000",
       "wait 0.987000",
+      "wait 9.000000",
+      "wait 9.000000",
+      "wait -10.000000",
+      "wait -10.000000",
+      "wait 10.000000",
+      "wait 10.000000",
+      "wait -9.000000",
+      "wait -9.000000",
+      "wait 0.000000",
+      "wait 89.999992",
+      "wait -89.999992",
+      "wait 90.000000",
+      "wait 0.000000",
+      "wait 179.999985",
+      "wait 0.000000",
+      "wait 45.000000",
+      "wait -45.000000",
       ""
     ]);
   });

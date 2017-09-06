@@ -555,6 +555,7 @@ f_round(vtype x)
 }
 
 #define deg2rad(x) ((x) / 180.0 * M_PI)
+#define rad2deg(x) ((x) / M_PI * 180.0)
 
 static int
 lookup_index(const region *region, uint32_t *u32, ntype name, uint32_t limit)

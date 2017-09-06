@@ -167,6 +167,21 @@ DEFUN(math, {
     env->e_value = exp10f(env->e_value);
 #endif
     break;
+  case Kfloor:
+    env->e_value = floorf(env->e_value);
+    break;
+  case Kceiling:
+    env->e_value = ceilf(env->e_value);
+    break;
+  case Kasin:
+    env->e_value = rad2deg(asinf(env->e_value));
+    break;
+  case Kacos:
+    env->e_value = rad2deg(acosf(env->e_value));
+    break;
+  case Katan:
+    env->e_value = rad2deg(atanf(env->e_value));
+    break;
   default:
     return ERROR_UNSUPPORTED;
   }
